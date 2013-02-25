@@ -1,0 +1,26 @@
+name            TS_20130208_1
+sex             male
+
+interfaceMode   2
+simDataDir      E:\DATA\RHYTHM-FMRI\PWS01
+% simDataDir
+
+designNum       2
+
+mouthMicDist    6 % cm
+closedLoopGain  10 % dB
+dBRange1        20 % dB
+trialLen        5 % s
+trigByScanner   1
+TA              2.5 % s
+TPaceStim       3.5 % s
+TVisStim        5.5 % s
+
+bAdaptRate      1
+vumeterMode     2
+
+paceStim_meanSylDur     0.26 % s
+paceStim_toneDur        25e-3 % s
+paceStim_toneFreq       6000 % Hz
+paceStim_toneAmp        0.2  % Wave peak (?)
+paceStim_toneRamp       5e-3 % s

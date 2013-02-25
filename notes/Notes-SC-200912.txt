@@ -1,0 +1,20 @@
+Rhythm-fMRI project
+
+=== 2009/12/01 ===
+NEW_DIR: rhythm-fmri spawned from sap-fmri.
+
+DOING: writing the code for extracting duration and intensity from a Harvard sentence recording. 
+	There are plenty of recordings of this sort to test on from APSTV, APSTV2 and APSTV_NW experiments. 
+	MATLAB_CODE: rhythm-fmri/mcode/analyzeSentence.m
+	Usage example: 
+		analyzeSentence('G:\DATA\APSTV\AS_PS23\main\rep9\trial-7-6.mat','plot')
+
+DOING: Add tone-sequence generating function to ADAPT_VC_RATIO_RHYTHM
+MATLAB_CODE: rhythm-fmri/mcode/testToneSeqGen.m
+	Basically done. 
+
+DOING: MATLAB_CODE: genRandIntervals. 
+	All 8-interval sequences right now. 
+
+MATLAB_CODE: getRandSentences.m
+	

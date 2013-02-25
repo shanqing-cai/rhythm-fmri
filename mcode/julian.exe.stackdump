@@ -1,0 +1,8 @@
+Exception: STATUS_ACCESS_VIOLATION at eip=0040A859
+eax=1035EF20 ebx=102C5D40 ecx=00000282 edx=012D012C esi=00000096 edi=002E0008
+ebp=10256C78 esp=0022CA50 program=E:\speechres\rhythm-fmri\julius-3.5.2-quickstart-windows\bin\julian.exe, pid 1772, thread main
+cs=001B ds=0023 es=0023 fs=003B gs=0000 ss=0023
+Stack trace:
+Frame     Function  Args
+10256C78  0040A859  (102911E0, 10292188, 10296010, 10299E98)
+End of stack trace

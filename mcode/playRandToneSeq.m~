@@ -1,0 +1,48 @@
+function playRandToneSeq(varargin)
+%%
+randSeqFN='randIntervals_8.mat';
+totDur=3;
+
+maxNTones=64;
+toneDur=25e-3;  % sec
+toneFreq=6e3;   % Hz
+toneAmp=0.2;    % Wave peak
+toneRamp=5e-3;  % sec
+
+if ~isempty(fsic(varargin,'toneDur'))
+    toneDur=varargin{fsic(varargin,'toneDur')+1};   
+end
+
+if ~isempty(fsic(varargin,
+
+%%
+load(randSeqFN);    % gives seqs
+nSeqs=size(seqs,1);
+nTones=size(seqs,2)+1;
+k=round(rand*(nSeqs-1))+1;
+
+t_int=seqs(k,:);
+t_int=t_int/sum(t_int); % Just for saveguard
+
+p.tsgNTones=nTones;
+p.tsgToneDur=[repmat(toneDur,1,nTones),zeros(1,maxNTones-nTones)];
+p.tsgToneFreq=[repmat(toneFreq,1,nTones),zeros(1,maxNTones-nTones)];
+p.tsgToneAmp=[repmat(toneAmp,1,nTones),zeros(1,maxNTones-nTones)];
+p.tsgToneRamp=[repmat(toneRamp,1,nTones),zeros(1,maxNTones-nTones)];
+p.tsgInt=[t_int*totDur,toneDur,zeros(1,maxNTones-nTones-1)];
+
+%%
+TransShiftMex(3,'tsgntones',p.tsgNTones);
+TransShiftMex(3,'tsgtonedur',p.tsgToneDur);
+TransShiftMex(3,'tsgtonefreq',p.tsgToneFreq);
+TransShiftMex(3,'tsgtoneamp',p.tsgToneAmp);
+TransShiftMex(3,'tsgtoneramp',p.tsgToneRamp);
+TransShiftMex(3,'tsgint',p.tsgInt);
+TransShiftMex(3,'wgtime',0);
+
+totDur=sum(p.tsgInt);
+
+TransShiftMex(13);
+pause(totDur);
+TransShiftMex(2);
+return
