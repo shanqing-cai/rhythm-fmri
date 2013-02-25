@@ -5,6 +5,7 @@ Author: Shanqing Cai (shanqing.cai@gmail.com)
 
 
 NOTE: This code by itself cannot run properly. It requires 
+
 1) the Mex program Audapter to process audio input and output. Write to the author to request Audapter if needed. 
 
 2) Some scripts in S.Cai's commonmcode repository. 
