@@ -3,6 +3,16 @@ Code for stimulus presentation and online ASR for the RHYTHM-FMRI project (fMRI 
 
 Author: Shanqing Cai (shanqing.cai@gmail.com)
 
+USAGE:
+
+The main program for experiment running is runExperiment.m
+
+Examples:
+
+runExperiment(config_file_name);
+
+runExperiment(config_file_name, 'twoScreens'); # Presents the stimulus window on a separate monitor to the left of the main one.
+
 
 NOTE: This code by itself cannot run properly. It requires 
 
