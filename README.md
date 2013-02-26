@@ -28,6 +28,6 @@ www.speech.cs.cmu.edu/cgi-bin/cmudict
 
 
 Acknowledgement:
-This project is supported by NIH grant NIH grant R01-DC0007683 (PI: Frank Guenther).
+This project is supported by NIH grant R01-DC0007683 (PI: Frank Guenther).
 
 
