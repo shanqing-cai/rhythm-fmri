@@ -66,6 +66,7 @@ sent = strrep(sent, '''', '');
 sent = strrep(sent, ',', '');
 sent = strrep(sent, '.', '');
 sent = strrep(sent, ';', '');
+sent = strrep(sent, '-', ' ');
 
 srcBaseFN = sprintf('sent_%s', strrep(sent, ' ', '_'));
 
@@ -249,9 +250,14 @@ fclose(asrOutF);
 pa = parse_asr_out(asrOutFN,  wavFN);
 varargout{1} = pa;
 
+if nargout >= 2
+    varargout{2} = outDir;
+end
+
+
 %% Optional visualization
 if ~isempty(fsic(varargin, '-s'))
-    figure('Position', [50, 100, 1350, 450]);
+    hfig = figure('Position', [50, 100, 1350, 450]);
     subplot('Position', [0.05, 0.1, 0.925, 0.8]);
     % [w, wfs] = wavread(wavFullFN);
     show_spectrogram(y, wfs, 'noFig');
@@ -268,6 +274,10 @@ if ~isempty(fsic(varargin, '-s'))
 
     title([strrep(strrep(wavFN, '\', '\\'), '_', '\_'), sprintf(': "%s"', data.params.name)])
     drawnow;
+    
+    if nargout == 3
+        varargout{3} = hfig;
+    end
 end
 
 if ~isempty(fsic(varargin, '-p'))

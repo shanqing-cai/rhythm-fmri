@@ -4,11 +4,11 @@
 % NS_E
 </s>    sil
 
-% GLUE
-GLUE    g l uw
-
 % THE
 THE    dh ah
+
+% GLUE
+GLUE    g l uw
 
 % SHEET
 SHEET    sh iy t
