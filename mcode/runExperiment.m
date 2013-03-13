@@ -60,11 +60,6 @@ if isdir(dirname)
     end
 end
 
-% Make a copy of the configuration file
-dconfig = dir(fullfile(dirname, 'config*.txt'));
-configBackupFN = fullfile(dirname, sprintf('config_%.2d.txt', length(dconfig) + 1));
-copyfile(configFN, configBackupFN);
-
 if bNew % set up new experiment
     mkdir(dirname)
     
@@ -162,6 +157,11 @@ else % load expt
     end
 end
 trackMeanSylDurs = [repmat(expt.subject.paceStim.meanSylDur,1,4)];
+
+% Make a copy of the configuration file
+dconfig = dir(fullfile(dirname, 'config*.txt'));
+configBackupFN = fullfile(dirname, sprintf('config_%.2d.txt', length(dconfig) + 1));
+copyfile(configFN, configBackupFN);
 
 %% Determine the log file name
 dlogs = dir(fullfile(dirname, 'log_*.txt'));
@@ -275,6 +275,10 @@ if (isempty(findStringInCell(varargin,'twoScreens')))
 else
 % 	if (expt.subject.trigByScanner==1)
 		ms=get(0,'MonitorPosition');
+        if size(ms, 1) < 2
+            error('It appears that only one monitor is connected to the system.');
+        end
+        
 		set(hgui.UIrecorder,'Position',[ms(2,1),ms(1,4)-ms(2,4),ms(2,3)-ms(2,1)+1,ms(2,4)+20],'toolbar','none','doublebuffer','on','renderer','painters');
 		pos_win=get(hgui.UIrecorder,'Position');
 		pos_strh=get(hgui.strh,'Position');
