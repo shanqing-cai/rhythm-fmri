@@ -46,25 +46,29 @@ if (~isempty(findStringInCell(varargin,'dirname')))
 end
 
 if isdir(dirname)
-    messg={sprintf('The specified directory "%s" already contains a previously recorded experiment', dirname)
-        ''
-        'Continue experiment, overwrite  or cancel ?'};
-    button1 = questdlg(messg,'DIRECTORY NOT EMPTY','Continue','Overwrite','Cancel','Continue');
-    switch button1
-        case 'Overwrite'
-            button2 = questdlg({'Are you sure you want to overwrite experiment'} ,'OVERWRITE EXPERIMENT ?');
-            switch button2
-                case 'Yes',
-                    rmdir(dirname,'s')
-                otherwise,
-                    return
-            end
-        case 'Continue'
-            bNew=false;
+    if ~isempty(fsic(varargin, 'confirmOverwrite'))
+        bNew = true;
+    else
+        messg={sprintf('The specified directory "%s" already contains a previously recorded experiment', dirname)
+            ''
+            'Continue experiment, overwrite  or cancel ?'};
+        button1 = questdlg(messg,'DIRECTORY NOT EMPTY','Continue','Overwrite','Cancel','Continue');
+        switch button1
+            case 'Overwrite'
+                button2 = questdlg({'Are you sure you want to overwrite experiment'} ,'OVERWRITE EXPERIMENT ?');
+                switch button2
+                    case 'Yes',
+                        rmdir(dirname,'s')
+                    otherwise,
+                        return
+                end
+            case 'Continue'
+                bNew=false;
 
-        otherwise,
-            return
+            otherwise,
+                return
 
+        end
     end
 end
 

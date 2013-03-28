@@ -897,6 +897,12 @@ if (handles.debug==0)
         handles.t_ivis = t_ivis;
         handles.t_mean_vwl_lv = t_mean_vwl_lv;
         
+        dataOut.t_nVowels = handles.t_nVowels;
+        dataOut.t_mean_iv = handles.t_mean_ivi;
+        dataOut.t_cv_ivis = handles.t_cv_ivis;
+        dataOut.t_ivis = handles.t_ivis;
+        dataOut.t_mean_vwl_lv = handles.t_mean_vwl_lv;
+        
         if ((handles.trigByScanner == 0 && handles.trialType == 1) ...
            || (handles.trigByScanner == 1 && handles.lastTrialType == 1)) ...
            && ~isnan(handles.t_mean_ivi)

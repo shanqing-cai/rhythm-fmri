@@ -23,7 +23,7 @@ paceStim_meanSylDur     0.27 % s
 minSylDur               0.22 % s. Set to -Inf for disabling user warning message
 maxSylDur               0.37 % %. Set to +Inf for disabling user warning message
 
-minVwlLevel             70 % dB
+minVwlLevel             65 % dB
 maxVwlLevel             80 % dB
 
 % -- NOTE: these feedback options are valid only with trigByScanner == 0 -- 
@@ -39,5 +39,5 @@ showRhythmicityFB_onlyRhythm 1 % 0 | 1 (Recommended: 1)
 
 paceStim_toneDur        25e-3 % s
 paceStim_toneFreq       6000 % Hz
-paceStim_toneAmp        0.2  % Wave peak (?)
+paceStim_toneAmp        0.1  % Wave peak (?)
 paceStim_toneRamp       5e-3 % s
