@@ -693,10 +693,10 @@ if (handles.debug==0)
     handles.time1=clock;
 
 %     if (handles.trigByScanner==1)
-        if (~isequal(handles.phase,'pre') && ~isequal(handles.phase,'pract1') && ~isequal(handles.phase,'pract2'))
+        if (~isequal(handles.phase,'pre') && ~isequal(handles.phase,'pract1') && ~isequal(handles.phase,'pract2')) && handles.trigByScanner
             pause(handles.TA);
         else
-            pause(0.25);
+%             pause(0.05);
         end
 %     else
 %         pause(0.25);

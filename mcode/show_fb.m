@@ -47,13 +47,21 @@ set(gcf, 'CurrentAxes', h.figUFBDat.axes_cv_ivis);
 
 set(gca, 'XLim', xlim_rhythm);
 set(gca, 'XTick', [1, 2], 'XTickLabel', {'NR', 'R'});
-set(gca, 'YLim', [0, 1]);
+
 set(gca, 'YTick', []);
 
 hold on;
 
 if ~isempty(fsic(h.showRhythmicityFB_phases, h.phase))
+    if h.showRhythmicityFB_onlyRhythm
+        xlim_rhythm = [1.5, 2.5];
+        set(gca, 'XLim', xlim_rhythm);
+        set(gca, 'XTick', [2], 'XTickLabel', {'R'});
+    end
+    
     if ~isfield(udat, 'rhythmDivBar')
+        set(gca, 'YLim', [0, 1]);
+        
         udat.rhythmDivBar = ...
             plot(xlim_rhythm, repmat(reci_cv_ivis_thresh / max_reci_cv_ivis, 1, 2), ...
             'k--', 'LineWidth', 2);
@@ -62,24 +70,34 @@ if ~isempty(fsic(h.showRhythmicityFB_phases, h.phase))
     end
 
     if ~isnan(h.t_cv_ivis)
-        for i1 = 1 : nBlink_rhythm
-            hbar = plot(h.trialType + [-barW / 2, barW / 2], ...
-                 repmat((1 / h.t_cv_ivis) / max_reci_cv_ivis, 1, 2), ...
-                 '-', 'Color', clrs{h.trialType}, 'LineWidth', 2);
-            drawnow;
+        if (h.showRhythmicityFB_onlyRhythm == 1 && h.trialType == 2) || ...
+                h.showRhythmicityFB_onlyRhythm == 0  
+            for i1 = 1 : nBlink_rhythm
 
-            if i1 < nBlink_rhythm
-                pause(blinkPeriod);
-                delete(hbar);
-                pause(blinkPeriod);
-                drawnow;  
+                    hbar = plot(h.trialType + [-barW / 2, barW / 2], ...
+                         repmat((1 / h.t_cv_ivis) / max_reci_cv_ivis, 1, 2), ...
+                         '-', 'Color', clrs{h.trialType}, 'LineWidth', 2);
+                    drawnow;
+                    ys = get(gca, 'YLim');
+                    if  (1 / h.t_cv_ivis) / max_reci_cv_ivis > ys(2)
+                        ys(2) = 1.1 * (1 / h.t_cv_ivis) / max_reci_cv_ivis;
+                        set(gca, 'YLim', ys);
+                    end
+
+                    if i1 < nBlink_rhythm
+                        pause(blinkPeriod);
+                        delete(hbar);
+                        pause(blinkPeriod);
+                        drawnow;  
+                    end
             end
+            
+            if ~isfield(udat, 'hBarsRhythm');
+                udat.hBarsRhythm = {[], []};
+            end
+            
+            udat.hBarsRhythm{h.trialType}(end + 1) = hbar;        
         end
-
-        if ~isfield(udat, 'hBarsRhythm');
-            udat.hBarsRhythm = {[], []};
-        end
-        udat.hBarsRhythm{h.trialType}(end + 1) = hbar;
     else
         htxt = text(xlim_int(1) + 0.1 * range(xlim_int), 0.5, 'Cannot determine rhythmicity');
         pause(1);
@@ -87,6 +105,9 @@ if ~isempty(fsic(h.showRhythmicityFB_phases, h.phase))
     end
 else
     cla;
+    hold on;
+    plot([0, 1], [0, 1], 'k-');
+    plot([0, 1], [1, 0], 'k-');
     if isfield(udat, 'rhythmDivBar')
         udat = rmfield(udat, {'rhythmDivBar', 'hBarsRhythm'});
     end
@@ -169,6 +190,9 @@ if ~isempty(fsic(h.showRateFB_phases, h.phase))
     end
 
     set(gca, 'XLim', xlim_rate);
+else
+    plot([0, 1], [0, 1], 'k-');
+    plot([0, 1], [1, 0], 'k-');
 end
 
 %% --- Intensity --- %%
@@ -245,6 +269,9 @@ if ~isempty(fsic(h.showIntFB_phases, h.phase))
     end
 
     set(gca, 'XLim', xlim_int);
+else
+    plot([0, 1], [0, 1], 'k-');
+    plot([0, 1], [1, 0], 'k-');
 end
 
 %%

@@ -35,6 +35,8 @@ showIntFB_phases            pre
 showRateWarn_phases         pre
 showIntWarn_phases          pre
 
+showRhythmicityFB_onlyRhythm 1 % 0 | 1 (Recommended: 1)
+
 paceStim_toneDur        25e-3 % s
 paceStim_toneFreq       6000 % Hz
 paceStim_toneAmp        0.2  % Wave peak (?)

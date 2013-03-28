@@ -263,6 +263,8 @@ hgui.showIntFB_phases = expt.subject.showIntFB_phases;
 hgui.showRateWarn_phases = expt.subject.showRateWarn_phases;
 hgui.showIntWarn_phases = expt.subject.showIntWarn_phases;
 
+hgui.showRhythmicityFB_onlyRhythm = expt.subject.showRhythmicityFB_onlyRhythm;
+
 hgui.toneDur=expt.subject.paceStim.toneDur;
 hgui.toneFreq=expt.subject.paceStim.toneFreq;
 hgui.toneAmp=expt.subject.paceStim.toneAmp;
