@@ -1,9 +1,8 @@
-name            TestExpt_audapter_3
+name            TestExpt_audapter_12
 sex             male
 
 interfaceMode   0
 simDataDir      E:\DATA\RHYTHM-FMRI\PWS01
-% simDataDir
 
 designNum       2
 
@@ -19,9 +18,22 @@ TVisStim        5.5 % s
 bAdaptRate      1
 vumeterMode     2
 
+% --- Performance feedback --- %
 paceStim_meanSylDur     0.27 % s
 minSylDur               0.22 % s. Set to -Inf for disabling user warning message
 maxSylDur               0.37 % %. Set to +Inf for disabling user warning message
+
+minVwlLevel             70 % dB
+maxVwlLevel             80 % dB
+
+% -- NOTE: these feedback options are valid only with trigByScanner == 0 -- 
+showRhythmicityFB_phases    pre,run1 % Examples: all | pre,run1 | none
+showRateFB_phases           pre
+showIntFB_phases            pre
+
+% showRhythmicityWarn_phases  pre,run1
+showRateWarn_phases         pre
+showIntWarn_phases          pre
 
 paceStim_toneDur        25e-3 % s
 paceStim_toneFreq       6000 % Hz

@@ -9,9 +9,17 @@ colors.nonRhythm = [0, 0.4, 0];
 subject = read_subject_config(configFN);
 
 if isequal(getHostName, 'smcg_w510')
-    subject.dataDir        	= 'E:\DATA\RHYTHM-FMRI\';
+%     subject.dataDir        	= 'E:\DATA\RHYTHM-FMRI\';
+    subject.dataDir        	= 'G:\DATA\RHYTHM-FMRI\';
 else
     subject.dataDir         = 'D:\CS_2004\PROJECTS\RHYTHM-FMRI\';
+end
+
+%% Check current working directory
+cwd = pwd;
+[~, cwd0] = fileparts(cwd);
+if ~isequal(cwd0, 'mcode')
+    error('Not currently under directry "mcode"\n');
 end
 
 %%
@@ -38,7 +46,7 @@ if (~isempty(findStringInCell(varargin,'dirname')))
 end
 
 if isdir(dirname)
-    messg={'The specified directory already contains a previously recorded experiment'
+    messg={sprintf('The specified directory "%s" already contains a previously recorded experiment', dirname)
         ''
         'Continue experiment, overwrite  or cancel ?'};
     button1 = questdlg(messg,'DIRECTORY NOT EMPTY','Continue','Overwrite','Cancel','Continue');
@@ -98,13 +106,13 @@ if bNew % set up new experiment
         sentCnt=sentCnt+t_nSents;
     end
     
-    expt.script.pre  = genPhaseScript('pre',  expt.script.pre.nReps,  expt.trialTypes, expt.stimSents.pre,  expt.stimSents_nSyls.pre,  expt.trialOrderRandReps);
-    expt.script.run1 = genPhaseScript('run1', expt.script.run1.nReps, expt.trialTypes, expt.stimSents.run1, expt.stimSents_nSyls.run1, expt.trialOrderRandReps);
-    expt.script.run2 = genPhaseScript('run2', expt.script.run2.nReps, expt.trialTypes, expt.stimSents.run2, expt.stimSents_nSyls.run2, expt.trialOrderRandReps);
-    expt.script.run3 = genPhaseScript('run3', expt.script.run3.nReps, expt.trialTypes, expt.stimSents.run3, expt.stimSents_nSyls.run3, expt.trialOrderRandReps);
-    expt.script.run4 = genPhaseScript('run4', expt.script.run4.nReps, expt.trialTypes, expt.stimSents.run4, expt.stimSents_nSyls.run4, expt.trialOrderRandReps);
-    expt.script.run5 = genPhaseScript('run5', expt.script.run5.nReps, expt.trialTypes, expt.stimSents.run5, expt.stimSents_nSyls.run5, expt.trialOrderRandReps);
-    expt.script.run6 = genPhaseScript('run6', expt.script.run6.nReps, expt.trialTypes, expt.stimSents.run6, expt.stimSents_nSyls.run6, expt.trialOrderRandReps);
+    expt.script.pre  = genPhaseScript('pre',  expt.script.pre.nReps,  expt.trialTypes, expt.stimSents.pre,  expt.stimSents_nSyls.pre,  expt.trialOrderRandReps, expt.subject.trigByScanner);
+    expt.script.run1 = genPhaseScript('run1', expt.script.run1.nReps, expt.trialTypes, expt.stimSents.run1, expt.stimSents_nSyls.run1, expt.trialOrderRandReps, expt.subject.trigByScanner);
+    expt.script.run2 = genPhaseScript('run2', expt.script.run2.nReps, expt.trialTypes, expt.stimSents.run2, expt.stimSents_nSyls.run2, expt.trialOrderRandReps, expt.subject.trigByScanner);
+    expt.script.run3 = genPhaseScript('run3', expt.script.run3.nReps, expt.trialTypes, expt.stimSents.run3, expt.stimSents_nSyls.run3, expt.trialOrderRandReps, expt.subject.trigByScanner);
+    expt.script.run4 = genPhaseScript('run4', expt.script.run4.nReps, expt.trialTypes, expt.stimSents.run4, expt.stimSents_nSyls.run4, expt.trialOrderRandReps, expt.subject.trigByScanner);
+    expt.script.run5 = genPhaseScript('run5', expt.script.run5.nReps, expt.trialTypes, expt.stimSents.run5, expt.stimSents_nSyls.run5, expt.trialOrderRandReps, expt.subject.trigByScanner);
+    expt.script.run6 = genPhaseScript('run6', expt.script.run6.nReps, expt.trialTypes, expt.stimSents.run6, expt.stimSents_nSyls.run6, expt.trialOrderRandReps, expt.subject.trigByScanner);
     
     p=getTSMDefaultParams(subject.sex,'closedLoopGain',expt.subject.closedLoopGain,...
         'trialLen',expt.subject.trialLen,...
@@ -181,7 +189,7 @@ else
     msglog(logFN, ' ');
     TransShiftMex(0);           %SC Gives input/output device info, and serves as an initialization.
 
-    msglog(logFN, '\nSettings :')
+    msglog(logFN, 'Settings :')
     msglog(logFN, sprintf('DMA Buffer    = %i samples',p.frameLen)); %SC Buffer length after downsampling
     msglog(logFN, sprintf('Samplerate    = %4.2f kHz',p.sr/1000));   %SC sampling rate after downsampling
     msglog(logFN, sprintf('Analysis win  = %4.2f msec',p.bufLen/p.sr*1000));
@@ -191,6 +199,8 @@ else
     msglog(logFN, sprintf('Process/sec   = %4.2f', p.sr/p.frameShift));
 
 end
+
+TransShiftMex(2);
 
 %% Load the multi-talker babble noise
 [x,fs_mtb]=wavread('mtbabble48k.wav');
@@ -205,8 +215,9 @@ lenMTB=round(2.5*fs_mtb);
 % TransShiftMex(3,'datapb',x_mtb{1});
 
 %% expt
-      
-figIdDat=makeFigDataMon;
+figIdDat = makeFigDataMon;
+figUFBDat = makeFigUserFB;
+guidata(figUFBDat.fid, figUFBDat);
 
 % wordList=expt.words;
 
@@ -214,7 +225,7 @@ allPhases=expt.allPhases;
 recPhases=expt.recPhases;
 % nWords=length(wordList);
 
-hgui=UIRecorder('figIdDat', figIdDat);
+hgui = UIRecorder('figIdDat', figIdDat, 'figUFBDat', figUFBDat);
 
 % if (expt.subject.designNum==2)
 %     expt.script=addFaceInfo(expt.script,hgui.skin.dFaces);
@@ -242,6 +253,15 @@ hgui.skin.facePnt=1;
 hgui.meanSylDur=expt.subject.paceStim.meanSylDur;
 hgui.minSylDur = expt.subject.minSylDur;
 hgui.maxSylDur = expt.subject.maxSylDur;
+hgui.minVwlLevel = expt.subject.minVwlLevel;
+hgui.maxVwlLevel = expt.subject.maxVwlLevel;
+
+hgui.showRhythmicityFB_phases = expt.subject.showRhythmicityFB_phases;
+hgui.showRateFB_phases = expt.subject.showRateFB_phases;
+hgui.showIntFB_phases = expt.subject.showIntFB_phases;
+% hgui.showRhythmicityWarn_phases = expt.subject.showRhythmicityWarn_phases;
+hgui.showRateWarn_phases = expt.subject.showRateWarn_phases;
+hgui.showIntWarn_phases = expt.subject.showIntWarn_phases;
 
 hgui.toneDur=expt.subject.paceStim.toneDur;
 hgui.toneFreq=expt.subject.paceStim.toneFreq;
@@ -302,6 +322,12 @@ else
 		set(hgui.speed_too_slow,'Position',[(pos_win(3)-pos_speed_axes(3))/2,pos_speed_too_slow(2),pos_speed_too_slow(3),pos_speed_too_slow(4)]);
 		set(hgui.speed_too_fast,'Position',[(pos_win(3)-pos_speed_axes(3))/2+pos_speed_axes(3)-pos_speed_too_fast(3),pos_speed_too_fast(2),pos_speed_too_fast(3),pos_speed_too_fast(4)]);
         set(hgui.msgh, 'FontSize', 20);
+        
+        fpos = get(figUFBDat.fid, 'Position');
+        set(figUFBDat.fid, 'Position', ...
+            [ms(2, 1) + (ms(2, 3) - ms(2, 1) - fpos(3)) / 2, ...
+             ms(1, 4) - ms(2, 4) + (ms(2, 4) - fpos(4)), ...
+             fpos(3), fpos(4)]);
 % 	else
 % 		set(hgui.UIrecorder,'Position',[-1400,180,1254,857],'toolbar','none');
 % 	end
@@ -704,7 +730,7 @@ save(fullfile(dirname,'state.mat'),'state');
 return
 
 %% 
-function phaseScript=genPhaseScript(stage,nReps,trialTypes,trainWords,nSyls,randReps)
+function phaseScript=genPhaseScript(stage,nReps,trialTypes,trainWords,nSyls,randReps, trigByScanner)
 	phaseScript=struct();
 	phaseScript.nReps=nReps;
     phaseScript.nTrials=0;
@@ -747,11 +773,18 @@ function phaseScript=genPhaseScript(stage,nReps,trialTypes,trainWords,nSyls,rand
                 ptwCnt=ptwCnt+1;
             end
         end
+        
+        if ~trigByScanner % -- Behavioral session: remove the no-speech trials -- %
+            idxKeep = find(oneRep.trialOrder <= 2);
+            oneRep.trialOrder = oneRep.trialOrder(idxKeep);
+            oneRep.word = oneRep.word(idxKeep);
+            oneRep.nSyls = oneRep.nSyls(idxKeep);
+        end
 
         phaseScript.(['rep',num2str(n)])=oneRep;
         phaseScript.nTrials=phaseScript.nTrials+length(oneRep.trialOrder);
 
-        if (isequal(stage(1:3),'run') && n==nReps)
+        if (isequal(stage(1:3),'run') && n==nReps && trigByScanner == 1)
             phaseScript.nTrials=phaseScript.nTrials+1;
             
             idx0=find(phaseScript.(['rep',num2str(n)]).trialOrder==3,1);            
@@ -762,60 +795,3 @@ function phaseScript=genPhaseScript(stage,nReps,trialTypes,trainWords,nSyls,rand
     end
 
 return
-
-% function script1=addFaceInfo(script0,dFaces)
-%     script1=script0;
-%     
-%     IDs.male=[];
-%     IDs.female=[];
-%     
-%     for n=1:length(dFaces.d)
-%         if isequal(dFaces.sex{n},'M')
-%             if isempty(find(IDs.male==dFaces.subjID(n)))
-%                 IDs.male=[IDs.male,dFaces.subjID(n)];
-%             end
-%         elseif isequal(dFaces.sex{n},'F')
-%             if isempty(find(IDs.female==dFaces.subjID(n)))
-%                 IDs.female=[IDs.female,dFaces.subjID(n)];
-%             end
-%         end
-%     end    
-%     IDs.male=sort(IDs.male);
-%     IDs.female=sort(IDs.female);
-%     
-%     IDs.male=IDs.male(randperm(length(IDs.male)));
-%     IDs.female=IDs.female(randperm(length(IDs.female)));    
-%     
-%     stages=fields(script1);
-%     for n=1:length(stages);
-%         stg=stages{n};
-%         if ~isempty(find(script1.(stg).rep1.trialOrder==5))
-%             nPersons=script1.(stg).nReps;
-%             tPersons=[];
-%             for k=1:nPersons
-%                 if (mod(k,2)==0)    % female
-%                     tPersons=[tPersons,IDs.female(1)];
-%                     IDs.female=IDs.female(2:end);
-%                 else    % male
-%                     tPersons=[tPersons,IDs.male(1)];
-%                     IDs.male=IDs.male(2:end);
-%                 end
-%             end
-%             idxFaces=[];
-%             for k=1:length(tPersons)
-%                 idxFaces0=find(dFaces.subjID==tPersons(k));
-%                 idxFaces0=idxFaces0(randperm(length(idxFaces0)));
-%                 idxFaces=[idxFaces,idxFaces0(1:4)];
-%             end
-%             idxFaces=idxFaces(randperm(length(idxFaces)));
-%             cnt=1;
-%             for k=1:script1.(stg).nReps
-%                 repString=['rep',num2str(k)];
-%                 script1.(stg).(repString).face=zeros(size(script1.(stg).(repString).trialOrder));
-%                 idx=find(script1.(stg).(repString).trialOrder==5)
-%                 script1.(stg).(repString).face(idx)=idxFaces(cnt:cnt+length(idx)-1);
-%                 cnt=cnt+length(idx);
-%             end
-%         end
-%     end
-% return

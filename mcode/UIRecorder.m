@@ -45,9 +45,9 @@ end
 % End initialization code - DO NOT EDIT
 
 % SCai: data displaying function
-if (~isempty(findStringInCell(varargin,'figIdDat'))) 
-    figIdDat=varargin{findStringInCell(varargin,'figIdDat')+1};
-end
+% if (~isempty(findStringInCell(varargin,'figIdDat'))) 
+%     figIdDat=varargin{findStringInCell(varargin,'figIdDat')+1};
+% end
 
 %% --- Executes just before UIrecorder is made visible.
 function UIrecorder_OpeningFcn(hObject, eventdata, handles, varargin)
@@ -57,11 +57,25 @@ function UIrecorder_OpeningFcn(hObject, eventdata, handles, varargin)
 % handles    structure with handles and user data (see GUIDATA)
 % varargin   unrecognized PropertyName/PropertyValue pairs from the
 %            command line (see VARARGIN)
-if (length(varargin)>=2)
-    figIdDat=varargin{2};
+% if (length(varargin)>=2)
+%     figIdDat=varargin{2};
+% else
+%     figIdDat=[];
+% end
+
+if ~isempty(fsic(varargin, 'figIdDat'))
+    figIdDat = varargin{fsic(varargin, 'figIdDat') + 1};
 else
-    figIdDat=[];
+    figIdDat = [];
 end
+
+if ~isempty(fsic(varargin, 'figUFBDat'))
+    figUFBDat = varargin{fsic(varargin, 'figUFBDat') + 1};
+else
+    figUFBDat = [];
+end
+
+
 
 if (~isempty(findStringInCell(varargin,'trad')))
 	isTrad=1;
@@ -219,7 +233,8 @@ axis(handles.progress_axes, 'xy');
  
 handles.logFN = 1; % Default: stdout
 
-handles.figIdDat=figIdDat;
+handles.figIdDat = figIdDat;
+handles.figUFBDat = figUFBDat;
 
 handles.dataOut=[];
 handles.bRmsRepeat=0;
@@ -737,7 +752,7 @@ if (handles.debug==0)
         tic;
         TransShiftMex(3, 'fb', 1);
 
-        msglog(handles.logFN, sprintf('meanSylDur = %f sec',handles.meanSylDur));
+        msglog(handles.logFN, sprintf('meanSylDur = %f sec',handles.meanSylDur));        
         
         TransShiftMex(1);
         audapterStartupTime = toc;
@@ -845,6 +860,7 @@ if (handles.debug==0)
                 vts = [];
                 t_mean_ivi = NaN;
                 t_cv_ivis = NaN;
+                t_mean_vwl_lv = NaN;
                 t_ivis = [];
             else
                 if handles.trigByScanner
@@ -853,10 +869,16 @@ if (handles.debug==0)
                     vidx = get_vowel_indices(dataOut.params.name);
                 end
                 
-                vts = get_vowel_t(asrPAlign, vidx);
+                vts = get_vowel_t(asrPAlign, vidx + 1);
                 t_ivis = diff(vts);
                 t_mean_ivi = mean(t_ivis);
                 t_cv_ivis = std(t_ivis) / mean(t_ivis);
+                
+                % --- Calculate mean vowel intensity (in dB SPL A) --- %
+                micRMS = load('../../signals/leveltest/micRMS_100dBA.mat');
+                t_mean_vwl_lv = get_mean_vwl_level(dataOut, asrPAlign, vidx, micRMS.micRMS_100dBA);                
+
+                msglog(handles.logFN, sprintf('t_cv_ivis = %f', t_cv_ivis));
             end
     %             vts = get_vowel_t(asrPAlign, vidx, 'peakRMS', t_rms, handles.lastData.params.frameLen / handles.lastData.params.sr);            
         else
@@ -873,6 +895,7 @@ if (handles.debug==0)
         handles.t_mean_ivi = t_mean_ivi;
         handles.t_cv_ivis = t_cv_ivis;
         handles.t_ivis = t_ivis;
+        handles.t_mean_vwl_lv = t_mean_vwl_lv;
         
         if ((handles.trigByScanner == 0 && handles.trialType == 1) ...
            || (handles.trigByScanner == 1 && handles.lastTrialType == 1)) ...
@@ -912,8 +935,10 @@ if (handles.debug==0)
     end
     % --- ~Store speech data of the current trial for later ASR --- %
     
+    if handles.trialType == 1 || handles.trialType == 2
+        show_fb(handles);
+    end
     
-
     bRmsRepeat=handles.bRmsRepeat;
     bSpeedRepeat=handles.bSpeedRepeat;
     if (handles.trialType==3 || handles.trialType==4)

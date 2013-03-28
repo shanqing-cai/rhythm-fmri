@@ -9,6 +9,8 @@ end
 
 vidat = load(vifn);
 if isempty(fsic(vidat.stcs, sent))
+    fprintf(2, 'WARNING: sentence "%s" is not found in vowel_indices file: %s\n', ...
+            sent, vifn);
     vi = [];
 else
     vi = vidat.vowelIndices{fsic(vidat.stcs, sent)};
