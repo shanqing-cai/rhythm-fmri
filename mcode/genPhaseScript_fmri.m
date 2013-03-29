@@ -7,40 +7,73 @@ function phaseScript = ...
 
     symbols='@#$%^&*()_+=-<>/\|[]{}';
     nSymbols=length(symbols);
+    
+    % --- Ensuring that the sentence sets are identical between the N and R
+    % conditions ---
+    nSpeechN = numel(find(trialTypes == 1));
+    nSpeechR = numel(find(trialTypes == 2));    
+    if nSpeechN ~= nSpeechR
+        error('Unequal number of non-rhythmic and rhytmic trials');
+    end
+    nSpeech = nSpeechN * 2;
+    
+    trainWordsUsed = {};
+    nSylsUsed = [];
+    for i1 = 1 : nReps
+        trainWordsUsed = [trainWordsUsed, ...
+                          repmat(trainWords((i1 - 1) * nSpeech + 1 : (i1 - 1) * nSpeech + nSpeechN), 1, 2)];
+        nSylsUsed = [nSylsUsed, repmat(nSyls((i1 - 1) * nSpeech + 1 : (i1 - 1) * nSpeech + nSpeechN), 1, 2)];
+    end
 
     twCnt=1;
     ptwCnt=1;
     for n=1:nReps
         bt=[trialTypes];
-        trainWordsUsed=trainWords;
+        trainWordsRep = trainWordsUsed((n - 1) * nSpeech + 1 : n * nSpeech);
+        nSylsRep = nSylsUsed((n - 1) * nSpeech + 1 : n * nSpeech);
+        
 %         pseudoWordsUsed=pseudoWords(randperm(length(trainWords)));
-%             testWordsUsed2=testWords(randperm(length(testWords)));            
-       
-        bt=bt(randperm(length(bt)));
+%             testWordsUsed2=testWords(randperm(length(testWords)));
+
+        idxrp = randperm(length(bt));        
+        bt = bt(idxrp);
+        
         oneRep=struct;
         oneRep.trialOrder=[];
         oneRep.word=cell(1,0);
         oneRep.nSyls=[];
-        cntTW=1;
+        
+        nCnt = 1;
+        rCnt = nSpeechN;
+        bCnt = 1;
+        
         for m=1:length(bt)
             oneRep.trialOrder=[oneRep.trialOrder,bt(m)];
-            if (bt(m)==1 || bt(m)==2)					                
-                oneRep.word{length(oneRep.word)+1}=trainWordsUsed{twCnt};
-                oneRep.nSyls(end+1)=nSyls(twCnt);
-                twCnt=twCnt+1;
-            elseif (bt(m)==3 || bt(m)==4)
-                t_sent=trainWordsUsed{ptwCnt};                
+            if (bt(m) == 1 || bt(m) == 2)
+                if bt(m) == 1 % -- Non-rhythmic -- %
+                    oneRep.word{length(oneRep.word) + 1} = trainWordsRep{nCnt};
+                    oneRep.nSyls(end+1) = nSyls(nCnt);
+                    
+                    nCnt = nCnt + 1;
+                else % -- Rhythmic -- %
+                    oneRep.word{length(oneRep.word) + 1} = trainWordsRep{rCnt + nSpeechN};
+                    oneRep.nSyls(end+1) = nSyls(rCnt + nSpeechN);
+                    
+                    rCnt = rCnt - 1;
+                end
+                
+            elseif (bt(m) == 3 || bt(m) == 4)
+                t_sent = trainWordsRep{bCnt};
+                
                 for i1=1:length(t_sent)
                     if ~isequal(t_sent(i1),' ')
-                        t_sent(i1)=symbols(round(rand*(nSymbols-1))+1);
+                        t_sent(i1) = symbols(round(rand * (nSymbols - 1)) + 1);
                     end
                 end
-                oneRep.word{length(oneRep.word)+1}=t_sent;
-                oneRep.nSyls(end+1)=nSyls(ptwCnt);
-%                 oneRep.word{length(oneRep.word)+1}=pseudoWordsUsed(cntTW);
-%                 oneRep.word{length(oneRep.word)+1}=pseudoWordsUsed(cntTW+1);
-%                 cntTW=cntTW+2;
-                ptwCnt=ptwCnt+1;
+                oneRep.word{length(oneRep.word)+1} = t_sent;
+                oneRep.nSyls(end+1) = nSyls(bCnt);
+                
+                bCnt = bCnt + 1;
             end
         end
         
