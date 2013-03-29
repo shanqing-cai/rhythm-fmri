@@ -82,13 +82,13 @@ if bNew % set up new experiment
     expt.trialTypes=[1,2,3,4];  % 1: non-rhythmic speech, 2: rhythmic speech, 3: non-rhythmic baseline, 4: rhythmic baseline. 
     expt.trialOrderRandReps=1;	%How many reps are randomized together
     
-    expt.script.pre.nReps=2;    %SC Numbers of repetitions in the stages   % !!1!!	
-    expt.script.run1.nReps=8;  %SC Default 10   %SC-Mod(09/26/2007)       % !!8!!
-    expt.script.run2.nReps=8;   %SC Default 15   %SC-Mod(09/26/2007)       % !!2!!
-    expt.script.run3.nReps=8;   %SC Default 20   %SC-Mod(09/26/2007)       % !!8!!
-    expt.script.run4.nReps=8;    %SC Default 20   %SC-Mod(09/26/2007)       % !!8!!
-    expt.script.run5.nReps=8;
-    expt.script.run6.nReps=8;
+    expt.script.pre.nReps = 2;    %SC Numbers of repetitions in the stages   % !!1!!	
+    expt.script.run1.nReps = 8;  %SC Default 10   %SC-Mod(09/26/2007)       % !!8!!
+    expt.script.run2.nReps = 8;   %SC Default 15   %SC-Mod(09/26/2007)       % !!2!!
+    expt.script.run3.nReps = 8;   %SC Default 20   %SC-Mod(09/26/2007)       % !!8!!
+    expt.script.run4.nReps = 8;    %SC Default 20   %SC-Mod(09/26/2007)       % !!8!!
+    expt.script.run5.nReps = 8;
+    expt.script.run6.nReps = 8;
 
 	expt.trialTypeDesc=cell(1,5);
 	expt.trialTypeDesc{1}='Non-rhythmic speech';
@@ -98,8 +98,9 @@ if bNew % set up new experiment
     
     nSents=(expt.script.pre.nReps+expt.script.run1.nReps+expt.script.run2.nReps+expt.script.run3.nReps+...
            expt.script.run4.nReps+expt.script.run5.nReps+expt.script.run6.nReps)*2;
-    [expt.stimSents_all,expt.nSyls_all]=getRandSentences(nSents);
-    sentCnt=1;
+    [expt.stimSents_all,expt.nSyls_all] = getRandSentences(nSents);
+    
+    sentCnt = 1;
 
 	nPhases=length(expt.allPhases);
     sentCnt=1;
@@ -110,17 +111,25 @@ if bNew % set up new experiment
         sentCnt=sentCnt+t_nSents;
     end
     
-    expt.script.pre  = genPhaseScript('pre',  expt.script.pre.nReps,  expt.trialTypes, expt.stimSents.pre,  expt.stimSents_nSyls.pre,  expt.trialOrderRandReps, expt.subject.trigByScanner);
-    expt.script.run1 = genPhaseScript('run1', expt.script.run1.nReps, expt.trialTypes, expt.stimSents.run1, expt.stimSents_nSyls.run1, expt.trialOrderRandReps, expt.subject.trigByScanner);
-    expt.script.run2 = genPhaseScript('run2', expt.script.run2.nReps, expt.trialTypes, expt.stimSents.run2, expt.stimSents_nSyls.run2, expt.trialOrderRandReps, expt.subject.trigByScanner);
-    expt.script.run3 = genPhaseScript('run3', expt.script.run3.nReps, expt.trialTypes, expt.stimSents.run3, expt.stimSents_nSyls.run3, expt.trialOrderRandReps, expt.subject.trigByScanner);
-    expt.script.run4 = genPhaseScript('run4', expt.script.run4.nReps, expt.trialTypes, expt.stimSents.run4, expt.stimSents_nSyls.run4, expt.trialOrderRandReps, expt.subject.trigByScanner);
-    expt.script.run5 = genPhaseScript('run5', expt.script.run5.nReps, expt.trialTypes, expt.stimSents.run5, expt.stimSents_nSyls.run5, expt.trialOrderRandReps, expt.subject.trigByScanner);
-    expt.script.run6 = genPhaseScript('run6', expt.script.run6.nReps, expt.trialTypes, expt.stimSents.run6, expt.stimSents_nSyls.run6, expt.trialOrderRandReps, expt.subject.trigByScanner);
+    if expt.subject.trigByScanner
+        expt.script.pre  = genPhaseScript_fmri('pre',  expt.script.pre.nReps,  expt.trialTypes, expt.stimSents.pre,  expt.stimSents_nSyls.pre,  expt.trialOrderRandReps, expt.subject.trigByScanner);
+        expt.script.run1 = genPhaseScript_fmri('run1', expt.script.run1.nReps, expt.trialTypes, expt.stimSents.run1, expt.stimSents_nSyls.run1, expt.trialOrderRandReps, expt.subject.trigByScanner);
+        expt.script.run2 = genPhaseScript_fmri('run2', expt.script.run2.nReps, expt.trialTypes, expt.stimSents.run2, expt.stimSents_nSyls.run2, expt.trialOrderRandReps, expt.subject.trigByScanner);
+        expt.script.run3 = genPhaseScript_fmri('run3', expt.script.run3.nReps, expt.trialTypes, expt.stimSents.run3, expt.stimSents_nSyls.run3, expt.trialOrderRandReps, expt.subject.trigByScanner);
+        expt.script.run4 = genPhaseScript_fmri('run4', expt.script.run4.nReps, expt.trialTypes, expt.stimSents.run4, expt.stimSents_nSyls.run4, expt.trialOrderRandReps, expt.subject.trigByScanner);
+        expt.script.run5 = genPhaseScript_fmri('run5', expt.script.run5.nReps, expt.trialTypes, expt.stimSents.run5, expt.stimSents_nSyls.run5, expt.trialOrderRandReps, expt.subject.trigByScanner);
+        expt.script.run6 = genPhaseScript_fmri('run6', expt.script.run6.nReps, expt.trialTypes, expt.stimSents.run6, expt.stimSents_nSyls.run6, expt.trialOrderRandReps, expt.subject.trigByScanner);
+    else
+        for k1 = 1 : numel(expt.allPhases)
+            ph = expt.allPhases{k1};
+            expt.script.(ph) = ...
+                genPhaseScript_behav(ph, expt.script.(ph).nReps, expt.subject);
+        end
+    end
     
-    p=getTSMDefaultParams(subject.sex,'closedLoopGain',expt.subject.closedLoopGain,...
-        'trialLen',expt.subject.trialLen,...
-        'mouthMicDist',expt.subject.mouthMicDist);
+    p = getTSMDefaultParams(subject.sex,'closedLoopGain', expt.subject.closedLoopGain,...
+        'trialLen', expt.subject.trialLen, ...
+        'mouthMicDist', expt.subject.mouthMicDist);
     
     state.phase=1;
     state.rep=1;
@@ -735,69 +744,3 @@ save(fullfile(dirname,'state.mat'),'state');
 
 return
 
-%% 
-function phaseScript=genPhaseScript(stage,nReps,trialTypes,trainWords,nSyls,randReps, trigByScanner)
-	phaseScript=struct();
-	phaseScript.nReps=nReps;
-    phaseScript.nTrials=0;
-
-    symbols='@#$%^&*()_+=-<>/\|[]{}';
-    nSymbols=length(symbols);
-
-    twCnt=1;
-    ptwCnt=1;
-    for n=1:nReps
-        bt=[trialTypes];
-        trainWordsUsed=trainWords;
-%         pseudoWordsUsed=pseudoWords(randperm(length(trainWords)));
-%             testWordsUsed2=testWords(randperm(length(testWords)));            
-       
-        bt=bt(randperm(length(bt)));
-        oneRep=struct;
-        oneRep.trialOrder=[];
-        oneRep.word=cell(1,0);
-        oneRep.nSyls=[];
-        cntTW=1;
-        for m=1:length(bt)
-            oneRep.trialOrder=[oneRep.trialOrder,bt(m)];
-            if (bt(m)==1 || bt(m)==2)					                
-                oneRep.word{length(oneRep.word)+1}=trainWordsUsed{twCnt};
-                oneRep.nSyls(end+1)=nSyls(twCnt);
-                twCnt=twCnt+1;
-            elseif (bt(m)==3 || bt(m)==4)
-                t_sent=trainWordsUsed{ptwCnt};                
-                for i1=1:length(t_sent)
-                    if ~isequal(t_sent(i1),' ')
-                        t_sent(i1)=symbols(round(rand*(nSymbols-1))+1);
-                    end
-                end
-                oneRep.word{length(oneRep.word)+1}=t_sent;
-                oneRep.nSyls(end+1)=nSyls(ptwCnt);
-%                 oneRep.word{length(oneRep.word)+1}=pseudoWordsUsed(cntTW);
-%                 oneRep.word{length(oneRep.word)+1}=pseudoWordsUsed(cntTW+1);
-%                 cntTW=cntTW+2;
-                ptwCnt=ptwCnt+1;
-            end
-        end
-        
-        if ~trigByScanner % -- Behavioral session: remove the no-speech trials -- %
-            idxKeep = find(oneRep.trialOrder <= 2);
-            oneRep.trialOrder = oneRep.trialOrder(idxKeep);
-            oneRep.word = oneRep.word(idxKeep);
-            oneRep.nSyls = oneRep.nSyls(idxKeep);
-        end
-
-        phaseScript.(['rep',num2str(n)])=oneRep;
-        phaseScript.nTrials=phaseScript.nTrials+length(oneRep.trialOrder);
-
-        if (isequal(stage(1:3),'run') && n==nReps && trigByScanner == 1)
-            phaseScript.nTrials=phaseScript.nTrials+1;
-            
-            idx0=find(phaseScript.(['rep',num2str(n)]).trialOrder==3,1);            
-            phaseScript.(['rep',num2str(n)]).trialOrder(end+1)=phaseScript.(['rep',num2str(n)]).trialOrder(idx0);
-            phaseScript.(['rep',num2str(n)]).word{end+1}=phaseScript.(['rep',num2str(n)]).word{idx0};
-            phaseScript.(['rep',num2str(n)]).nSyls(end+1)=phaseScript.(['rep',num2str(n)]).nSyls(idx0);
-        end
-    end
-
-return

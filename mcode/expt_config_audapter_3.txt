@@ -15,6 +15,14 @@ TA              2.5 % s
 TPaceStim       3.0 % s
 TVisStim        5.5 % s
 
+
+% --- Perturbation related: For behavioral session only --- %
+pertSent        The_pet_cat_gave_birth_to_kittens
+nTrialsPerRep       10     % Total number of trials per repetition
+nTrialsF1UpPerRep   2      % Number of F1Up-perturbation trials per rep
+nTrialsDecelPerRep  2      % Number of decel-pertubatin trials per rep
+nTrialsOtherPerRep  2      % Number of other sentences per rep
+
 bAdaptRate      1
 vumeterMode     2
 
