@@ -44,13 +44,13 @@ function phaseScript = ...
             end
         end
         
-        if ~trigByScanner % -- Behavioral session: remove the no-speech trials -- %
-            idxKeep = find(oneRep.trialOrder <= 2);
-            oneRep.trialOrder = oneRep.trialOrder(idxKeep);
-            oneRep.word = oneRep.word(idxKeep);
-            oneRep.nSyls = oneRep.nSyls(idxKeep);
-        end
-
+%         if ~trigByScanner % -- Behavioral session: remove the no-speech trials -- %
+%             idxKeep = find(oneRep.trialOrder <= 2);
+%             oneRep.trialOrder = oneRep.trialOrder(idxKeep);
+%             oneRep.word = oneRep.word(idxKeep);
+%             oneRep.nSyls = oneRep.nSyls(idxKeep);
+%         end
+% 
         phaseScript.(['rep',num2str(n)])=oneRep;
         phaseScript.nTrials=phaseScript.nTrials+length(oneRep.trialOrder);
 

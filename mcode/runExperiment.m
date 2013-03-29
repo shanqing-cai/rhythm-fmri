@@ -79,7 +79,8 @@ if bNew % set up new experiment
     expt.allPhases={'pre','run1','run2','run3','run4','run5','run6'};
     expt.recPhases={'pre','run1','run2','run3','run4','run5','run6'}; %SC The pahses during which the data are recorded
     
-    expt.trialTypes=[1,2,3,4];  % 1: non-rhythmic speech, 2: rhythmic speech, 3: non-rhythmic baseline, 4: rhythmic baseline. 
+%     expt.trialTypes=[1, 2, 3, 4];  % 1: non-rhythmic speech, 2: rhythmic speech, 3: non-rhythmic baseline, 4: rhythmic baseline. 
+    expt.trialTypes = eval(expt.subject.trialTypes);
     expt.trialOrderRandReps=1;	%How many reps are randomized together
     
     expt.script.pre.nReps = 2;    %SC Numbers of repetitions in the stages   % !!1!!	
@@ -96,8 +97,9 @@ if bNew % set up new experiment
 	expt.trialTypeDesc{3}='Non-rhythmic baseline';
 	expt.trialTypeDesc{4}='Rhythmic baseline';
     
+    nSpeechTrialsPerRep = numel(find(expt.trialTypes <= 2));
     nSents=(expt.script.pre.nReps+expt.script.run1.nReps+expt.script.run2.nReps+expt.script.run3.nReps+...
-           expt.script.run4.nReps+expt.script.run5.nReps+expt.script.run6.nReps)*2;
+           expt.script.run4.nReps+expt.script.run5.nReps+expt.script.run6.nReps) * nSpeechTrialsPerRep;
     [expt.stimSents_all,expt.nSyls_all] = getRandSentences(nSents);
     
     sentCnt = 1;
@@ -105,20 +107,20 @@ if bNew % set up new experiment
 	nPhases=length(expt.allPhases);
     sentCnt=1;
     for i1=1:nPhases
-        t_nSents=expt.script.(expt.allPhases{i1}).nReps*2;
+        t_nSents=expt.script.(expt.allPhases{i1}).nReps * nSpeechTrialsPerRep;
         expt.stimSents.(expt.allPhases{i1})=expt.stimSents_all(sentCnt:sentCnt+t_nSents-1);
         expt.stimSents_nSyls.(expt.allPhases{i1})=expt.nSyls_all(sentCnt:sentCnt+t_nSents-1);
         sentCnt=sentCnt+t_nSents;
     end
     
     if expt.subject.trigByScanner
-        expt.script.pre  = genPhaseScript_fmri('pre',  expt.script.pre.nReps,  expt.trialTypes, expt.stimSents.pre,  expt.stimSents_nSyls.pre,  expt.trialOrderRandReps, expt.subject.trigByScanner);
-        expt.script.run1 = genPhaseScript_fmri('run1', expt.script.run1.nReps, expt.trialTypes, expt.stimSents.run1, expt.stimSents_nSyls.run1, expt.trialOrderRandReps, expt.subject.trigByScanner);
-        expt.script.run2 = genPhaseScript_fmri('run2', expt.script.run2.nReps, expt.trialTypes, expt.stimSents.run2, expt.stimSents_nSyls.run2, expt.trialOrderRandReps, expt.subject.trigByScanner);
-        expt.script.run3 = genPhaseScript_fmri('run3', expt.script.run3.nReps, expt.trialTypes, expt.stimSents.run3, expt.stimSents_nSyls.run3, expt.trialOrderRandReps, expt.subject.trigByScanner);
-        expt.script.run4 = genPhaseScript_fmri('run4', expt.script.run4.nReps, expt.trialTypes, expt.stimSents.run4, expt.stimSents_nSyls.run4, expt.trialOrderRandReps, expt.subject.trigByScanner);
-        expt.script.run5 = genPhaseScript_fmri('run5', expt.script.run5.nReps, expt.trialTypes, expt.stimSents.run5, expt.stimSents_nSyls.run5, expt.trialOrderRandReps, expt.subject.trigByScanner);
-        expt.script.run6 = genPhaseScript_fmri('run6', expt.script.run6.nReps, expt.trialTypes, expt.stimSents.run6, expt.stimSents_nSyls.run6, expt.trialOrderRandReps, expt.subject.trigByScanner);
+        for k1 = 1 : numel(expt.allPhases)
+            ph = expt.allPhases{k1};
+            expt.script.(ph) = ...
+                genPhaseScript_fmri(ph, expt.script.(ph).nReps,  ...
+                                    expt.trialTypes, expt.stimSents.(ph), ...
+                                    expt.stimSents_nSyls.(ph), expt.trialOrderRandReps, expt.subject.trigByScanner);
+        end
     else
         for k1 = 1 : numel(expt.allPhases)
             ph = expt.allPhases{k1};
@@ -229,8 +231,11 @@ lenMTB=round(2.5*fs_mtb);
 
 %% expt
 figIdDat = makeFigDataMon;
-figUFBDat = makeFigUserFB;
-guidata(figUFBDat.fid, figUFBDat);
+if expt.subject.trigByScanner == 0
+    figUFBDat = makeFigUserFB;
+    guidata(figUFBDat.fid, figUFBDat);
+end
+
 
 % wordList=expt.words;
 
@@ -238,7 +243,11 @@ allPhases=expt.allPhases;
 recPhases=expt.recPhases;
 % nWords=length(wordList);
 
-hgui = UIRecorder('figIdDat', figIdDat, 'figUFBDat', figUFBDat);
+if expt.subject.trigByScanner == 0
+    hgui = UIRecorder('figIdDat', figIdDat, 'figUFBDat', figUFBDat);
+else
+    hgui = UIRecorder('figIdDat', figIdDat);
+end
 
 % if (expt.subject.designNum==2)
 %     expt.script=addFaceInfo(expt.script,hgui.skin.dFaces);
@@ -263,11 +272,17 @@ hgui.trialLen=expt.subject.trialLen;
 % hgui.skin.faceOrder=randperm(length(hgui.skin.dFaces));
 hgui.skin.facePnt=1;
 
+hgui.trialTypes = expt.subject.trialTypes;
+
 hgui.meanSylDur=expt.subject.paceStim.meanSylDur;
 hgui.minSylDur = expt.subject.minSylDur;
 hgui.maxSylDur = expt.subject.maxSylDur;
 hgui.minVwlLevel = expt.subject.minVwlLevel;
 hgui.maxVwlLevel = expt.subject.maxVwlLevel;
+
+hgui.showRhythmHint = expt.subject.showRhythmHint;
+
+hgui.audRhythmAlways = expt.subject.audRhythmAlways;
 
 hgui.showRhythmicityFB_phases = expt.subject.showRhythmicityFB_phases;
 hgui.showRateFB_phases = expt.subject.showRateFB_phases;
@@ -326,7 +341,7 @@ else
 		pos_speed_label=get(hgui.speed_label,'Position');
 		pos_speed_too_slow=get(hgui.speed_too_slow,'Position');
 		pos_speed_too_fast=get(hgui.speed_too_fast,'Position');
-		set(hgui.strh,'Position',[(pos_win(3)-pos_strh(3))/2+5,(pos_win(4)-pos_strh(4))/2-75,pos_strh(3),pos_strh(4)]);
+		set(hgui.strh,'Position',[(pos_win(3)-pos_strh(3))/2+5,(pos_win(4)-pos_strh(4))/2-75,pos_strh(3),pos_strh(4)]);                        
 		set(hgui.axes_pic,'Position',[(pos_win(3)-pos_axes_pic(3))/2,(pos_win(4)-pos_axes_pic(4))/2,pos_axes_pic(3),pos_axes_pic(4)]);
 		set(hgui.rms_axes,'Position',[(pos_win(3)-pos_rms_axes(3))/2,pos_rms_axes(2),pos_rms_axes(3),pos_rms_axes(4)]);
 		set(hgui.rms_label,'Position',[(pos_win(3)-pos_rms_label(3))/2,pos_rms_label(2),pos_rms_label(3),pos_rms_label(4)]);
@@ -338,11 +353,13 @@ else
 		set(hgui.speed_too_fast,'Position',[(pos_win(3)-pos_speed_axes(3))/2+pos_speed_axes(3)-pos_speed_too_fast(3),pos_speed_too_fast(2),pos_speed_too_fast(3),pos_speed_too_fast(4)]);
         set(hgui.msgh, 'FontSize', 20);
         
-        fpos = get(figUFBDat.fid, 'Position');
-        set(figUFBDat.fid, 'Position', ...
-            [ms(2, 1) + (ms(2, 3) - ms(2, 1) - fpos(3)) / 2, ...
-             ms(1, 4) - ms(2, 4) + (ms(2, 4) - fpos(4)), ...
-             fpos(3), fpos(4)]);
+        if hgui.trigByScanner == 0
+            fpos = get(figUFBDat.fid, 'Position');
+            set(figUFBDat.fid, 'Position', ...
+                [ms(2, 1) + (ms(2, 3) - ms(2, 1) - fpos(3)) / 2, ...
+                 ms(1, 4) - ms(2, 4) + (ms(2, 4) - fpos(4)), ...
+                 fpos(3), fpos(4)]);
+        end
 % 	else
 % 		set(hgui.UIrecorder,'Position',[-1400,180,1254,857],'toolbar','none');
 % 	end

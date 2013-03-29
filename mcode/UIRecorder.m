@@ -714,9 +714,15 @@ if (handles.debug==0)
     drawnow;
     
     if (handles.trialType==1 || handles.trialType==3)   % Non-rhythmic
-        paceStimParams=playRandToneSeq(8 ,'toneDur',handles.toneDur,'toneFreq',handles.toneFreq,...
-            'toneAmp',handles.toneAmp,'toneRamp',handles.toneRamp,'totDur',handles.TPaceStim,...
-            'seqDur',handles.meanSylDur*(8 - 1));
+        if handles.audRhythmAlways
+            paceStimParams=playRandToneSeq(8, 'uniform', 'toneDur', handles.toneDur,'toneFreq',handles.toneFreq,...
+                'toneAmp',handles.toneAmp,'toneRamp',handles.toneRamp,'totDur',handles.TPaceStim,...
+                'seqDur',handles.meanSylDur * (8 - 1));
+        else
+            paceStimParams=playRandToneSeq(8, 'toneDur',handles.toneDur,'toneFreq',handles.toneFreq,...
+                'toneAmp',handles.toneAmp,'toneRamp',handles.toneRamp,'totDur',handles.TPaceStim,...
+                'seqDur',handles.meanSylDur * (8 - 1));
+        end
     else
         paceStimParams=playRandToneSeq(8,'uniform',...
             handles.toneDur,'toneFreq',handles.toneFreq,'toneAmp',handles.toneAmp,...
@@ -743,6 +749,14 @@ if (handles.debug==0)
             set(handles.strh, 'ForegroundColor', colors.nonRhythm);
         else
             set(handles.strh, 'ForegroundColor', colors.rhythm);
+        end
+        
+        if handles.showRhythmHint
+            if handles.trialType == 1
+                set(handles.msgh, 'String', 'N', 'Visible', 'on', 'ForegroundColor', colors.nonRhythm, 'FontSize', 30);
+            elseif handles.trialType == 2
+                set(handles.msgh, 'String', 'R', 'Visible', 'on', 'ForegroundColor', colors.rhythm, 'FontSize', 30);
+            end
         end
         
         drawnow;
@@ -941,7 +955,7 @@ if (handles.debug==0)
     end
     % --- ~Store speech data of the current trial for later ASR --- %
     
-    if handles.trialType == 1 || handles.trialType == 2
+    if (handles.trialType == 1 || handles.trialType == 2) && handles.trigByScanner == 0
         show_fb(handles);
     end
     
@@ -971,6 +985,11 @@ if (handles.debug==0)
     set(handles.strh,'visible','off');
     % set(handles.pic_imgh,'cdata',handles.skin.fixation);
     set(handles.pic_imgh,'visible','off');
+    
+    if handles.showRhythmHint 
+        set(handles.msgh, 'String', '', 'visible', 'off', 'ForegroundColor', 'k', 'FontSize', 20);
+    end
+    drawnow;
 else
     dataOut=struct;
     dataOut.signalIn=[]; dataOut.signalOut=[];

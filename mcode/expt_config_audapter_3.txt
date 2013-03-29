@@ -10,11 +10,17 @@ mouthMicDist    6 % cm
 closedLoopGain  10 % dB
 dBRange1        20 % dB
 trialLen        4.5 % s
-trigByScanner   0 % 0 - behavioral session; 1 - fMRI session
+trigByScanner   1 % 0 - behavioral session; 1 - fMRI session
 TA              2.5 % s
 TPaceStim       3.0 % s
 TVisStim        5.5 % s
 
+showRhythmHint      1       % Whether to display the "N" and "R" hint letters
+
+
+% --- Related to the fMRI exeriment --- %
+audRhythmAlways     1       % Present only regular beats, regardless of type of trial
+trialTypes          [1,1,2,2,3,4] % Use no commas. To get equal number of four types of trials, use [1, 2, 3, 4]
 
 % --- Perturbation related: For behavioral session only --- %
 pertSent        The_pet_cat_gave_birth_to_kittens
@@ -46,6 +52,6 @@ showIntWarn_phases          pre
 showRhythmicityFB_onlyRhythm 1 % 0 | 1 (Recommended: 1)
 
 paceStim_toneDur        25e-3 % s
-paceStim_toneFreq       6000 % Hz
+paceStim_toneFreq       1000 % Hz, Old value: 6000
 paceStim_toneAmp        0.1  % Wave peak (?)
 paceStim_toneRamp       5e-3 % s
