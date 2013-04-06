@@ -25,7 +25,7 @@ manualTrigPhases    none      % Examples: all | pract1,pract2 (no space) | none
 NREPS_PRE       1       % Default: 2
 NREPS_PRACT1    1       % Default: 2
 NREPS_PRACT2    1       % Default: 2
-NREPS_RUN       2       % Default: 8
+NREPS_RUN       8       % Default: 8
 
 % --- Trial lengths: ** For behavioral sessions only --- %
 trialLen_pract1     6       % Unit: s. Default: 6

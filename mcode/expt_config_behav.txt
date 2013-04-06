@@ -22,10 +22,10 @@ nonInformativeFixationCross     1 % Whether to show a white (hence non-informati
 manualTrigPhases    none      % Examples: all | pract1,pract2 (no space) | none
 
 % --- Number of repetitions --- %
-NREPS_PRE       1       % Default: 2
 NREPS_PRACT1    1       % Default: 2
 NREPS_PRACT2    1       % Default: 2
-NREPS_RUN       2       % Default: 8
+NREPS_PRE       1       % Default: 2
+NREPS_RUN       8       % Default: 8
 
 % --- Trial lengths: ** For behavioral sessions only --- %
 trialLen_pract1     6       % Unit: s. Default: 6
