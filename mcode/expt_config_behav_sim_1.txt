@@ -1,0 +1,58 @@
+name            TestExpt_behav_sim_1
+sex             male
+
+interfaceMode   2
+simDataDir      G:\DATA\RHYTHM-FMRI\TestExpt_behav_3
+
+designNum       2
+
+mouthMicDist    6 % cm
+closedLoopGain  10 % dB
+dBRange1        20 % dB
+trialLen        4.5 % s
+trigByScanner   0 % 0 - behavioral session; 1 - fMRI session
+TA              2.5 % s
+TPaceStim       3.0 % s
+TVisStim        5.5 % s
+
+showRhythmHint      1       % Whether to display the "N" and "R" hint letters
+
+% --- Related to the fMRI exeriment --- %
+audRhythmAlways     1       % Present only regular beats, regardless of type of trial
+trialTypes          [1,1,2,2,3,4] % Use no commas. To get equal number of four types of trials, use [1, 2, 3, 4]
+
+% --- Perturbation related: For behavioral session only --- %
+% pertSent        The_pet_cat_gave_birth_to_kittens
+pertSent        The_steady_bat_gave_birth_to_pups
+% pertSent        The_clever_bat_gave_birth_to_pups
+nTrialsPerRep       10     % Total number of trials per repetition
+nTrialsF1UpPerRep   2      % Number of F1Up-perturbation trials per rep
+nTrialsDecelPerRep  2      % Number of decel-pertubatin trials per rep
+nTrialsOtherPerRep  2      % Number of other sentences per rep
+
+bAdaptRate      1
+vumeterMode     2
+
+% --- Performance feedback --- %
+paceStim_meanSylDur     0.27 % s
+minSylDur               0.22 % s. Set to -Inf for disabling user warning message
+maxSylDur               0.37 % %. Set to +Inf for disabling user warning message
+
+minVwlLevel             65 % dB
+maxVwlLevel             80 % dB
+
+% -- NOTE: these feedback options are valid only with trigByScanner == 0 -- 
+showRhythmicityFB_phases    pre,run1 % Examples: all | pre,run1 | none
+showRateFB_phases           pre
+showIntFB_phases            pre
+
+% showRhythmicityWarn_phases  pre,run1
+showRateWarn_phases         pre
+showIntWarn_phases          pre
+
+showRhythmicityFB_onlyRhythm 1 % 0 | 1 (Recommended: 1)
+
+paceStim_toneDur        25e-3 % s
+paceStim_toneFreq       1000 % Hz, Old value: 6000
+paceStim_toneAmp        0.1  % Wave peak (?)
+paceStim_toneRamp       5e-3 % s
