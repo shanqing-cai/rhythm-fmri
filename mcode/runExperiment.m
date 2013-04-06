@@ -351,6 +351,9 @@ msglog(logFN, ['Vowel duration range: [',num2str(300-0.4*250),',',num2str(300+0.
 hgui.debug = DEBUG;
 hgui.trigKey = expt.subject.trigKey;
 
+hgui.FmtShiftStat0 = expt.subject.FmtShiftStat0;
+hgui.FmtShiftStat1 = expt.subject.FmtShiftStat1;
+
 guidata(hgui.UIrecorder, hgui);
 
 if (isempty(findStringInCell(varargin,'twoScreens')))

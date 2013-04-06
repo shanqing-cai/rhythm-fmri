@@ -95,6 +95,9 @@ handles.timeCreated=clock;
 
 handles.manualTrigPhases = 'all';
 
+handles.FmtShiftStat0 = 5;
+handles.FmtShiftStat1 = 9;
+
 if isequal(getHostName, 'smcg_w510');
     handles.msgImgDir = 'E:\speechres\adapt\triphcode\uimg';
     handles.utterImgDir = 'E:\speechres\adapt\triphcode\utterimg';
@@ -880,6 +883,19 @@ if (handles.debug==0)
                 frameDur = dataOut.params.frameLen / dataOut.params.sr;
                 tAxis = 0 : frameDur : frameDur * (size(dataOut.fmts, 1) - 1);
                 plot(tAxis, dataOut.fmts(:, 1 : 2), 'w-');
+                
+                plot(tAxis, dataOut.ost_stat * 250, 'b-');
+                
+                if isfield(handles, 'FmtShiftStat0') && isfield(handles, 'FmtShiftStat1')
+                    ys = get(gca, 'YLim');
+                    if ~isempty(find(dataOut.ost_stat == handles.FmtShiftStat0, 1))
+                        plot(repmat(tAxis(find(dataOut.ost_stat == handles.FmtShiftStat0, 1)), 1, 2), ys, 'b--');
+                    end
+                    
+                    if ~isempty(find(dataOut.ost_stat == handles.FmtShiftStat1 + 1, 1))
+                        plot(repmat(tAxis(find(dataOut.ost_stat == handles.FmtShiftStat1 + 1, 1)), 1, 2), ys, 'b-');
+                    end
+                end
             end
 
             plot_phn_align(asrPAlign);
