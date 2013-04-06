@@ -146,6 +146,8 @@ t_rate_min = 1 / h.maxSylDur;
 
 if ~isnan(h.t_mean_ivi)
     t_rate = 1 / h.t_mean_ivi;
+else
+    t_rate = NaN;
 end
     
 if ~isempty(fsic(h.showRateFB_phases, h.phase))
@@ -191,8 +193,8 @@ else
     plot([0, 1], [1, 0], 'k-');
 end
 
-if ~isempty(fsic(h.showRateWarn_phases, h.phase)) 
-    set(gcf, 'CurrentAxes', h.figUFBDat.axes_warn);
+if ~isempty(fsic(h.showRateWarn_phases, h.phase)) && ~isnan(t_rate)
+    set(gcf, 'CurrentAxes', h.figUFBDat.axes_warn)
     cla;
     if t_rate > t_rate_max
         warnMsg = 'Slower, please';
@@ -272,7 +274,7 @@ else
     plot([0, 1], [1, 0], 'k-');
 end
 
-if ~isempty(fsic(h.showIntWarn_phases, h.phase)) 
+if ~isempty(fsic(h.showIntWarn_phases, h.phase)) && ~isempty(h.t_mean_vwl_lv) && ~isnan(h.t_mean_vwl_lv)
     set(gcf, 'CurrentAxes', h.figUFBDat.axes_warn);
     cla;
     if h.t_mean_vwl_lv > h.maxVwlLevel
