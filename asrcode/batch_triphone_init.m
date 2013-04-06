@@ -1,6 +1,7 @@
 function batch_triphone_init
 %% CONFIG
-BASE_MAT = 'E:\DATA\RHYTHM-FMRI\TestExpt_audapter_1\pre\rep1\trial-1-2.mat';
+% BASE_MAT = 'E:\DATA\RHYTHM-FMRI\TestExpt_audapter_1\pre\rep1\trial-1-2.mat';
+BASE_MAT = 'G:\DATA\RHYTHM-FMRI\TestExpt_behav_1\pre\rep1\trial-1-2.mat';
 %%
 
 stcs = sents();
