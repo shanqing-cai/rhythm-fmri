@@ -1,11 +1,11 @@
 function p = getTSMDefaultParams(sex,varargin)
 switch sex
     case 'male'
-        p.nLPC          = 13; 
+        p.nLPC          = 17; 
         p.fn1           = 591;
         p.fn2           = 1314;
     case 'female'
-        p.nLPC          = 11;	%SC-Mod(2008/02/08) Used to be 9
+        p.nLPC          = 15;
         p.fn1           = 675;
         p.fn2           = 1392;
     otherwise,
@@ -94,7 +94,7 @@ p.bRMSClip=1;
 % p.rmsClipThresh=1.0;
 
 load('../../signals/leveltest/micRMS_100dBA.mat');
-p.rmsClipThresh=micRMS_100dBA / (10^((100-100)/20));	% 100 dB maximum input level
+p.rmsClipThresh = micRMS_100dBA / (10 ^ ((100 - 100) / 20));	% 100 dB maximum input level
 
 %% Perturbation-related variables: these are for the mel (bMelShift=1) or Hz (bMelShift=0) frequency space
 p.F2Min=0;
@@ -108,5 +108,13 @@ p.pertFieldN=257;
 p.pertF2=zeros(1,p.pertFieldN);
 p.pertAmp=zeros(1,p.pertFieldN);
 p.pertPhi=zeros(1,p.pertFieldN);
+
+%% Pitch shift and delay related
+p.delayFrames = 0;
+p.bPitchShift = 0;
+p.pitchShiftRatio = 1;
+p.pvocFrameLen = 256;
+p.pvocHop = 64;
+p.bDownSampFilt = 1;
 
 return

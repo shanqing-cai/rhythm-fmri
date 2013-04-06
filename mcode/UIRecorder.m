@@ -86,12 +86,14 @@ end
 handles.trigByScanner=0;
 handles.TA=2.5;
 handles.phase='';
-handles.trigKey='add';	% To change
+handles.trigKey = 'equal';	% To change
 handles.trialLen=2.2;
 handles.debug=0;
 handles.vumeterMode=NaN;  % 1: 10 ticks; 2: 3 ticks;
 
 handles.timeCreated=clock;
+
+handles.manualTrigPhases = 'all';
 
 if isequal(getHostName, 'smcg_w510');
     handles.msgImgDir = 'E:\speechres\adapt\triphcode\uimg';
@@ -204,8 +206,8 @@ skin=struct('pause', imread(fullfile(pwd,'graphics','skin-pause.jpg')),...
     'good', imread(fullfile(pwd,'graphics','choice-yes.gif')),...
     'bad', imread(fullfile(pwd,'graphics','choice-cancel.gif')),...
 	'fixation',imread(fullfile(pwd,'graphics','fixation.bmp')),...
-    'fixation_paced',imread(fullfile(pwd,'graphics','fixation-paced.bmp')),...
-    'fixation_nonpaced',imread(fullfile(pwd,'graphics','fixation-nonpaced.bmp')),...
+    'fixation_paced', imread(fullfile(pwd,'graphics','fixation-paced.bmp')),...
+    'fixation_nonpaced', imread(fullfile(pwd,'graphics','fixation-nonpaced.bmp')),...
 	'vumeter',  vumeter,...
     'vumeter2',  vumeter2,...
 	'dPseudowords',dir('./graphics/pseudochars/pseudoword-*.bmp'),...
@@ -255,8 +257,8 @@ handles.rmsTransTarg=micRMS_100dBA / (10^((100-handles.rmsTransTarg_spl)/20));
 handles.nextMessage=imread(fullfile(handles.msgImgDir,'message_pre2.bmp'));
 
 set(handles.UIrecorder,'keyPressFcn',@key_Callback);
-set(handles.strh,'keyPressFcn',@key_Callback);
-set(handles.play,'keyPressFcn',@key_Callback);
+set(handles.strh, 'keyPressFcn', @key_Callback);
+set(handles.play, 'Callback', {@play_Callback, handles});
 % set(handles.rec_slider,'keyPressFcn',@key_Callback);
 set(handles.msgh,'keyPressFcn',@key_Callback);
 
@@ -296,8 +298,8 @@ function play_Callback(hObject, eventdata, handles)
 % CDataMessageBlank=zeros(750,720,3);
 % CDataMessageBlank(:,:,1)=64/255*ones(750,720);
 % CDataMessageBlank(:,:,3)=64/255*ones(750,720);
-
-if(get(handles.play,'userdata')==0) % currently in pause mode
+handles = guidata(handles.UIrecorder);
+if(get(handles.play, 'userdata')==0) % currently in pause mode
     set(handles.play,'cdata',handles.skin.pause,'userdata',1); % now in play mode
     set(handles.msgh,'string','');
 	handles.trialType=-1;
@@ -309,6 +311,8 @@ else % currently in play mode
     TransShiftMex(2) %%SC stop TransShiftMex
     set(handles.msgh,'string','Press play to continue...');
 end
+
+return
 
 function key_Callback(src, evnt)
 hgui = guidata(src);
@@ -351,7 +355,7 @@ record(handles);
 
 %% SUBFUNCTIONS
 %% --------------------------------------------------------------------------
-function [dataOut, bRmsGood, bSpeedGood, t_rms] = checkData(data, handles, paceStimParams)
+function [dataOut, t_rms] = checkData(data, handles, paceStimParams)
 % This function is called after stoprec is executed. It checks the data and
 % displays the rms and transition length . If the rms and speed are in range
 %, the data is stored in handles.dataOut.
@@ -407,8 +411,8 @@ if ~isempty(data)
 % 	speedval = round(100/lenRange*max(0,min(lenRange,lenRange/2+(vocaLen-vocaLenNow)/2)));   
 end
 
-bRmsGood=1;
-bSpeedGood=1;
+% bRmsGood = NaN;
+% bSpeedGood = NaN;
 
 % SCai: update the data monitor window
 set(0,'CurrentFigure',handles.figIdDat(1));
@@ -666,19 +670,31 @@ handles1 = guidata(handles.UIrecorder);
 if isfield(handles1, 'lastData');
     handles.lastData = handles1.lastData;
     handles.lastSaveDataFN = handles1.lastSaveDataFN;
+    handles.lastStc = handles1.lastStc;
     handles.lastAsrDir = handles1.lastAsrDir;
     handles.lastTrialType = handles1.lastTrialType;
 end
 
+% set(handles.play, 'userdata', 1);
+
 % if (handles.trigByScanner==1)
-    set(handles.play,'userdata',1);
+if handles.trigByScanner
+    set(handles.play, 'userdata', 1);
+    
     uiwait(handles.UIrecorder);
+else
+    if ~isempty(fsic(strsplit(handles.manualTrigPhases, ','), handles.phase)) ...
+            || isequal(handles.manualTrigPhases, 'all')
+        uiwait(handles.UIrecorder); % Manual trigger
+    else
+        waitfor(handles.play, 'userdata', 1);
+    end
+end
 % else
-%     waitfor(handles.play,'userdata',1);
+%     
 % end
 
-if (handles.debug==0)
-    
+if (handles.debug==0)    
     go=get(handles.UIrecorder,'UserData');
     if isequal(go,'nogo')
         return
@@ -703,9 +719,10 @@ if (handles.debug==0)
 %     end
     
     % pause(0.1);
-    if (handles.trialType==1 || handles.trialType==3)
+    
+    if (handles.trialType==1 || handles.trialType==3) && handles.nonInformativeFixationCross == 0
         set(handles.pic_imgh,'cdata',handles.skin.fixation_nonpaced,'visible','on');
-    elseif (handles.trialType==2 || handles.trialType==4)
+    elseif (handles.trialType==2 || handles.trialType==4) && handles.nonInformativeFixationCross == 0
         set(handles.pic_imgh,'cdata',handles.skin.fixation_paced,'visible','on');
     else
         set(handles.pic_imgh,'cdata',handles.skin.fixation,'visible','on');
@@ -713,6 +730,7 @@ if (handles.debug==0)
     
     drawnow;
     
+    set(handles.play, 'Enable', 'off');
     if (handles.trialType==1 || handles.trialType==3)   % Non-rhythmic
         if handles.audRhythmAlways
             paceStimParams=playRandToneSeq(8, 'uniform', 'toneDur', handles.toneDur,'toneFreq',handles.toneFreq,...
@@ -729,13 +747,14 @@ if (handles.debug==0)
             'toneRamp',handles.toneRamp,'totDur',handles.TPaceStim,...
             'seqDur',handles.meanSylDur*(8 - 1));
     end
-        
+    set(handles.play, 'Enable', 'on');
     
 %     pause(0.18);
     set(handles.pic_imgh,'visible','off');
     drawnow;
 
-    if (isequal(handles.word,'Ready...') || handles.trialType==-1)
+%     if (isequal(handles.word,'Ready...') || handles.trialType==-1)
+    if handles.trialType == -1
         return
     end
     
@@ -776,8 +795,8 @@ if (handles.debug==0)
     elseif handles.interfaceMode == 2 % winAudio + sim 
         tic;
         data = load(handles.simDataFN);
-        [dataOut, bRmsGood, bSpeedGood, t_rms] = checkData(data.data, handles, paceStimParams);
-        dataLoadTime = toc;                
+        [dataOut, t_rms] = checkData(data.data, handles, paceStimParams);
+        dataLoadTime = toc;
     else
         error('%s: unrecognized interfaceMode: %d', mfilename, handles.interfaceMode)
     end
@@ -818,7 +837,13 @@ if (handles.debug==0)
         end
         TransShiftMex(2);
 
-        [dataOut, bRmsGood, bSpeedGood, t_rms] = checkData(getData, handles, paceStimParams);
+        if handles.trigByScanner == 0
+            sigs = TransShiftMex(4);
+            if size(sigs, 2) < 2
+                return; % Recover from pause
+            end
+        end
+        [dataOut, t_rms] = checkData(getData, handles, paceStimParams);
     end
     
     if handles.trigByScanner == 0 % -- During a behavioral experiment. ASR will be done sequentially -- %
@@ -839,6 +864,8 @@ if (handles.debug==0)
             asrPAlign = parse_asr_out(julianStdOutFN,  julianWavFN);
 
             set(0, 'CurrentFigure', handles.figIdDat(1));
+            
+            % --- Input signal --- %
             set(gcf, 'CurrentAxes', handles.figIdDat(7));
             cla;
             
@@ -848,6 +875,12 @@ if (handles.debug==0)
                 show_spectrogram(dataOut.signalIn, dataOut.params.sr, 'noFig');
             end
             set(gca, 'XTick', []);
+            
+            if handles.trigByScanner == 0
+                frameDur = dataOut.params.frameLen / dataOut.params.sr;
+                tAxis = 0 : frameDur : frameDur * (size(dataOut.fmts, 1) - 1);
+                plot(tAxis, dataOut.fmts(:, 1 : 2), 'w-');
+            end
 
             plot_phn_align(asrPAlign);
             
@@ -856,19 +889,41 @@ if (handles.debug==0)
             else
                 title(['This speech trial: "', dataOut.params.name, '"']);
             end
-
+            
             xs = get(gca, 'XLim');
             set(gcf, 'CurrentAxes', handles.figIdDat(4))
             set(gca, 'XLim', xs);
-
+            
+            if handles.trigByScanner == 0
+                % --- Output signal --- %
+                set(gcf, 'CurrentAxes', handles.figIdDat(9));
+                cla;
+                if handles.trigByScanner
+                    show_spectrogram(handles.lastData.signalOut, handles.lastData.params.sr, 'noFig');
+                else
+                    show_spectrogram(dataOut.signalOut, dataOut.params.sr, 'noFig');
+                end
+            
+                set(gca, 'XLim', xs);
+                
+                plot(tAxis, dataOut.fmts(:, 1 : 2), 'w-');
+                plot(tAxis, dataOut.sfmts(:, 1 : 2), 'c-');
+            end
+            
             % --- Calculate vowel timing --- %
             % TODO: code to deal with production error
-            if asrPAlign.nphns <= 2
+            if handles.trigByScanner
+                t_stc = handles.lastStc;
+            else
+                t_stc = dataOut.params.name;
+            end
+            
+            if asrPAlign.nphns ~= length(get_sent_phones(t_stc, handles.stcsData.stcs, handles.stcsData.sentPhns)) + 2
                 if handles.trigByScanner
-                    msglog(handles.logFN, sprintf('INFO: It appears that no speech was recorded in last speech trial: %s', ...
+                    msglog(handles.logFN, sprintf('INFO: It appears that no valid speech was recorded in last speech trial: %s', ...
                             handles.lastSaveDataFN))
                 else
-                    msglog(handles.logFN, 'INFO: It appears that no speech was recorded in this speech trial.');
+                    msglog(handles.logFN, 'INFO: It appears that no valid speech was recorded in this speech trial.');
                 end
 
                 vts = [];
@@ -876,6 +931,9 @@ if (handles.debug==0)
                 t_cv_ivis = NaN;
                 t_mean_vwl_lv = NaN;
                 t_ivis = [];
+                
+                bRmsGood = NaN;
+                bSpeedGood = NaN;
             else
                 if handles.trigByScanner
                     vidx = get_vowel_indices(handles.lastData.params.name);
@@ -893,8 +951,15 @@ if (handles.debug==0)
                 t_mean_vwl_lv = get_mean_vwl_level(dataOut, asrPAlign, vidx, micRMS.micRMS_100dBA);                
 
                 msglog(handles.logFN, sprintf('t_cv_ivis = %f', t_cv_ivis));
+                
+                bRmsGood = (t_mean_vwl_lv >= handles.minVwlLevel) & (t_mean_vwl_lv <= handles.maxVwlLevel);
+                bSpeedGood = (t_mean_ivi >= handles.minSylDur) & (t_mean_ivi <= handles.maxSylDur);
             end
-    %             vts = get_vowel_t(asrPAlign, vidx, 'peakRMS', t_rms, handles.lastData.params.frameLen / handles.lastData.params.sr);            
+    %             vts = get_vowel_t(asrPAlign, vidx, 'peakRMS', t_rms, handles.lastData.params.frameLen / handles.lastData.params.sr);
+
+            asrErrCode = check_asrPAlign(asrPAlign);
+            bASRGood = (asrErrCode == 0);
+            
         else
             msglog(handles.logFN,  'WARNING: ASR did not have enough time to finish.')
             msglog(handles.logFN,  sprintf('Missing file: %s. Nothing will be displayed or used to update program status.', julianStdOutFN));
@@ -903,6 +968,10 @@ if (handles.debug==0)
             t_mean_ivi = NaN;
             t_cv_ivis = NaN;
             t_ivis = [];
+            
+            bASRGood = NaN;
+            bRmsGood = NaN;
+            bSpeedGood = NaN;
         end
         
         handles.t_nVowels = length(vts);
@@ -912,43 +981,50 @@ if (handles.debug==0)
         handles.t_mean_vwl_lv = t_mean_vwl_lv;
         
         dataOut.t_nVowels = handles.t_nVowels;
-        dataOut.t_mean_iv = handles.t_mean_ivi;
+        dataOut.t_mean_ivi = handles.t_mean_ivi;
         dataOut.t_cv_ivis = handles.t_cv_ivis;
         dataOut.t_ivis = handles.t_ivis;
         dataOut.t_mean_vwl_lv = handles.t_mean_vwl_lv;
         
-        if ((handles.trigByScanner == 0 && handles.trialType == 1) ...
-           || (handles.trigByScanner == 1 && handles.lastTrialType == 1)) ...
-           && ~isnan(handles.t_mean_ivi)
-            if handles.t_mean_ivi < handles.minSylDur % Speech too fast            
-                set(handles.msgh, 'String', 'Speak slower please!', ...
-                    'ForegroundColor', colors.nonRhythm, 'Visible', 'on');
-                drawnow;
-                
-                msglog(handles.logFN, 'Gave advice to speak slower');
-            elseif handles.t_mean_ivi > handles.maxSylDur
-                set(handles.msgh, 'String', 'Speak faster please!', ...
-                    'ForegroundColor', colors.nonRhythm, 'Visible', 'on');
-                drawnow;
-                
-                msglog(handles.logFN, 'Gave advice to speak faster');
-            end
-        end
+%         if ((handles.trigByScanner == 0 && handles.trialType == 1) ...
+%            || (handles.trigByScanner == 1 && handles.lastTrialType == 1)) ...
+%            && ~isnan(handles.t_mean_ivi)
+%             if handles.t_mean_ivi < handles.minSylDur % Speech too fast            
+%                 set(handles.msgh, 'String', 'Speak slower please!', ...
+%                     'ForegroundColor', colors.nonRhythm, 'Visible', 'on');
+%                 drawnow;
+%                 
+%                 msglog(handles.logFN, 'Gave advice to speak slower');
+%             elseif handles.t_mean_ivi > handles.maxSylDur
+%                 set(handles.msgh, 'String', 'Speak faster please!', ...
+%                     'ForegroundColor', colors.nonRhythm, 'Visible', 'on');
+%                 drawnow;
+%                 
+%                 msglog(handles.logFN, 'Gave advice to speak faster');
+%             end
+%         end
 
         if handles.trigByScanner
             handles = rmfield(handles, ...
-                {'lastData', 'lastSaveDataFN', 'lastAsrDir', 'lastTrialType'});
+                {'lastData', 'lastSaveDataFN', 'lastStc', 'lastAsrDir', 'lastTrialType'});
         end
         
             
     end
     % --- ~Perform ASR on the latest speech data: parse julian output --- %
     
+    if handles.trigByScanner == 0
+        dataOut.bASRGood = bASRGood;
+        dataOut.bRmsGood = bRmsGood;
+        dataOut.bSpeedGood = bSpeedGood;
+    end
+    
     % --- Store speech data of the current trial for later ASR --- %
     if handles.trigByScanner == 1
         if handles.trialType == 1 || handles.trialType == 2
             handles.lastData = dataOut;
             handles.lastSaveDataFN = handles.saveDataFN;
+            handles.lastStc = dataOut.params.name;
             handles.lastAsrDir = handles.asrDir;
             handles.lastTrialType = handles.trialType;
         end
@@ -956,7 +1032,7 @@ if (handles.debug==0)
     % --- ~Store speech data of the current trial for later ASR --- %
     
     if (handles.trialType == 1 || handles.trialType == 2) && handles.trigByScanner == 0
-        show_fb(handles);
+        show_fb(handles);        
     end
     
     bRmsRepeat=handles.bRmsRepeat;
@@ -970,9 +1046,8 @@ if (handles.debug==0)
         end
     end
 
-
-    if ((~bRmsGood && bRmsRepeat) || (~bSpeedGood && bSpeedRepeat))
-        record(handles)    
+    if handles.trigByScanner == 0 && (isnan(bRmsGood) || isnan(bSpeedGood)) 
+        record(handles); % Repeat
     else
     % data is saved as UserData in the fig handle (wicht is the signal for
     % the host function to launch the next single trial

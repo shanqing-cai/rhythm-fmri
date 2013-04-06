@@ -5,6 +5,9 @@ DEBUG=0;
 colors.rhythm = [0, 0, 1];
 colors.nonRhythm = [0, 0.4, 0];
 
+sentMatFN = '../asr/vowel_indices.mat';
+check_file(sentMatFN);
+
 %% ---- Modify -----
 subject = read_subject_config(configFN);
 
@@ -15,11 +18,15 @@ else
     subject.dataDir         = 'D:\CS_2004\PROJECTS\RHYTHM-FMRI\';
 end
 
+if subject.trigByScanner == 0
+    check_file(subject.basePCF);
+end
+
 %% Check current working directory
 cwd = pwd;
 [~, cwd0] = fileparts(cwd);
 if ~isequal(cwd0, 'mcode')
-    error('Not currently under directry "mcode"\n');
+    error('Not currently under directry "mcode"');
 end
 
 %%
@@ -72,25 +79,38 @@ if isdir(dirname)
     end
 end
 
+expt.subject=subject;
 if bNew % set up new experiment
     mkdir(dirname)
     
-	expt.subject=subject;
-    expt.allPhases={'pre','run1','run2','run3','run4','run5','run6'};
-    expt.recPhases={'pre','run1','run2','run3','run4','run5','run6'}; %SC The pahses during which the data are recorded
+    if expt.subject.trigByScanner    % fMRI experiment
+        expt.allPhases={'pre', 'run1', 'run2', 'run3', 'run4', 'run5', 'run6'};
+        expt.recPhases={'pre', 'run1', 'run2', 'run3', 'run4', 'run5', 'run6'}; %SC The pahses during which the data are recorded
+        
+        expt.script.pre.nReps = expt.subject.NREPS_PRE;    %SC Numbers of repetitions in the stages   % !!1!!	
+        expt.script.run1.nReps = expt.subject.NREPS_RUN;  %SC Default 10   %SC-Mod(09/26/2007)       % !!8!!
+        expt.script.run2.nReps = expt.subject.NREPS_RUN;   %SC Default 15   %SC-Mod(09/26/2007)       % !!2!!
+        expt.script.run3.nReps = expt.subject.NREPS_RUN;   %SC Default 20   %SC-Mod(09/26/2007)       % !!8!!
+        expt.script.run4.nReps = expt.subject.NREPS_RUN;    %SC Default 20   %SC-Mod(09/26/2007)       % !!8!!
+        expt.script.run5.nReps = expt.subject.NREPS_RUN;
+        expt.script.run6.nReps = expt.subject.NREPS_RUN;
+    else
+        expt.allPhases={'pract1', 'pract2', 'pre', 'run1', 'run2', 'run3', 'run4'};
+        expt.recPhases={'pract1', 'pract2', 'pre', 'run1', 'run2', 'run3', 'run4'}; %SC The pahses during which the data are recorded
+        
+        expt.script.pract1.nReps = expt.subject.NREPS_PRACT1;
+        expt.script.pract2.nReps = expt.subject.NREPS_PRACT2;
+        expt.script.pre.nReps = expt.subject.NREPS_PRE;
+        expt.script.run1.nReps = expt.subject.NREPS_RUN;
+        expt.script.run2.nReps = expt.subject.NREPS_RUN;
+        expt.script.run3.nReps = expt.subject.NREPS_RUN;
+        expt.script.run4.nReps = expt.subject.NREPS_RUN;
+    end
     
 %     expt.trialTypes=[1, 2, 3, 4];  % 1: non-rhythmic speech, 2: rhythmic speech, 3: non-rhythmic baseline, 4: rhythmic baseline. 
     expt.trialTypes = eval(expt.subject.trialTypes);
     expt.trialOrderRandReps=1;	%How many reps are randomized together
     
-    expt.script.pre.nReps = 2;    %SC Numbers of repetitions in the stages   % !!1!!	
-    expt.script.run1.nReps = 8;  %SC Default 10   %SC-Mod(09/26/2007)       % !!8!!
-    expt.script.run2.nReps = 8;   %SC Default 15   %SC-Mod(09/26/2007)       % !!2!!
-    expt.script.run3.nReps = 8;   %SC Default 20   %SC-Mod(09/26/2007)       % !!8!!
-    expt.script.run4.nReps = 8;    %SC Default 20   %SC-Mod(09/26/2007)       % !!8!!
-    expt.script.run5.nReps = 8;
-    expt.script.run6.nReps = 8;
-
 	expt.trialTypeDesc=cell(1,5);
 	expt.trialTypeDesc{1}='Non-rhythmic speech';
 	expt.trialTypeDesc{2}='Rhythmic speech';
@@ -98,8 +118,13 @@ if bNew % set up new experiment
 	expt.trialTypeDesc{4}='Rhythmic baseline';
     
     nSpeechTrialsPerRep = numel(find(expt.trialTypes <= 2));
-    nSents=(expt.script.pre.nReps+expt.script.run1.nReps+expt.script.run2.nReps+expt.script.run3.nReps+...
-           expt.script.run4.nReps+expt.script.run5.nReps+expt.script.run6.nReps) * nSpeechTrialsPerRep;
+    if expt.subject.trigByScanner
+        nSents=(expt.script.pre.nReps+expt.script.run1.nReps+expt.script.run2.nReps+expt.script.run3.nReps+...
+                expt.script.run4.nReps+expt.script.run5.nReps+expt.script.run6.nReps) * nSpeechTrialsPerRep;
+    else
+        nSents=(expt.script.pract1.nReps+expt.script.pract2.nReps+expt.script.pre.nReps+...
+                expt.script.run1.nReps+expt.script.run2.nReps+expt.script.run3.nReps+expt.script.run4.nReps) * nSpeechTrialsPerRep;
+    end
     [expt.stimSents_all,expt.nSyls_all] = getRandSentences(nSents);
     
     sentCnt = 1;
@@ -263,6 +288,8 @@ if ~isempty(hgui.simDataDir)
     end
 end
 
+hgui.stcsData = load(sentMatFN);
+
 hgui.pcrKnob=subject.pcrKnob;
 hgui.ITI=expt.subject.ITI;
 hgui.trigByScanner=expt.subject.trigByScanner;
@@ -274,6 +301,8 @@ hgui.skin.facePnt=1;
 
 hgui.trialTypes = expt.subject.trialTypes;
 
+hgui.manualTrigPhases = expt.subject.manualTrigPhases;
+
 hgui.meanSylDur=expt.subject.paceStim.meanSylDur;
 hgui.minSylDur = expt.subject.minSylDur;
 hgui.maxSylDur = expt.subject.maxSylDur;
@@ -281,6 +310,7 @@ hgui.minVwlLevel = expt.subject.minVwlLevel;
 hgui.maxVwlLevel = expt.subject.maxVwlLevel;
 
 hgui.showRhythmHint = expt.subject.showRhythmHint;
+hgui.nonInformativeFixationCross = expt.subject.nonInformativeFixationCross;
 
 hgui.audRhythmAlways = expt.subject.audRhythmAlways;
 
@@ -290,6 +320,9 @@ hgui.showIntFB_phases = expt.subject.showIntFB_phases;
 % hgui.showRhythmicityWarn_phases = expt.subject.showRhythmicityWarn_phases;
 hgui.showRateWarn_phases = expt.subject.showRateWarn_phases;
 hgui.showIntWarn_phases = expt.subject.showIntWarn_phases;
+
+hgui.rateErrRepeat_phases = expt.subject.rateErrRepeat_phases;
+hgui.intErrRepeat_phases = expt.subject.intErrRepeat_phases;
 
 hgui.showRhythmicityFB_onlyRhythm = expt.subject.showRhythmicityFB_onlyRhythm;
 
@@ -315,8 +348,10 @@ hgui.vocaLen=round(300*p.sr/(p.frameLen*1000)); % 300 ms, 225 frames
 hgui.lenRange=round(250*p.sr/(p.frameLen*1000));  % single-sided tolerance range: 0.4*250 = 100 ms
 msglog(logFN, ['Vowel duration range: [',num2str(300-0.4*250),',',num2str(300+0.4*250),'] ms.']);
 
-hgui.debug=DEBUG;
-% hgui.trigKey='equal';
+hgui.debug = DEBUG;
+hgui.trigKey = expt.subject.trigKey;
+
+guidata(hgui.UIrecorder, hgui);
 
 if (isempty(findStringInCell(varargin,'twoScreens')))
 % 	set(hgui.UIrecorder,...
@@ -393,17 +428,96 @@ for i1 = 1 : startPhase - 1
     timingDat.trialCnt = timingDat.trialCnt + expt.script.(t_phase).nTrials;
 end
 
+trialTypes = {'N', 'R'};
+
 % trialCnt = 1;
 for n=startPhase:length(allPhases)
     state.phase=n;
     state.rep=1;
     thisphase=allPhases{1,n};
-    subdirname=fullfile(dirname,thisphase);
+    
+    subdirname = fullfile(dirname,thisphase);
     if ~isdir(subdirname)
         mkdir(subdirname);
     end
     
     hgui.phase=thisphase;
+    
+    subjectMessageDialog(thisphase, getMsgStr(expt.subject.trigByScanner, thisphase));
+    
+    % === Get perturbation parameters === %
+    if expt.subject.trigByScanner == 0 && ...
+            length(thisphase) > 3 && isequal(thisphase(1 : 3), 'run')               
+        sent = strrep(expt.subject.pertSent, '_', ' ');
+        
+        inputDirs = {};
+        for i2 = 1 : n - 1
+            if ~isequal(allPhases{i2}, 'pract1')
+                inputDirs{end + 1} = fullfile(dirname, allPhases{i2});
+            end
+        end
+        % TODO: Incremental updates
+        
+        [ostMat, timeWarpCfg, rmsThresh] = ...
+            get_ost_pcf_params_rhy(inputDirs, sent, 0, ...
+                                   'warpOnsetTime', expt.subject.warpOnsetTime, ...
+                                   'decelWarpRate', expt.subject.decelWarpRate, ...
+                                   'accelWarpRate', expt.subject.accelWarpRate, ...
+                                   'F1ShiftRatio', expt.subject.F1ShiftRatio, ...
+                                   'FmtShiftStat0', expt.subject.FmtShiftStat0, ...
+                                   'FmtShiftStat1', expt.subject.FmtShiftStat1);
+        
+        % == Write ostMat to .ost file == %
+        msglog(logFN, sprintf('\n'));
+        ost_fns = struct;
+        for i1 = 1 : numel(trialTypes)
+            tt = trialTypes{i1};
+            
+            ost_fns.(tt) = fullfile(subdirname, sprintf('%s.ost', tt));
+            write_ost_to_file(ostMat.(tt), expt.subject.rmsSlopeWin, ost_fns.(tt));
+            check_file(ost_fns.(tt));
+            
+            msglog(logFN, sprintf('Generated online state tracking file for trialType %s: %s', ...
+                                  tt, ost_fns.(tt)));
+        end
+        msglog(logFN, sprintf('\n'));
+        
+        % == Write timeWarpCfg to .pcf file == %
+        pcf_fmt_fns = struct;   % For formant perturbation
+        pcf_twarp_fns = struct; % For time warping
+        for i1 = 1 : numel(trialTypes)
+            tt = trialTypes{i1}; 
+            
+            pcf_fmt_fns.(tt) = fullfile(subdirname, sprintf('fmt_%s.pcf', tt));
+            format_pcf(expt.subject.basePCF, pcf_fmt_fns.(tt), ...
+                       1234, ...        % Use a very large, practically unreachable stat number
+                       timeWarpCfg.timeWarp_tBegin.(tt), ...
+                       timeWarpCfg.timeWarp_rate1.(tt), ...
+                       timeWarpCfg.timeWarp_dur1.(tt), ...
+                       timeWarpCfg.timeWarp_durHold.(tt), ...
+                       timeWarpCfg.timeWarp_rate2.(tt), ...
+                       expt.subject.F1ShiftRatio, expt.subject.FmtShiftStat0, expt.subject.FmtShiftStat1);
+            check_file(pcf_fmt_fns.(tt));
+            
+            msglog(logFN, sprintf('Generated formant perturbation configuration file for trialType %s: %s', ...
+                                  tt, pcf_fmt_fns.(tt)));
+            
+            pcf_twarp_fns.(tt) = fullfile(subdirname, sprintf('twarp_%s.pcf', tt));
+            format_pcf(expt.subject.basePCF, pcf_twarp_fns.(tt), ...
+                       timeWarpCfg.timeWarp_initStat.(tt), ...
+                       timeWarpCfg.timeWarp_tBegin.(tt), ...
+                       timeWarpCfg.timeWarp_rate1.(tt), ...
+                       timeWarpCfg.timeWarp_dur1.(tt), ...
+                       timeWarpCfg.timeWarp_durHold.(tt), ...
+                       timeWarpCfg.timeWarp_rate2.(tt), ...
+                       0, expt.subject.FmtShiftStat0, expt.subject.FmtShiftStat1);
+            check_file(pcf_twarp_fns.(tt));
+            
+            msglog(logFN, sprintf('Generated time-warping perturbation configuration file for trialType %s: %s', ...
+                                  tt, pcf_twarp_fns.(tt)));
+        end
+    end
+    msglog(logFN, sprintf('\n'));
     
     % Adjust the number of reps
     msglog(logFN, ['--- Coming up: ',thisphase,'. nReps = ',num2str(expt.script.(thisphase).nReps),...
@@ -445,11 +559,12 @@ for n=startPhase:length(allPhases)
 	
 	if (subject.showPlayButton==0)
 		set(hgui.play,'visible','off');
-	end
+    end
+    
+    set(hgui.play, 'cdata', hgui.skin.play, 'userdata', 0);
     
     if isequal(thisphase,'pre')
 %         case 'pre'
-        set(hgui.play,'cdata',hgui.skin.play,'userdata',0);
         p.bDetect=0;
         p.bShift = 0;   %SC No shift in the pre phase
 
@@ -481,8 +596,8 @@ for n=startPhase:length(allPhases)
 %             set(hgui.msgh_imgh,'CData',CDataMessage.ftparampicking,'visible','on');
         drawnow;
 
-        set(hgui.msgh,'string',{'Please stand by...'},'visible','on');
-
+        set(hgui.msgh,'string',{'Please stand by...'},'visible','on');        
+        
         if (hgui.debug==0)
 %             [vowelF0Mean,vowelF0SD]=getVowelPitches(dirname);
 %             disp(['Vowel meanF0 = ',num2str(vowelF0Mean),' Hz: stdF0 = ',num2str(vowelF0SD),' Hz']);
@@ -521,11 +636,12 @@ for n=startPhase:length(allPhases)
     drawnow
     
 
-    set(hgui.msgh,'string',getMsgStr(thisphase),'visible','on');        
+%     set(hgui.msgh,'string',getMsgStr(thisphase),'visible','on');
+    % TODO %
 
     MexIO('init',p);  %SC Inject p to TransShiftMex
 
-    for i0=startRep:nReps    %SC Loop for the reps in the phase
+    for i0 = startRep:nReps    %SC Loop for the reps in the phase
         repString=['rep',num2str(i0)];
         state.rep=i0;
         state.params=p;
@@ -555,12 +671,20 @@ for n=startPhase:length(allPhases)
 		% --- ~Perturbation field ---
 
         for k = 1 : nTrials
-            thisTrial=expt.script.(thisphase).(repString).trialOrder(k); % 0: silent; 1: no noise; 2: noise only; 			
+            thisTrial = expt.script.(thisphase).(repString).trialOrder(k); % 0: silent; 1: no noise; 2: noise only;
+            
+            if expt.subject.trigByScanner == 0
+                thisPert = expt.script.(thisphase).(repString).pertType(k); % 0: noPert; 1: F1; 2: Decel; 4: other
+            else
+                thisPert = -1; % Not applicable
+            end
+            
             thisWord=expt.script.(thisphase).(repString).word{k};     %SC Retrieve the word from the randomly shuffled list
             nSyls=expt.script.(thisphase).(repString).nSyls(k);
 
 			hgui.trialType = thisTrial;
-			hgui.word = thisWord;
+            hgui.thisPert = thisPert;
+			hgui.word = thisWord;            
             hgui.subject = expt.subject;
             hgui.nSyls = nSyls;
             hgui.saveDataFN = fullfile(subsubdirname, ['trial-', num2str(k), '-', num2str(thisTrial)]);
@@ -578,11 +702,13 @@ for n=startPhase:length(allPhases)
             if (ischar(thisWord))
     			msglog(logFN, ['[', datestr(clock), ']: ', thisphase,' - ',repString, ...
                       ', k = ',num2str(k),': trialType = ',num2str(hgui.trialType), ...
-                      ' - ',thisWord]);
+                      '; pertType = ', num2str(hgui.thisPert), ...
+                      ' - ',thisWord, ' (trialLen = ',num2str(hgui.trialLen), ' s)']);
             else
                 msglog(logFN, ['[', datestr(clock), ']: ', thisphase,' - ',repString, ...
                      ', k = ',num2str(k),': trialType = ',num2str(hgui.trialType), ...
-                     ' - Pseudoword-',num2str(thisWord)]);
+                     '; pertType = ', num2str(hgui.thisPert), ...
+                     ' - Pseudoword-', num2str(thisWord), ' (trialLen = ',num2str(hgui.trialLen), ' s)']);
             end
             
             % Count down    
@@ -601,7 +727,7 @@ for n=startPhase:length(allPhases)
             % ~Count down
             
             bPrompt = 0;
-            if (hgui.trialType>=2)   %SC The distinction between train and test words                             
+            if (hgui.trialType >= 2)   %SC The distinction between train and test words                             
                 TransShiftMex(3, 'bdetect', 0, bPrompt);
                 TransShiftMex(3, 'bshift', 0, bPrompt);
 			else
@@ -627,109 +753,218 @@ for n=startPhase:length(allPhases)
                 hgui.simDataFN = fullfile(simDir, dsimfns(1).name);
             end
             
-            UIRecorder('singleTrial', hgui.play, 1, hgui);
-
-            data=get(hgui.UIrecorder,'UserData');           %SC Retrieve the data
-            hgui1 = guidata(hgui.UIrecorder);
+            % == Perturbation related configurations == %
+            if expt.subject.trigByScanner == 0 && ...
+               length(thisphase) > 3 && isequal(thisphase(1 : 3), 'run')
+                if thisTrial == 1
+                    TransShiftMex(3, 'rmsthr', rmsThresh.N);
+                elseif thisTrial == 2                    
+                    TransShiftMex(3, 'rmsthr', rmsThresh.R);
+                end
+                
+                tt = trialTypes{thisTrial};
+                if thisPert == 1  % F1 shift
+                    TransShiftMex(3, 'bshift', 1, 0);
+                    TransShiftMex(3, 'bpitchshift', 0, 0);
+                    
+                    TransShiftMex(8, ost_fns.(tt), 0);
+                    TransShiftMex(9, pcf_fmt_fns.(tt), 0);
+                    
+                elseif thisPert == 2
+                    TransShiftMex(3, 'bshift', 0, 0);
+                    TransShiftMex(3, 'bpitchshift', 1, 0);
+                    
+                    TransShiftMex(8, ost_fns.(tt), 0);
+                    TransShiftMex(9, pcf_twarp_fns.(tt), 0);
+                    
+                else
+                    TransShiftMex(3, 'bshift', 0, 0);
+                    TransShiftMex(3, 'bpitchshift', 0, 0);
+                    
+                end
+            else
+                TransShiftMex(3, 'bshift', 0, 0);
+                TransShiftMex(3, 'bpitchshift', 0, 0);
+            end
+            TransShiftMex(3, 'nfb', 1, 0);
+            % == ~Perturbation related configurations == %
             
-            if timingDat.trialCnt > 1 && (timingDat.trialType(timingDat.trialCnt - 1) <= 2)
-                if isfield(hgui1, 't_mean_ivi')
-                    msglog(logFN, sprintf('Mean IVI = %f s', hgui1.t_mean_ivi))
+            
+            % == Adjust trial length (For behavioral sessions only) == %
+            if expt.subject.trigByScanner == 0
+                suffix = thisphase;
+                if length(suffix) > 3 && isequal(suffix(1 : 3), 'run')
+                    suffix = suffix(1 : 3);
+                end
+                
+                hgui.trialLen = expt.subject.(['trialLen_', suffix]);
+                TransShiftMex(3, 'triallen', expt.subject.(['trialLen_', suffix]), 0);                
+            end
+            
+            % == Loop trial until trial is performed correctly or no
+            % repetition requirement is in place == %
+            bRepeat = 1;
+            repeatCnt = 1;
+            while bRepeat
+                MexIO('reset');
 
-                    timingDat.mean_ivi(timingDat.trialCnt - 1) = hgui1.t_mean_ivi;
-                    timingDat.cv_ivi(timingDat.trialCnt - 1) = hgui1.t_cv_ivis;
+                UIRecorder('singleTrial', hgui.play, 1, hgui);
 
-                    if timingDat.trialType(timingDat.trialCnt - 1) == 1
-                        trackMeanSylDurs(end + 1) = hgui1.t_mean_ivi;
-                        adaptMeanSylDur = nanmean(trackMeanSylDurs(end - 5 + 1 : end));
-                        recMeanSylDurs.nonRhythm(end+1) =  hgui1.t_mean_ivi;
-                        recMeanPeakRMS.nonRhythm(end+1) = data.meanPeakRMS;
-                        recCV_IVI.nonRhythm(end + 1) = hgui1.t_cv_ivis;
+                data = get(hgui.UIrecorder,'UserData');           %SC Retrieve the data
+                hgui1 = guidata(hgui.UIrecorder);
+                
+                % == Save timing data == %
+                if expt.subject.trigByScanner == 0 % Behavioral sessions
+                    tDatIdx = timingDat.trialCnt;
+                    bToSaveTimingDat = timingDat.trialType(tDatIdx) <= 2;                    
+                else % fMRI sessions
+                    tDatIdx = timingDat.trialCnt - 1;
+                    if tDatIdx <= 0
+                        bToSaveTimingDat = 0;
                     else
-                        recMeanSylDurs.rhythm(end+1) = hgui1.t_mean_ivi;
-                        recMeanPeakRMS.rhythm(end+1)  = data.meanPeakRMS;
-                        recCV_IVI.rhythm(end + 1) = hgui1.t_cv_ivis;
+                        bToSaveTimingDat = (timingDat.trialType(tDatIdx) <= 2);
+                    end
+                end
+                
+                if bToSaveTimingDat
+                    if isfield(hgui1, 't_mean_ivi')
+                        msglog(logFN, sprintf('Mean IVI = %f s', hgui1.t_mean_ivi))
+                        
+                        if expt.subject.trigByScanner == 1
+                            bSaveDat = 1;
+                        else
+                            bSaveDat = data.bASRGood;
+                        end
+                        
+                        if bSaveDat
+                            timingDat.mean_ivi(tDatIdx) = hgui1.t_mean_ivi;
+                            timingDat.cv_ivi(tDatIdx) = hgui1.t_cv_ivis;
+                        end
+
+                        if timingDat.trialType(tDatIdx) == 1
+                            if bSaveDat
+                                trackMeanSylDurs(end + 1) = hgui1.t_mean_ivi;
+                            end
+                            if ~isnan(nanmean(trackMeanSylDurs(end - 5 + 1 : end)))
+                                adaptMeanSylDur = nanmean(trackMeanSylDurs(end - 5 + 1 : end));
+                            end
+                            recMeanSylDurs.nonRhythm(end+1) =  hgui1.t_mean_ivi;
+                            recMeanPeakRMS.nonRhythm(end+1) = hgui1.t_mean_vwl_lv;
+                            recCV_IVI.nonRhythm(end + 1) = hgui1.t_cv_ivis;
+                        else
+                            recMeanSylDurs.rhythm(end+1) = hgui1.t_mean_ivi;
+                            recMeanPeakRMS.rhythm(end+1)  = hgui1.t_mean_vwl_lv;
+                            recCV_IVI.rhythm(end + 1) = hgui1.t_cv_ivis;
+                        end
+
+                        save(fullfile(dirname, 'timingDat.mat'), ...
+                             'timingDat', 'trackMeanSylDurs', 'adaptMeanSylDur', ...
+                             'recMeanSylDurs', 'recMeanPeakRMS', 'recCV_IVI');
+                    end
+                end
+
+                data.timeStamp=clock;
+
+%                 if (thisTrial==1 || thisTrial==2)
+                    set(0,'CurrentFigure', figIdDat(1));
+                    set(gcf,'CurrentAxes',figIdDat(5));
+                    cla;
+                    plot(recMeanSylDurs.nonRhythm, '.-', 'Color', colors.nonRhythm);
+                    hold on;
+                    plot(recMeanSylDurs.rhythm, '.-', 'Color', colors.rhythm); 
+%                     set(gca,'XLim',[0, 100],'YLim',[0,1]);
+                    set(gca,'YLim',[0,1]);
+                    legend({'nonRhythm','rhythm'});
+    %                 xlabel('Block #');
+                    ylabel('Mean syllable duration (sec)');
+
+                    set(gcf,'CurrentAxes',figIdDat(6));
+                    cla;
+%                     plot(20*log10(recMeanPeakRMS.nonRhythm), '.-', 'Color', colors.nonRhythm);
+                    plot(recMeanPeakRMS.nonRhythm, '.-', 'Color', colors.nonRhythm);
+                    hold on;
+%                     plot(20*log10(recMeanPeakRMS.rhythm), '.-', 'Color', colors.rhythm);
+                    plot(recMeanPeakRMS.rhythm, '.-', 'Color', colors.rhythm);
+%                     set(gca,'XLim',[0,100]);
+                    xlabel('Block #');
+                    ylabel('Log Mean peak RMS (a.u.)');
+
+                    set(gcf, 'CurrentAxes', figIdDat(8));
+                    cla;
+                    plot(recCV_IVI.nonRhythm, '.-', 'Color', colors.nonRhythm); hold on;
+                    plot(recCV_IVI.rhythm, '.-', 'Color', colors.rhythm);
+%                     set(gca,'XLim',[0,100]);
+%                     legend({'nonRhythm','rhythm'});
+                    ylabel('CV of IVIs');
+%                 end
+
+    %             if (thisTrial==1)
+    %                 if ~isempty(data.rms)
+    %                     switch (thisphase)  %SC Record the RMS peaks in the bout
+    %                         case 'pre'
+    %                             rmsPeaks=[rmsPeaks ; max(data.rms(:,1))];
+    %                         case 'pract1',
+    %                             rmsPeaks=[rmsPeaks ; max(data.rms(:,1))];                    
+    %                         case 'pract2',
+    %                             rmsPeaks=[rmsPeaks ; max(data.rms(:,1))];                    
+    %                         otherwise,
+    %                     end
+    %                 end
+    %             end
+
+    %             if (isequal(thisphase,'pract1'))
+    %                 if (thisTrial==1 || thisTrial==2)
+    %                     if (isfield(data,'vowelLevel') && ~isempty(data.vowelLevel) && ~isnan(data.vowelLevel) && ~isinf(data.vowelLevel))
+    %                         subjProdLevel=[subjProdLevel,data.vowelLevel];
+    %                     end
+    %                 end
+    %             end
+                
+                if expt.subject.trigByScanner 
+                    bRepeat = 0;   % -- Override -- %
+                    dataFN = fullfile(subsubdirname, ...
+                                      ['trial-', num2str(k), '-', num2str(thisTrial), '.mat']);
+                else
+                    bRepeat = 0;
+                    if isequal(expt.subject.intErrRepeat_phases, 'all') || ...
+                        ~isempty(fsic(strsplit(expt.subject.intErrRepeat_phases, ','), thisphase))
+                        bRepeat = bRepeat | (data.bRmsGood == 0);
                     end
 
-                    save(fullfile(dirname, 'timingDat.mat'), ...
-                         'timingDat', 'trackMeanSylDurs', 'adaptMeanSylDur', ...
-                         'recMeanSylDurs', 'recMeanPeakRMS', 'recCV_IVI');
+                    if isequal(expt.subject.rateErrRepeat_phases, 'all') || ...
+                        ~isempty(fsic(strsplit(expt.subject.rateErrRepeat_phases, ','), thisphase))
+                        bRepeat = bRepeat | (data.bSpeedGood == 0);
+                    end
+
+                    if bRepeat
+                        dataFN = fullfile(subsubdirname, ...
+                                          ['trial-', num2str(k), '-', num2str(thisTrial), '_bad', num2str(repeatCnt), '.mat']);
+
+                        % -- Rename the ASR directory -- %
+                        asrDir1 = strrep(hgui.asrDir, '_asr', sprintf('_bad%d_asr', repeatCnt));
+                        if isdir(hgui.asrDir)
+                            movefile(hgui.asrDir, asrDir1);
+                            check_dir(asrDir1);
+                            msglog(logFN, sprintf('Move directory: %s --> %s', hgui.asrDir, asrDir1));
+                        end
+
+                        repeatCnt = repeatCnt + 1;
+                    else
+                        dataFN = fullfile(subsubdirname, ...
+                                          ['trial-', num2str(k), '-', num2str(thisTrial), '.mat']);
+                    end
+
                 end
+                
+                save(dataFN, 'data');
+                check_file(dataFN);
+                msglog(logFN, ['Saved ', dataFN,'.']);
+                msglog(logFN, ' ');
             end
             
-            timingDat.trialCnt = timingDat.trialCnt + 1;
-            
-            data.timeStamp=clock;
-%             data.subject=expt.subject;
-%             data.params.name=thisWord;
-%             data.params.trialType=thisTrial;
-            
-%             if (thisTrial==1)
-%                 trackMeanSylDurs=[trackMeanSylDurs,data.meanSylDur];
-%                 adaptMeanSylDur = nanmean(trackMeanSylDurs(end - 5 + 1 : end));
-%                 recMeanSylDurs.nonRhythm(end+1)=data.meanSylDur;
-%                 recMeanPeakRMS.nonRhythm(end+1)=data.meanPeakRMS;
-%             elseif (thisTrial==2)
-%                 recMeanSylDurs.rhythm(end+1)=data.meanSylDur;
-%                 recMeanPeakRMS.rhythm(end+1)=data.meanPeakRMS;
+%             if thisTrial <= 2
+                timingDat.trialCnt = timingDat.trialCnt + 1;
 %             end
-            
-            if (thisTrial==1 || thisTrial==2)
-                set(0,'CurrentFigure', figIdDat(1));
-                set(gcf,'CurrentAxes',figIdDat(5));
-                cla;
-                plot(recMeanSylDurs.nonRhythm, '.-', 'Color', colors.nonRhythm);
-                hold on;
-                plot(recMeanSylDurs.rhythm, '.-', 'Color', colors.rhythm); 
-                set(gca,'XLim',[0,100],'YLim',[0,1]);
-                legend({'nonRhythm','rhythm'});
-%                 xlabel('Block #');
-                ylabel('Mean syllable duration (sec)');
-                
-                set(gcf,'CurrentAxes',figIdDat(6));
-                cla;
-                plot(20*log10(recMeanPeakRMS.nonRhythm), '.-', 'Color', colors.nonRhythm);
-                hold on;
-                plot(20*log10(recMeanPeakRMS.rhythm), '.-', 'Color', colors.rhythm);
-                set(gca,'XLim',[0,100]);
-                xlabel('Block #');
-                ylabel('Log Mean peak RMS (a.u.)');
-                
-                set(gcf, 'CurrentAxes', figIdDat(8));
-                cla;
-                plot(recCV_IVI.nonRhythm, '.-', 'Color', colors.nonRhythm); hold on;
-                plot(recCV_IVI.rhythm, '.-', 'Color', colors.rhythm);
-                set(gca,'XLim',[0,100]);
-                legend({'nonRhythm','rhythm'});
-                ylabel('CV of IVIs');
-            end
-            
-%             if (thisTrial==1)
-%                 if ~isempty(data.rms)
-%                     switch (thisphase)  %SC Record the RMS peaks in the bout
-%                         case 'pre'
-%                             rmsPeaks=[rmsPeaks ; max(data.rms(:,1))];
-%                         case 'pract1',
-%                             rmsPeaks=[rmsPeaks ; max(data.rms(:,1))];                    
-%                         case 'pract2',
-%                             rmsPeaks=[rmsPeaks ; max(data.rms(:,1))];                    
-%                         otherwise,
-%                     end
-%                 end
-%             end
-            
-%             if (isequal(thisphase,'pract1'))
-%                 if (thisTrial==1 || thisTrial==2)
-%                     if (isfield(data,'vowelLevel') && ~isempty(data.vowelLevel) && ~isnan(data.vowelLevel) && ~isinf(data.vowelLevel))
-%                         subjProdLevel=[subjProdLevel,data.vowelLevel];
-%                     end
-%                 end
-%             end
-			
-            save(fullfile(subsubdirname, ['trial-', num2str(k), '-', num2str(thisTrial)]), 'data');
-            msglog(logFN, ['Saved ',fullfile(subsubdirname,['trial-',num2str(k),'-',num2str(thisTrial)]),'.']);
-            msglog(logFN, ' ');
-            
             phaseTrialCnt=phaseTrialCnt+1;
 
             % Calculate and show progress
@@ -744,6 +979,7 @@ for n=startPhase:length(allPhases)
             
         end
     end
+        
     startRep=1;
 end
 set(hgui.play,'cdata',hgui.skin.play,'userdata',0);

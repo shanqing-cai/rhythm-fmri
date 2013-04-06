@@ -134,48 +134,76 @@ switch(action)
             TransShiftMex(3,'fn2',1500, toPrompt);
         end
         
-        if (isfield(p,'fitLen'))
-            TransShiftMex(3,'fitlen',p.fitLen, toPrompt);
-        else
-            TransShiftMex(3,'fitlen',15, toPrompt);
+        %SC(2012/03/05) Frequency/pitch shifting
+        if (isfield(p, 'bPitchShift'))
+            TransShiftMex(3, 'bpitchshift', p.bPitchShift, toPrompt);
         end
-        if (isfield(p,'sylDurLB'))
-            TransShiftMex(3,'syldurlb',p.sylDurLB, toPrompt);
-        else
-            TransShiftMex(3,'syldurlb',38, toPrompt);
+        if (isfield(p, 'pitchShiftRatio'))
+            TransShiftMex(3, 'pitchshiftratio', p.pitchShiftRatio, toPrompt);
         end
-        if (isfield(p,'iF2LB'))
-            TransShiftMex(3,'if2lb',p.iF2LB, toPrompt);
-        else
-            TransShiftMex(3,'if2lb',1600, toPrompt);
-        end        
-        if (isfield(p,'uF2UB'))
-            TransShiftMex(3,'uf2ub',p.uF2UB, toPrompt);
-        else
-            TransShiftMex(3,'uf2ub',1500, toPrompt);
-        end
-        if (isfield(p,'dF2Lim'))
-            TransShiftMex(3,'df2lim',p.dF2Lim, toPrompt);
-        else
-            TransShiftMex(3,'df2lim',25, toPrompt);
+        if (isfield(p, 'gain'))
+            TransShiftMex(3, 'gain', p.gain, toPrompt);
         end
         
+        if (isfield(p, 'mute'))
+            TransShiftMex(3, 'mute', p.mute, toPrompt);
+        end
+        
+        if (isfield(p, 'pvocFrameLen'))
+            TransShiftMex(3, 'pvocframelen', p.pvocFrameLen, toPrompt);
+        end
+        if (isfield(p, 'pvocHop'))
+            TransShiftMex(3, 'pvochop', p.pvocHop, toPrompt);
+        end
+        
+        if (isfield(p, 'bDownSampFilt'))
+            TransShiftMex(3, 'bdownsampfilt', p.bDownSampFilt, toPrompt);
+        end
+%         if (isfield(p,'fitLen'))
+%             TransShiftMex(3,'fitlen',p.fitLen, toPrompt);
+%         else
+%             TransShiftMex(3,'fitlen',15, toPrompt);
+%         end
+%         if (isfield(p,'sylDurLB'))
+%             TransShiftMex(3,'syldurlb',p.sylDurLB, toPrompt);
+%         else
+%             TransShiftMex(3,'syldurlb',38, toPrompt);
+%         end
+        
+%         if (isfield(p,'iF2LB'))
+%             TransShiftMex(3,'if2lb',p.iF2LB, toPrompt);
+%         else
+%             TransShiftMex(3,'if2lb',1600, toPrompt);
+%         end
+%         if (isfield(p,'uF2UB'))
+%             TransShiftMex(3,'uf2ub',p.uF2UB, toPrompt);
+%         else
+%             TransShiftMex(3,'uf2ub',1500, toPrompt);
+%         end
+%         if (isfield(p,'dF2Lim'))
+%             TransShiftMex(3,'df2lim',p.dF2Lim, toPrompt);
+%         else
+%             TransShiftMex(3,'df2lim',25, toPrompt);
+%         end
+        
         % SC(2009/06/24): Auto-stop functionality 
-        if (isfield(p,'bAutoStop'))
-            TransShiftMex(3,'bautostop',p.bAutoStop, toPrompt);
-        else
-            TransShiftMex(3,'bautostop',0, toPrompt);
-        end
-        if (isfield(p,'voiceDurThresh'))
-            TransShiftMex(3,'voicedurthresh',p.voiceDurThresh, toPrompt);
-        else
-            TransShiftMex(3,'voicedurthresh',0.3, toPrompt);
-        end
-        if (isfield(p,'silDurThresh'))
-            TransShiftMex(3,'sildurthresh',p.silDurThresh, toPrompt);
-        else
-            TransShiftMex(3,'sildurthresh',2, toPrompt);
-        end
+%         if (isfield(p,'bAutoStop'))
+%             TransShiftMex(3,'bautostop',p.bAutoStop, toPrompt);
+%         else
+%             TransShiftMex(3,'bautostop',0, toPrompt);
+%         end
+%         if (isfield(p,'voiceDurThresh'))
+%             TransShiftMex(3,'voicedurthresh',p.voiceDurThresh, toPrompt);
+%         else
+%             TransShiftMex(3,'voicedurthresh',0.3, toPrompt);
+%         end
+%         if (isfield(p,'silDurThresh'))
+%             TransShiftMex(3,'sildurthresh',p.silDurThresh, toPrompt);
+%         else
+%             TransShiftMex(3,'sildurthresh',2, toPrompt);
+%         end
+
+
         return;
 %%            
     case 'process',
@@ -189,6 +217,29 @@ switch(action)
 
         switch(nout)
             case 1,
+%                 data.signalIn       = signalMat(:,1);
+%                 data.signalOut      = signalMat(:,2);
+% 
+%                 data.intervals      = dataMat(:,1);
+%                 data.rms            = dataMat(:,2:4);
+%                 
+%                 offS = 5;
+%                 data.fmts           = dataMat(:, offS : offS+p.nTracks-1);
+%                 data.rads           = dataMat(:, offS+p.nTracks : offS+2*p.nTracks-1);
+%                 data.dfmts          = dataMat(:, offS+2*p.nTracks : offS+2*p.nTracks+1);
+%                 data.sfmts          = dataMat(:, offS+2*p.nTracks+2 : offS+2*p.nTracks+3);
+% %                 data.df1            = dataMat(:,offS+2*p.nTracks+4);
+% %                 data.df2            = dataMat(:,offS+2*p.nTracks+5);
+%                 
+%                 
+%                 offS = offS + 2 * p.nTracks + 2 * 2 + p.nLPC;
+%                 data.rms_slp        = dataMat(:, offS);
+%                 data.sentStat       = dataMat(:, offS + 1);
+%                 
+%                 %offS = offS+2*p.nTracks+4;
+%                 %data.ai             = dataMat(:,offS:offS+p.nLPC);
+%                 data.params         = p;
+%                 varargout(1)        = {data};
                 data.signalIn       = signalMat(:,1);
                 data.signalOut      = signalMat(:,2);
 
@@ -200,14 +251,19 @@ switch(action)
                 data.rads           = dataMat(:,offS+p.nTracks:offS+2*p.nTracks-1);
                 data.dfmts          = dataMat(:,offS+2*p.nTracks:offS+2*p.nTracks+1);
                 data.sfmts          = dataMat(:,offS+2*p.nTracks+2:offS+2*p.nTracks+3);
-                data.df1            = dataMat(:,offS+2*p.nTracks+4);
-                data.df2            = dataMat(:,offS+2*p.nTracks+5);
-                data.sentStat       = dataMat(:,offS+2*p.nTracks+6);
+
+                offS = offS + 2 * p.nTracks + 4;
+%                 data.ai             = dataMat(:,offS:offS+p.nLPC);
                 
-                %offS = offS+2*p.nTracks+4;
-                %data.ai             = dataMat(:,offS:offS+p.nLPC);
+                offS = offS + p.nLPC + 1;
+                data.rms_slope      = dataMat(:, offS);
+                              
+                offS = offS + 1;
+                data.ost_stat       = dataMat(:, offS);
+                
                 data.params         = p;
                 varargout(1)        = {data};
+
                 return;
 
             case 2,
