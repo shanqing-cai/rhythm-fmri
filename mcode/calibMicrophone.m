@@ -6,9 +6,12 @@ if ~isfile(calibWavFN)
 end
 
 %%
+p = getTSMDefaultParams('female');
 TransShiftMex(0);
-TransShiftMex(3, 'srate', 16000);
-TransShiftMex(3, 'framelen', 32);
+
+MexIO('init', p);
+% TransShiftMex(3, 'srate', 16000);
+% TransShiftMex(3, 'framelen', 32);
 
 [w, fs] = wavread(calibWavFN);
 
@@ -36,8 +39,6 @@ sr=12e3;
 taxis=0:(1/sr):((length(sig)-1)/sr);
 plot(taxis,sig); 
 hold on;
-
-
 
 title('Set tStart!');
 coord1=ginput(1);

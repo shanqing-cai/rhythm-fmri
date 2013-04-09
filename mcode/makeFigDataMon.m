@@ -1,6 +1,6 @@
 function figIdDat=makeFigDataMon()
 fid=figure('Position', [300, 100, 1200, 640], ...
-           'Name', 'TransAdapt: Data monitor');
+           'Name', 'Data monitor', 'NumberTitle', 'off');
 axes1=subplot('Position', [0.05 ,0.575, 0.25, 0.4]);   % Input waveform
 axes2=subplot('Position', [0.05, 0.1, 0.25, 0.4]);   % Output waveform
 

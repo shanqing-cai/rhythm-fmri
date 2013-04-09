@@ -1,13 +1,13 @@
-name            TestExpt_behav_9
-sex             male
+name            TEST_21
+sex             female
 
 interfaceMode   0
 simDataDir      E:\DATA\RHYTHM-FMRI\PWS01
 
 designNum       2
 
-mouthMicDist    6 % cm
-closedLoopGain  10 % dB
+mouthMicDist    10 % cm
+closedLoopGain  0 % dB
 dBRange1        20 % dB
 trialLen        4.5 % s
 trigByScanner   0 % 0 - behavioral session; 1 - fMRI session
@@ -75,7 +75,7 @@ showRhythmicityFB_onlyRhythm 1 % 0 | 1 (Recommended: 1)
 
 paceStim_toneDur        25e-3 % s
 paceStim_toneFreq       1000 % Hz, Old value: 6000
-paceStim_toneAmp        0.1  % Wave peak (?)
+paceStim_toneAmp        0.01  % Wave peak (?)
 paceStim_toneRamp       5e-3 % s
 
 % --- Perturbation --- %

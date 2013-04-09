@@ -117,4 +117,7 @@ p.pvocFrameLen = 256;
 p.pvocHop = 64;
 p.bDownSampFilt = 1;
 
+%%
+p.bBypassFmt = 0;
+
 return

@@ -46,7 +46,12 @@ switch(action)
 		end
 		if (isfield(p,'rmsClipThresh'))
 			TransShiftMex(3,'rmsclipthresh',p.rmsClipThresh, toPrompt);
-		end
+        end
+        
+%% SC(2013/04/08) Option to bypass the formant tracking / shifting for speed
+        if isfield(p, 'bBypassFmt')
+            TransShiftMex(3, 'bbypassfmt', p.bBypassFmt, toPrompt);
+        end
 		
 %% SC-Mod(2008/05/15) Cepstral lifting related
         if (isfield(p,'bCepsLift'))

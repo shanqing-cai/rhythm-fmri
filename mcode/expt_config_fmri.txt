@@ -1,4 +1,4 @@
-name            TestExpt_fmri_test_1
+name            FO_MIC3_TEST
 sex             male
 
 interfaceMode   0

@@ -368,6 +368,7 @@ else
         end
         
 		set(hgui.UIrecorder,'Position',[ms(2,1),ms(1,4)-ms(2,4),ms(2,3)-ms(2,1)+1,ms(2,4)+20],'toolbar','none','doublebuffer','on','renderer','painters');
+        set(hgui.UIrecorder, 'NumberTitle', 'off', 'Name', 'UI Recorder');
 		pos_win=get(hgui.UIrecorder,'Position');
 		pos_strh=get(hgui.strh,'Position');
 		pos_axes_pic=get(hgui.axes_pic,'Position');
@@ -767,13 +768,15 @@ for n=startPhase:length(allPhases)
                 
                 tt = trialTypes{thisTrial};
                 if thisPert == 1  % F1 shift
+                    TransShiftMex(3, 'bbypassfmt', 0, 0);
                     TransShiftMex(3, 'bshift', 1, 0);
                     TransShiftMex(3, 'bpitchshift', 0, 0);
                     
                     TransShiftMex(8, ost_fns.(tt), 0);
                     TransShiftMex(9, pcf_fmt_fns.(tt), 0);
                     
-                elseif thisPert == 2
+                elseif thisPert == 2 % Time warping
+                    TransShiftMex(3, 'bbypassfmt', 1, 0);
                     TransShiftMex(3, 'bshift', 0, 0);
                     TransShiftMex(3, 'bpitchshift', 1, 0);
                     
@@ -781,13 +784,16 @@ for n=startPhase:length(allPhases)
                     TransShiftMex(9, pcf_twarp_fns.(tt), 0);
                     
                 else
+                    TransShiftMex(3, 'bbypassfmt', 0, 0);
                     TransShiftMex(3, 'bshift', 0, 0);
                     TransShiftMex(3, 'bpitchshift', 0, 0);
                     
                 end
             else
+                TransShiftMex(3, 'bbypassfmt', 0, 0);
                 TransShiftMex(3, 'bshift', 0, 0);
                 TransShiftMex(3, 'bpitchshift', 0, 0);
+                
             end
             TransShiftMex(3, 'nfb', 1, 0);
             % == ~Perturbation related configurations == %
@@ -848,7 +854,8 @@ for n=startPhase:length(allPhases)
                             if bSaveDat
                                 trackMeanSylDurs(end + 1) = hgui1.t_mean_ivi;
                             end
-                            if ~isnan(nanmean(trackMeanSylDurs(end - 5 + 1 : end)))
+                            if length(trackMeanSylDurs) > 5 && ...
+                               ~isnan(nanmean(trackMeanSylDurs(end - 5 + 1 : end)))
                                 adaptMeanSylDur = nanmean(trackMeanSylDurs(end - 5 + 1 : end));
                             end
                             recMeanSylDurs.nonRhythm(end+1) =  hgui1.t_mean_ivi;

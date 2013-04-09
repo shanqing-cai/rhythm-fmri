@@ -9,7 +9,7 @@ figDat = struct;
 
 figDat.fid = figure('Position', [200, 200, 320, 240], ...
                     'ToolBar', 'none', 'MenuBar', 'none', ...
-                    'Name', '', 'NumberTitle', 'off');
+                    'Name', 'Subject feedback', 'NumberTitle', 'off');
 
 % cv_ivis feedback
 figDat.axes_cv_ivis = subplot('Position', [0.1, bot, 0.275, hgt]);

@@ -49,7 +49,7 @@ set(0, 'CurrentFigure', h.figUFBDat.fid);
 set(gcf, 'CurrentAxes', h.figUFBDat.axes_cv_ivis);
 
 set(gca, 'XLim', xlim_rhythm);
-set(gca, 'XTick', [1, 2], 'XTickLabel', {'NR', 'R'});
+set(gca, 'XTick', [1, 2], 'XTickLabel', {'N', 'R'});
 
 set(gca, 'YTick', []);
 
