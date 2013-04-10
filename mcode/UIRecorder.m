@@ -91,6 +91,12 @@ handles.trialLen=2.2;
 handles.debug=0;
 handles.vumeterMode=NaN;  % 1: 10 ticks; 2: 3 ticks;
 
+% handles.modePromptDur = 0;
+% handles.type1Prompt = 'Normal';
+% handles.type2Prompt = 'Rhythm';
+% handles.type3Prompt = 'Silent';
+% handles.type4Prompt = 'Silent';
+
 handles.timeCreated=clock;
 
 handles.manualTrigPhases = 'all';
@@ -764,9 +770,6 @@ if (handles.debug==0)
     colors.rhythm = [0, 0, 1];
     colors.nonRhythm = [0, 0.4, 0];
     if (handles.trialType==1 || handles.trialType==2 || handles.trialType==3 || handles.trialType==4)
-        set(handles.strh, 'string', handles.word,'visible','on');
-        set(handles.msgh, 'String', '', 'ForegroundColor', 'k', 'Visible', 'off');
-        
         if handles.trialType == 1 || handles.trialType == 3
             set(handles.strh, 'ForegroundColor', colors.nonRhythm);
         else
@@ -775,11 +778,31 @@ if (handles.debug==0)
         
         if handles.showRhythmHint
             if handles.trialType == 1
-                set(handles.msgh, 'String', 'N', 'Visible', 'on', 'ForegroundColor', colors.nonRhythm, 'FontSize', 30);
+                set(handles.msgh, 'String', handles.type1Prompt, 'Visible', 'on', 'ForegroundColor', colors.nonRhythm, 'FontSize', 30);
             elseif handles.trialType == 2
-                set(handles.msgh, 'String', 'R', 'Visible', 'on', 'ForegroundColor', colors.rhythm, 'FontSize', 30);
+                set(handles.msgh, 'String', handles.type2Prompt, 'Visible', 'on', 'ForegroundColor', colors.rhythm, 'FontSize', 30);
+            elseif handles.trialType == 3
+                set(handles.msgh, 'String', handles.type3Prompt, 'Visible', 'on', 'ForegroundColor', colors.nonRhythm, 'FontSize', 30);
+            elseif handles.trialType == 4
+                set(handles.msgh, 'String', handles.type4Prompt, 'Visible', 'on', 'ForegroundColor', colors.rhythm, 'FontSize', 30);
+            end
+            
+            if handles.modePromptDur > 0
+                pause(handles.modePromptDur);
+            else
+                if handles.modePromptDur < 0
+                    error('modePromptDur must not be negative');
+                end
+            end
+            
+        else
+            if handles.modePromptDur > 0
+                error('Currently, modePromptDur > 0 must be used under showRhythmHint = 1');
             end
         end
+        
+        set(handles.strh, 'string', handles.word,'visible','on');
+%         set(handles.msgh, 'String', '', 'ForegroundColor', 'k', 'Visible', 'off');
         
         drawnow;
     end    
@@ -829,9 +852,9 @@ if (handles.debug==0)
     % --- ~Perform ASR on the latest speech data: preparation and julian run --- %
     
     if handles.interfaceMode == 0
-        pause(max([0, handles.trialLen - audapterStartupTime - asrPrepRunTime]));
+        pause(max([0, handles.trialLen - audapterStartupTime - asrPrepRunTime - handles.modePromptDur]));
     elseif handles.interfaceMode == 2
-        pause(max([0, handles.trialLen - dataLoadTime - asrPrepRunTime]));
+        pause(max([0, handles.trialLen - dataLoadTime - asrPrepRunTime - handles.modePromptDur]));
     end
     
     if handles.interfaceMode == 0
@@ -843,6 +866,8 @@ if (handles.debug==0)
         if handles.trigByScanner == 0
             sigs = TransShiftMex(4);
             if size(sigs, 2) < 2
+                data.bRmsGood = 0;
+                
                 return; % Recover from pause
             end
         end

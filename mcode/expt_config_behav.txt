@@ -15,6 +15,12 @@ TA              2.5 % s
 TPaceStim       3.0 % s
 TVisStim        5.5 % s
 
+modePromptDur   0.5 % Unit: s. Use 0 if mode prompt is not needed. This duration is included in the trialLen
+type1Prompt     Normal % Normal
+type2Prompt     Rhythm % Rhythm
+type3Prompt     Silent % Alternative: Normal
+type4Prompt     Silent % Alternative: Rhythm
+
 showRhythmHint                  1 % Whether to display the "N" and "R" hint letters
 nonInformativeFixationCross     1 % Whether to show a white (hence non-informative) fixation cross
 

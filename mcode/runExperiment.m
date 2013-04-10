@@ -301,6 +301,13 @@ hgui.trigByScanner=expt.subject.trigByScanner;
 hgui.TA=expt.subject.TA;
 hgui.dBRange=expt.subject.dBRange1;
 hgui.trialLen=expt.subject.trialLen;
+
+hgui.modePromptDur = expt.subject.modePromptDur;
+hgui.type1Prompt = expt.subject.type1Prompt;
+hgui.type2Prompt = expt.subject.type2Prompt;
+hgui.type3Prompt = expt.subject.type3Prompt;
+hgui.type4Prompt = expt.subject.type4Prompt;
+
 % hgui.skin.faceOrder=randperm(length(hgui.skin.dFaces));
 hgui.skin.facePnt=1;
 
