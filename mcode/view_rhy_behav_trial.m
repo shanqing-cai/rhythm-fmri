@@ -1,4 +1,4 @@
-function view_rhy_behav_trial(dataFN, varargin)
+function view_rhy_behav_trial(dataFN, bReproc, varargin)
 %% 
 % dataFN = 'G:\DATA\RHYTHM-FMRI\TestExpt_behav_9\run1\rep1\trial-2-1.mat';
 % dataFN = 'G:\DATA\RHYTHM-FMRI\PILOT_ANS_F01\run1\rep1\trial-6-2.mat';
@@ -20,9 +20,67 @@ end
 %%
 load(dataFN); % Gives data
 
+%% Search for any existing expt.mat files
+[repDir, baseMatFN] = fileparts(dataFN);
+[phaseDir, repBase] = fileparts(repDir);
+[exptDir, phaseBase] = fileparts(phaseDir);
+
+d_expt = dir(fullfile(exptDir, 'expt.mat'));
+if length(d_expt) == 1
+    load(fullfile(exptDir, 'expt.mat')); % Gives expt
+    
+    % -- Figure out the pertType -- %
+    phase = phaseBase;
+    repNum = str2double(strrep(repBase, 'rep', ''));
+    splitted = strsplit(baseMatFN, '-');
+    trialNum = str2double(splitted{2});
+    trialType = str2double(splitted{3});
+    
+    pertType = expt.script.(phase).(['rep', num2str(repNum)]).pertType(trialNum);
+    fprintf(1, 'INFO: trialType = %d; pertType = %d\n', trialType, pertType);
+end
+
+%% Search for any existing ost and pcf files
+if trialType == 1
+    d_ost = dir(fullfile(phaseDir, 'N.ost'));
+elseif trialType == 2
+    d_ost = dir(fullfile(phaseDir, 'R.ost'));
+else
+    error('Unexpected trialType: %d', trialType);
+end
+
+if bReproc
+    if length(d_ost) == 1
+        ost_fn = fullfile(phaseDir, d_ost(1).name);
+        
+        fprintf(1, 'INFO: using native ost file: %s\n', ost_fn);
+        TransShiftMex(8, ost_fn, 1);
+    else
+        fprintf(1, 'WARNING: no native ost file is found\n');
+    end
+end
+
 %% Change parameters
 % data.params.bPitchShift = 0;
 % data.params.bBypassFmt = 0;
+
+if bReproc
+    MexIO('init', data.params);
+    MexIO('reset');
+    
+    fs = data.params.sr;
+
+    sigIn = data.signalIn;
+
+    sigIn = resample(sigIn, data.params.sr * data.params.downfact, fs);     
+    sigInCell = makecell(sigIn, data.params.frameLen * data.params.downfact);
+
+    for n = 1 : length(sigInCell)
+        TransShiftMex(5, sigInCell{n});
+    end
+
+    data = MexIO('getData');
+end
 
 %%
 figure('Position', [50, 100, 1400, 600]);
@@ -33,8 +91,6 @@ title(data.params.name);
 frameDur = data.params.frameLen / data.params.sr;
 tAxis = 0 : frameDur : frameDur * (size(data.fmts, 1) - 1);
 plot(tAxis, data.fmts(:, 1 : 2), 'w-');
-
-
 
 plot(tAxis, data.ost_stat * 250, 'b-');
 

@@ -318,8 +318,9 @@ hgui.manualTrigPhases = expt.subject.manualTrigPhases;
 hgui.meanSylDur=expt.subject.paceStim.meanSylDur;
 hgui.minSylDur = expt.subject.minSylDur;
 hgui.maxSylDur = expt.subject.maxSylDur;
-hgui.minVwlLevel = expt.subject.minVwlLevel;
-hgui.maxVwlLevel = expt.subject.maxVwlLevel;
+
+hgui.minVwlLevel = expt.subject.(['minVwlLevel_', lower(expt.subject.sex)]);
+hgui.maxVwlLevel = expt.subject.(['maxVwlLevel_', lower(expt.subject.sex)]);
 
 hgui.showRhythmHint = expt.subject.showRhythmHint;
 hgui.nonInformativeFixationCross = expt.subject.nonInformativeFixationCross;
@@ -476,7 +477,7 @@ for n=startPhase:length(allPhases)
         end
         % TODO: Incremental updates
         
-        [ostMat, timeWarpCfg, rmsThresh] = ...
+        [ostMat, timeWarpCfg, rmsThresh, maxInterval_5_10] = ...
             get_ost_pcf_params_rhy(inputDirs, sent, 0, ...
                                    'warpOnsetTime', expt.subject.warpOnsetTime, ...
                                    'decelWarpRate', expt.subject.decelWarpRate, ...
@@ -492,11 +493,13 @@ for n=startPhase:length(allPhases)
             tt = trialTypes{i1};
             
             ost_fns.(tt) = fullfile(subdirname, sprintf('%s.ost', tt));
-            write_ost_to_file(ostMat.(tt), expt.subject.rmsSlopeWin, ost_fns.(tt));
+            write_ost_to_file(ostMat.(tt), expt.subject.rmsSlopeWin, ...
+                              maxInterval_5_10.(tt), ost_fns.(tt));
             check_file(ost_fns.(tt));
             
-            msglog(logFN, sprintf('Generated online state tracking file for trialType %s: %s', ...
-                                  tt, ost_fns.(tt)));
+            msglog(logFN, ...
+                   sprintf('Generated online state tracking file for trialType %s: %s', ...
+                           tt, ost_fns.(tt)));
         end
         msglog(logFN, sprintf('\n'));
         

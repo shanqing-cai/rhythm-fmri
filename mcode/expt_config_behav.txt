@@ -1,5 +1,5 @@
 name            TEST_21
-sex             female
+sex             male
 
 interfaceMode   0
 simDataDir      E:\DATA\RHYTHM-FMRI\PWS01
@@ -61,8 +61,10 @@ paceStim_meanSylDur     0.27 % s
 minSylDur               0.22 % s. Set to -Inf for disabling user warning message
 maxSylDur               0.32 % %. Set to +Inf for disabling user warning message
 
-minVwlLevel             70 % dB SPL A
-maxVwlLevel             80 % dB SPL A
+minVwlLevel_male        70 % dB SPL A
+maxVwlLevel_male        80 % dB SPL A
+minVwlLevel_female      67.5 % dB SPL A
+minVwlLevel_female      77.5 % dB SPL A
 
 % -- NOTE: these feedback options are valid only with trigByScanner == 0 --
 % --    DO NOT USE SPACES AFTER COMMAS --

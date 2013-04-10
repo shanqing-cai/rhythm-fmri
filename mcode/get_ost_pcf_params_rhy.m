@@ -1,4 +1,4 @@
-function [ostMat, timeWarpCfg, rmsThresh] = ...
+function [ostMat, timeWarpCfg, rmsThresh, maxInterval_5_10] = ...
             get_ost_pcf_params_rhy(varargin)
 % Syntax:
 %       get_ost_params_rhy(); %  For testing only 
@@ -11,7 +11,6 @@ function [ostMat, timeWarpCfg, rmsThresh] = ...
 %                 FmtShiftStat0:    default: 5
 %                 FmtShiftStat1:    default: 9
 %                 basePCF:
-
 
 %% Input
 % inputDir = 'G:\DATA\RHYTHM-FMRI\TestExpt_behav_1\pre';
@@ -118,6 +117,8 @@ if isequal(sent, 'The steady bat gave birth to pups')
     stat_2_prm2 = protoStruct;
     
     steady_s_dur = protoStruct;
+    
+    len_s_t_eh_d = protoStruct;
 else
     error('The sentence "%s" is currently not supported', sent);
 end
@@ -221,6 +222,8 @@ for i0 = 1 : numel(inputDirs)
             end
 
             fprintf(1, 'Processing file: %s (%s)...\n', trialMat, trialType);
+            
+            len_s_t_eh_d.(trialType)(end + 1) = asrPAlign.tend(7) - asrPAlign.tbeg(4);
 
             frameDur = data.params.frameLen / data.params.sr;
             N = size(data.rms, 1);
@@ -352,9 +355,16 @@ for i0 = 1 : numel(inputDirs)
 
 end
 
-%% Determine the perturbation parameters %%
+%% Determine the maxIOICfg parameers
 trialTypes = {'N', 'R'};
 
+for i1 = 1 : numel(trialTypes)
+    tt = trialTypes{i1};
+    
+    maxInterval_5_10.(tt) = quantile(len_s_t_eh_d.(tt), 0.9) * 1.1;
+end
+
+%% Determine the perturbation parameters %%
 if isequal(sent, 'The steady bat gave birth to pups')
     for i1 = 1 : numel(trialTypes)
         tt = trialTypes{i1};
