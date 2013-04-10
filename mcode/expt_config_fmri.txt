@@ -1,4 +1,4 @@
-name            FO_MIC3_TEST
+name            FMRI_TEST_1
 sex             male
 
 interfaceMode   0
@@ -25,7 +25,7 @@ manualTrigPhases    none      % Examples: all | pract1,pract2 (no space) | none
 NREPS_PRE       1       % Default: 2
 NREPS_PRACT1    1       % Default: 2
 NREPS_PRACT2    1       % Default: 2
-NREPS_RUN       8       % Default: 8
+NREPS_RUN       8      % Default: 8
 
 % --- Trial lengths: ** For behavioral sessions only --- %
 trialLen_pract1     6       % Unit: s. Default: 6
@@ -70,6 +70,8 @@ showIntWarn_phases          pract1,pract2,pre,run1,run2,run3,run4
 
 rateErrRepeat_phases        pract2,pre
 intErrRepeat_phases         pract1,pract2,pre
+
+colorAcceptRanges           1 % Whether to include a green colored acceptance region in each subplot
 
 showRhythmicityFB_onlyRhythm 1 % 0 | 1 (Recommended: 1)
 

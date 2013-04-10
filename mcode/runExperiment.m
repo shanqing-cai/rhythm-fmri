@@ -62,7 +62,7 @@ if isdir(dirname)
         button1 = questdlg(messg,'DIRECTORY NOT EMPTY','Continue','Overwrite','Cancel','Continue');
         switch button1
             case 'Overwrite'
-                button2 = questdlg({'Are you sure you want to overwrite experiment'} ,'OVERWRITE EXPERIMENT ?');
+                button2 = questdlg({sprintf('Are you sure you want to overwrite data in directory %s?', dirname)} ,'OVERWRITE EXPERIMENT ?');
                 switch button2
                     case 'Yes',
                         rmdir(dirname,'s')
@@ -125,7 +125,12 @@ if bNew % set up new experiment
         nSents=(expt.script.pract1.nReps+expt.script.pract2.nReps+expt.script.pre.nReps+...
                 expt.script.run1.nReps+expt.script.run2.nReps+expt.script.run3.nReps+expt.script.run4.nReps) * nSpeechTrialsPerRep;
     end
-    [expt.stimSents_all,expt.nSyls_all] = getRandSentences(nSents);
+    
+    if expt.subject.trigByScanner == 0
+        [expt.stimSents_all, expt.nSyls_all] = getRandSentences(nSents);
+    else
+        [expt.stimSents_all, expt.nSyls_all] = getRandSentences_fmri(expt);
+    end
     
     sentCnt = 1;
 
@@ -323,6 +328,8 @@ hgui.showIntWarn_phases = expt.subject.showIntWarn_phases;
 
 hgui.rateErrRepeat_phases = expt.subject.rateErrRepeat_phases;
 hgui.intErrRepeat_phases = expt.subject.intErrRepeat_phases;
+
+hgui.colorAcceptRanges = expt.subject.colorAcceptRanges;
 
 hgui.showRhythmicityFB_onlyRhythm = expt.subject.showRhythmicityFB_onlyRhythm;
 
@@ -840,7 +847,7 @@ for n=startPhase:length(allPhases)
                         msglog(logFN, sprintf('Mean IVI = %f s', hgui1.t_mean_ivi))
                         
                         if expt.subject.trigByScanner == 1
-                            bSaveDat = 1;
+                            bSaveDat = hgui1.bASRGood;
                         else
                             bSaveDat = data.bASRGood;
                         end
@@ -848,6 +855,8 @@ for n=startPhase:length(allPhases)
                         if bSaveDat
                             timingDat.mean_ivi(tDatIdx) = hgui1.t_mean_ivi;
                             timingDat.cv_ivi(tDatIdx) = hgui1.t_cv_ivis;
+                        else
+                            fprintf(2, 'WARNING: ASR result from the last speech trials appears to contain errors. Not using the ASR results.\n');
                         end
 
                         if timingDat.trialType(tDatIdx) == 1
@@ -855,7 +864,8 @@ for n=startPhase:length(allPhases)
                                 trackMeanSylDurs(end + 1) = hgui1.t_mean_ivi;
                             end
                             if length(trackMeanSylDurs) > 5 && ...
-                               ~isnan(nanmean(trackMeanSylDurs(end - 5 + 1 : end)))
+                               ~isnan(nanmean(trackMeanSylDurs(end - 5 + 1 : end))) && ...
+                               (~isequal(thisphase, 'pract1') && ~isequal(thisphase, 'pract2') && ~isequal(thisphase, 'pre'))
                                 adaptMeanSylDur = nanmean(trackMeanSylDurs(end - 5 + 1 : end));
                             end
                             recMeanSylDurs.nonRhythm(end+1) =  hgui1.t_mean_ivi;

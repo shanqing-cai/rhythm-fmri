@@ -15,6 +15,8 @@ clrs = {[0, 0.5, 0], [0, 0, 1]};
 warnFontWeight = 'Bold';
 warnFontSize = 13;
 
+acceptRangeClr = [0, 1, 0];
+
 %%
 % --- Related to cv_ivis --- %
 cv_ivis_thresh = 0.25;
@@ -77,6 +79,16 @@ if ~isempty(fsic(h.showRhythmicityFB_phases, h.phase))
         udat.hRhythmTitle = ...
             title('Rhythmicity', 'FontWeight', 'Bold');
     end
+    
+    ys = get(gca, 'YLim');
+    
+    if ~isfield(udat, 'rhythmAccetRect')
+        udat.rhythmAccetRect = ...
+            rectangle('Position', ...
+                      [xlim_rhythm(1), reci_cv_ivis_thresh / max_reci_cv_ivis, xlim_rhythm(2) - xlim_rhythm(1), ys(2) - reci_cv_ivis_thresh / max_reci_cv_ivis], ...
+                      'EdgeColor', 'None', 'FaceColor', acceptRangeClr);
+    end
+        
 
     if ~isnan(h.t_cv_ivis)
         if (h.showRhythmicityFB_onlyRhythm == 1 && h.trialType == 2) || ...
@@ -92,7 +104,7 @@ if ~isempty(fsic(h.showRhythmicityFB_phases, h.phase))
                          repmat((1 / h.t_cv_ivis) / max_reci_cv_ivis, 1, 2), ...
                          '-', 'Color', t_clr, 'LineWidth', 2);
                     drawnow;
-                    ys = get(gca, 'YLim');
+                    
                     if  (1 / h.t_cv_ivis) / max_reci_cv_ivis > ys(2)
                         ys(2) = 1.1 * (1 / h.t_cv_ivis) / max_reci_cv_ivis;
                         set(gca, 'YLim', ys);
@@ -153,6 +165,11 @@ end
 if ~isempty(fsic(h.showRateFB_phases, h.phase))
     udat.rateRangeBars = nan(1, 2);
     
+    udat.rateAcceptRect = ...
+        rectangle('Position', ...
+                  [xlim_rate(1), (t_rate_min - rate_LB) / (rate_UB - rate_LB), xlim_rate(2) - xlim_rate(1), (t_rate_max - t_rate_min) / (rate_UB - rate_LB)], ...
+                  'EdgeColor', 'None', 'FaceColor', acceptRangeClr);
+              
     udat.rateRangeBars(1) = ...
         plot(xlim_rate, ...
              repmat((t_rate_min - rate_LB) / (rate_UB - rate_LB), 1, 2), ...
@@ -161,8 +178,9 @@ if ~isempty(fsic(h.showRateFB_phases, h.phase))
         plot(xlim_rate, ...
              repmat((t_rate_max - rate_LB) / (rate_UB - rate_LB), 1, 2), ...
              'k--', 'LineWidth', 2);
+
     udat.hRateTitle = ...
-        title('Speed', 'FontWeight', 'Bold');        
+        title('Speed', 'FontWeight', 'Bold');
 
     text(xlim_rate(2) * 0.3, 0.05, 'SLOW');
     text(xlim_rate(2) * 0.3, 0.95, 'FAST');
@@ -232,6 +250,12 @@ set(gca, 'YTick', []);
 
 if ~isempty(fsic(h.showIntFB_phases, h.phase))
     udat.intRangeBars = nan(1, 2);
+    
+    udat.intAcceptRect = ...
+        rectangle('Position', ...
+                  [xlim_int(1), (h.minVwlLevel - int_LB) / (int_UB - int_LB), xlim_int(2) - xlim_int(1), (h.maxVwlLevel - h.minVwlLevel) / (int_UB - int_LB)], ...
+                  'EdgeColor', 'None', 'FaceColor', acceptRangeClr);
+    
     udat.intRangeBars(1) = ...
         plot(xlim_int, ...
              repmat((h.minVwlLevel - int_LB) / (int_UB - int_LB), 1, 2), ...

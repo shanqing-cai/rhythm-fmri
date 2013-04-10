@@ -71,6 +71,8 @@ showIntWarn_phases          pract1,pract2,pre,run1,run2,run3,run4
 rateErrRepeat_phases        pract2,pre
 intErrRepeat_phases         pract1,pract2,pre
 
+colorAcceptRanges           1 % Whether to include a green colored acceptance region in each subplot
+
 showRhythmicityFB_onlyRhythm 1 % 0 | 1 (Recommended: 1)
 
 paceStim_toneDur        25e-3 % s

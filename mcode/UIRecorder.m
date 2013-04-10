@@ -947,7 +947,7 @@ if (handles.debug==0)
                 t_cv_ivis = NaN;
                 t_mean_vwl_lv = NaN;
                 t_ivis = [];
-                
+                                
                 bRmsGood = NaN;
                 bSpeedGood = NaN;
             else
@@ -990,6 +990,7 @@ if (handles.debug==0)
             bSpeedGood = NaN;
         end
         
+        handles.bASRGood = bASRGood;
         handles.t_nVowels = length(vts);
         handles.t_mean_ivi = t_mean_ivi;
         handles.t_cv_ivis = t_cv_ivis;
@@ -1042,7 +1043,7 @@ if (handles.debug==0)
             handles.lastSaveDataFN = handles.saveDataFN;
             handles.lastStc = dataOut.params.name;
             handles.lastAsrDir = handles.asrDir;
-            handles.lastTrialType = handles.trialType;
+            handles.lastTrialType = handles.trialType;            
         end
     end
     % --- ~Store speech data of the current trial for later ASR --- %
