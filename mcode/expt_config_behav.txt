@@ -1,4 +1,4 @@
-name            TEST_21
+name            TEST_01
 sex             male
 
 interfaceMode   0
@@ -61,10 +61,10 @@ paceStim_meanSylDur     0.27 % s
 minSylDur               0.22 % s. Set to -Inf for disabling user warning message
 maxSylDur               0.32 % %. Set to +Inf for disabling user warning message
 
-minVwlLevel_male        70 % dB SPL A
-maxVwlLevel_male        80 % dB SPL A
-minVwlLevel_female      67.5 % dB SPL A
-minVwlLevel_female      77.5 % dB SPL A
+minVwlLevel_male        67.5 % dB SPL A
+maxVwlLevel_male        77.5 % dB SPL A
+minVwlLevel_female      65 % dB SPL A
+minVwlLevel_female      75 % dB SPL A
 
 % -- NOTE: these feedback options are valid only with trigByScanner == 0 --
 % --    DO NOT USE SPACES AFTER COMMAS --
@@ -92,7 +92,7 @@ paceStim_toneRamp       5e-3 % s
 rmsSlopeWin             0.03        % Unit: s
 
 warpOnsetTime           0.00
-decelWarpRate           0.25
+decelWarpRate           0.50
 accelWarpRate           2
 
 F1ShiftRatio            0.25

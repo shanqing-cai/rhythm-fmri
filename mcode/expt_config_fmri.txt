@@ -92,7 +92,7 @@ paceStim_toneRamp       5e-3 % s
 rmsSlopeWin             0.03        % Unit: s
 
 warpOnsetTime           0.00
-decelWarpRate           0.25
+decelWarpRate           0.50
 accelWarpRate           2
 
 F1ShiftRatio            0.25

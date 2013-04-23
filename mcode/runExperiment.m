@@ -95,8 +95,10 @@ if bNew % set up new experiment
         expt.script.run5.nReps = expt.subject.NREPS_RUN;
         expt.script.run6.nReps = expt.subject.NREPS_RUN;
     else
-        expt.allPhases={'pract1', 'pract2', 'pre', 'run1', 'run2', 'run3', 'run4'};
-        expt.recPhases={'pract1', 'pract2', 'pre', 'run1', 'run2', 'run3', 'run4'}; %SC The pahses during which the data are recorded
+%         expt.allPhases={'pract1', 'pract2', 'pre', 'run1', 'run2', 'run3', 'run4'};
+%         expt.recPhases={'pract1', 'pract2', 'pre', 'run1', 'run2', 'run3', 'run4'}; %SC The pahses during which the data are recorded
+        expt.allPhases={'pract1', 'pract2', 'pre', 'run1', 'run2', 'run3'};
+        expt.recPhases={'pract1', 'pract2', 'pre', 'run1', 'run2', 'run3'}; %SC The pahses during which the data are recorded
         
         expt.script.pract1.nReps = expt.subject.NREPS_PRACT1;
         expt.script.pract2.nReps = expt.subject.NREPS_PRACT2;
@@ -104,7 +106,6 @@ if bNew % set up new experiment
         expt.script.run1.nReps = expt.subject.NREPS_RUN;
         expt.script.run2.nReps = expt.subject.NREPS_RUN;
         expt.script.run3.nReps = expt.subject.NREPS_RUN;
-        expt.script.run4.nReps = expt.subject.NREPS_RUN;
     end
     
 %     expt.trialTypes=[1, 2, 3, 4];  % 1: non-rhythmic speech, 2: rhythmic speech, 3: non-rhythmic baseline, 4: rhythmic baseline. 
@@ -123,7 +124,7 @@ if bNew % set up new experiment
                 expt.script.run4.nReps+expt.script.run5.nReps+expt.script.run6.nReps) * nSpeechTrialsPerRep;
     else
         nSents=(expt.script.pract1.nReps+expt.script.pract2.nReps+expt.script.pre.nReps+...
-                expt.script.run1.nReps+expt.script.run2.nReps+expt.script.run3.nReps+expt.script.run4.nReps) * nSpeechTrialsPerRep;
+                expt.script.run1.nReps+expt.script.run2.nReps+expt.script.run3.nReps) * nSpeechTrialsPerRep;
     end
     
     if expt.subject.trigByScanner == 0
@@ -543,7 +544,13 @@ for n=startPhase:length(allPhases)
     % Adjust the number of reps
     msglog(logFN, ['--- Coming up: ',thisphase,'. nReps = ',num2str(expt.script.(thisphase).nReps),...
         '; nTrials = ',num2str(expt.script.(thisphase).nTrials),' ---']);
-    nRepsNew=input('(Enter to skip) nRepsNew = ','s');
+    
+    if expt.subject.trigByScanner
+        nRepsNew = input('(Enter to skip) nRepsNew = ', 's');
+    else
+        nRepsNew = '';
+    end
+    
     nRepsNew=str2num(nRepsNew);
     if (~isempty(nRepsNew) && ~ischar(nRepsNew) && nRepsNew~=expt.script.(thisphase).nReps)
         expt.script.(thisphase).nReps=nRepsNew;
@@ -903,7 +910,7 @@ for n=startPhase:length(allPhases)
                     hold on;
                     plot(recMeanSylDurs.rhythm, '.-', 'Color', colors.rhythm); 
 %                     set(gca,'XLim',[0, 100],'YLim',[0,1]);
-                    set(gca,'YLim',[0,1]);
+                    set(gca,'YLim',[0, 0.75]);
                     legend({'nonRhythm','rhythm'});
     %                 xlabel('Block #');
                     ylabel('Mean syllable duration (sec)');

@@ -1,11 +1,11 @@
-function [i1,i2,f1,f2,iv1,iv2]=getFmtPlotBounds(fmt1,fmt2)
+function [i1,i2,f1,f2,iv1,iv2,bPossibleMultiProd]=getFmtPlotBounds(fmt1,fmt2)
     istart=[];  iend=[];
     state=0;
     for n=1:length(fmt1)
         if (state==0)
             if (fmt1(n)>0)
                 state=1;
-                istart=[istart,n];;
+                istart=[istart,n];
             end
         else    % state==1
             if (fmt1(n)==0)
@@ -30,4 +30,12 @@ function [i1,i2,f1,f2,iv1,iv2]=getFmtPlotBounds(fmt1,fmt2)
     
     f1=fmt1(istart(imax):iend(imax));
     f2=fmt2(istart(imax):iend(imax));
+    
+    bPossibleMultiProd = 0;
+    if numel(lengths) >= 2
+        lengths = sort(lengths);
+        if lengths(end - 1) > 0.5 * lengths(end) && lengths(end) > 0
+            bPossibleMultiProd = 1;
+        end        
+    end
 return
