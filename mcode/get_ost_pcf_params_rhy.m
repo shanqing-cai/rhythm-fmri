@@ -118,7 +118,8 @@ if isequal(sent, 'The steady bat gave birth to pups')
     
     steady_s_dur = protoStruct;
     
-    len_s_t_eh_d = protoStruct;
+%     len_s_t_eh_d = protoStruct;
+    len_eh_d = protoStruct;
 else
     error('The sentence "%s" is currently not supported', sent);
 end
@@ -223,7 +224,8 @@ for i0 = 1 : numel(inputDirs)
 
             fprintf(1, 'Processing file: %s (%s)...\n', trialMat, trialType);
             
-            len_s_t_eh_d.(trialType)(end + 1) = asrPAlign.tend(7) - asrPAlign.tbeg(4);
+%             len_s_t_eh_d.(trialType)(end + 1) = asrPAlign.tend(7) - asrPAlign.tbeg(4);
+            len_eh_d.(trialType)(end + 1) = asrPAlign.tend(7) - asrPAlign.tbeg(6);
 
             frameDur = data.params.frameLen / data.params.sr;
             N = size(data.rms, 1);
@@ -361,7 +363,8 @@ trialTypes = {'N', 'R'};
 for i1 = 1 : numel(trialTypes)
     tt = trialTypes{i1};
     
-    maxInterval_5_10.(tt) = quantile(len_s_t_eh_d.(tt), 0.9) * 1.1;
+%     maxInterval_5_10.(tt) = quantile(len_s_t_eh_d.(tt), 0.9) * 1.1;
+    maxInterval_5_10.(tt) = quantile(len_eh_d.(tt), 0.9) * 1.1;
 end
 
 %% Determine the perturbation parameters %%
