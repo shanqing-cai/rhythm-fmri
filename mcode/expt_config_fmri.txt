@@ -64,7 +64,7 @@ maxSylDur               0.32 % %. Set to +Inf for disabling user warning message
 minVwlLevel_male        70 % dB SPL A
 maxVwlLevel_male        80 % dB SPL A
 minVwlLevel_female      67.5 % dB SPL A
-minVwlLevel_female      77.5 % dB SPL A
+maxVwlLevel_female      77.5 % dB SPL A
 
 % -- NOTE: these feedback options are valid only with trigByScanner == 0 --
 % --    DO NOT USE SPACES AFTER COMMAS --

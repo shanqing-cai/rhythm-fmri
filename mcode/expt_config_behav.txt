@@ -1,5 +1,5 @@
-name            TEST_01
-sex             male
+name            PILOT_ANS_F01
+sex             female
 
 interfaceMode   0
 simDataDir      E:\DATA\RHYTHM-FMRI\PWS01
@@ -30,7 +30,7 @@ manualTrigPhases    none      % Examples: all | pract1,pract2 (no space) | none
 % --- Number of repetitions --- %
 NREPS_PRACT1    1       % Default: 2
 NREPS_PRACT2    1       % Default: 2
-NREPS_PRE       1       % Default: 2
+NREPS_PRE       2       % Default: 2
 NREPS_RUN       8       % Default: 8
 
 % --- Trial lengths: ** For behavioral sessions only --- %
@@ -64,7 +64,7 @@ maxSylDur               0.32 % %. Set to +Inf for disabling user warning message
 minVwlLevel_male        67.5 % dB SPL A
 maxVwlLevel_male        77.5 % dB SPL A
 minVwlLevel_female      65 % dB SPL A
-minVwlLevel_female      75 % dB SPL A
+maxVwlLevel_female      75 % dB SPL A
 
 % -- NOTE: these feedback options are valid only with trigByScanner == 0 --
 % --    DO NOT USE SPACES AFTER COMMAS --

@@ -3,6 +3,7 @@ function updateParamsUI(uihdls, varargin)
 DEFAULT_RATING = 2;
 DEFAULT_ASR_OKAY= 1;
 DEFAULT_OST_OKAY = 1;
+DEFAULT_FLUENCY_CODE = [];
 
 %%
 red = [1, 0, 0];
@@ -31,6 +32,7 @@ if nargin == 2 % data
     
     comments = '';
     
+    fluencyCode = DEFAULT_FLUENCY_CODE;
 elseif nargin == 4 % pdata
     pdata = varargin{1};
     dataFld = varargin{2};
@@ -67,6 +69,8 @@ elseif nargin == 4 % pdata
     bOSTOkay = pdata.(dataFld).bOSTOkay(idx);
     bASROkay = pdata.(dataFld).bASROkay(idx);
     comments = pdata.(dataFld).comments{idx};
+    
+    fluencyCode = pdata.(dataFld).fluencyCode{idx};
 else
     return;
 end
@@ -113,5 +117,17 @@ else
 end
 
 set(uihdls.edit_comments, 'String', comments);
+
+for i1 = 1 : numel(uihdls.utterWords)
+    uWord = uihdls.utterWords{i1};    
+    btnName = sprintf('bt_%s', uWord);
+    
+    if ~isempty(find(fluencyCode == i1, 1))
+        set(uihdls.(btnName), 'ForegroundColor', [1, 0, 0]);
+    else
+        set(uihdls.(btnName), 'ForegroundColor', [0, 1, 0]);
+    end
+    
+end
 
 return

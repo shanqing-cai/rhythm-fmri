@@ -154,6 +154,14 @@ if isdir(asrDir)
         
         iv1 = round(ts1 / frameDur);
         iv2 = round(ts2 / frameDur);
+        
+        if iv1 < 1
+            iv1 = 1;
+        end
+        
+        if iv2 > length(taxis1)
+            iv2 = length(taxis1);
+        end
     else
         fprintf(1, 'WARNING: ASR results appears to be erroneous in trial %s', rawDataFn);
         iv1 = 1;
@@ -181,9 +189,9 @@ else
 end
 
 if (~isempty(iv1) && ~isempty(iv2) && ~isnan(iv1) && ~isnan(iv2))
-    this_utter.traj_F1=f1v(iv1:iv2);
-    this_utter.traj_F2=f2v(iv1:iv2);
-    this_utter.sigRMS=sigRMS(iv1:iv2);
+    this_utter.traj_F1=f1v(iv1 : min([iv2, length(f1v)]));
+    this_utter.traj_F2=f2v(iv1 : min([iv2, length(f2v)]));
+    this_utter.sigRMS=sigRMS(iv1 : min([iv2, length(sigRMS)]));
 else
     this_utter.traj_F1=[];
     this_utter.traj_F2=[];
@@ -281,7 +289,7 @@ end
 %     if ~isempty(find(data.sentStat==6))
 %         xlim=[taxis1(min(find(data.sentStat==1)))-0.2,taxis1(min(find(data.sentStat==6)))+0.8];
 %     else
-xlim=[taxis1(iv1), taxis1(iv2)];
+xlim=[taxis1(iv1), taxis1(min([iv2, length(taxis1)]))];
 %     end
 
 this_utter.pertStr=pertStr;

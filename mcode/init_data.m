@@ -109,6 +109,7 @@ dataFlds = {'rmsThresh',  0;
               'p1OnsetTime', 0;
               'p2OnsetTime', 0;
               'bRhythmError', 0;
+              'fluencyCode', 1; % [] - fluent
               'bDiscard',   0;
               'bRMSGood', 0;
               'bSpeedGood', 0;

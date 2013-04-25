@@ -43,6 +43,8 @@ fprintf('Saved to %s\n', dacacheFN);
 rating_cbk(uihdls.pm_rating, [], dacacheFN, stateFN, uihdls);
 ostOkay_cbk(uihdls.pm_ostOkay, [], dacacheFN, stateFN, uihdls);
 asrOkay_cbk(uihdls.pm_asrOkay, [], dacacheFN, stateFN, uihdls);
+comments_cbk(uihdls.edit_comments, [], dacacheFN, stateFN, uihdls);
+fluencyBtn_cbk(uihdls.hfig, [], dacacheFN, stateFN, uihdls);
 
 updateTrialList(state, uihdls);
 set(uihdls.hlist, 'Enable', 'on');
