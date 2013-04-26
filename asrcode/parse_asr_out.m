@@ -1,4 +1,4 @@
-function pa = parse_asr_out(asrOutFN, wavFN)
+function pa = parse_asr_out(asrOutFN, wavFN, varargin)
 aot = textread(asrOutFN, '%s', 'delimiter', '\n'); % ASR output text
 
 bFoundWav = 0;
@@ -58,6 +58,12 @@ pa.phones = cell(1, nphns);
 pa.tbeg = nan(1, nphns);
 pa.tend = nan(1, nphns);
 
+tStep = 1e2;
+if ~isempty(fsic(varargin, 'frameLen'))
+    frameLen = varargin{fsic(varargin, 'frameLen') + 1};
+    tStep = 0.01 / frameLen * tStep;
+end
+
 for k1 = 1 : nphns
     t_line = palines{k1};
     t_items = splitstring(t_line);
@@ -77,8 +83,8 @@ for k1 = 1 : nphns
     end
     
     pa.phones{k1} = t_phn;
-    pa.tbeg(k1) = str2double(t_items{2}) / 1e2;
-    pa.tend(k1) = str2double(t_items{3}) / 1e2;
+    pa.tbeg(k1) = str2double(t_items{2}) / tStep;
+    pa.tend(k1) = str2double(t_items{3}) / tStep;
 end
 
 return

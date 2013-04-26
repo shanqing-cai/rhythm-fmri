@@ -43,7 +43,11 @@ if ~isdir(outDir)
 end
 
 % --- Create the wav file --- %
-y = data.signalIn;
+if isempty(fsic(varargin, 'output'))
+    y = data.signalIn;
+else
+    y = data.signalOut;
+end
 y = resample(y, wfs, data.params.sr);
 wavFN = fullfile(outDir, 'speech.wav');
 wavwrite(y, wfs, wavFN);
@@ -150,6 +154,13 @@ jconf_time = toc;
 %% First pass of running julian
 jcmd1 = sprintf('%s -input rawfile -filelist %s -C %s -palign', ...
                 JULIAN_BIN, wavFList, trialJConf);
+            
+if ~isempty(fsic(varargin, 'frameLen'))
+    frameLen = varargin{fsic(varargin, 'frameLen') + 1}; % Unit: s
+    fshift = round(frameLen * wfs);
+    jcmd1 = sprintf('%s -fshift %d', jcmd1, fshift);
+end
+            
 if bPrep
     stdOutFN = fullfile(outDir, 'julian_stdout.txt');
     jcmd1 = [jcmd1, ' > ', stdOutFN];

@@ -185,6 +185,12 @@ uihdls.hmenu_rmsThresh = uimenu('Parent', uihdls.hfig, 'Label', 'rmsThresh');
 uihdls.hmenu_rmsThresh_scan = uimenu('Parent', uihdls.hmenu_rmsThresh, ...
                                      'Label', 'Scan for trials with gaps');
 
+uihdls.hmenu_asr = uimenu('Parent', uihdls.hfig, 'Label', 'ASR');
+uihdls.hmenu_genASRTimeLabels = uimenu('Parent', uihdls.hmenu_asr, ...
+                                       'Label', 'Generate time labels from ASR results');
+uihdls.hmenu_asrOnFB = uimenu('Parent', uihdls.hmenu_asr, ...
+                                       'Label', 'Run ASR on auditory feedback');
+
 hreveal = uicontrol('Style', 'pushbutton', ...
                     'Unit', 'Normalized', ...
                     'Position', [0.02, 0.04, 0.18, 0.04], ...
@@ -549,6 +555,8 @@ set(uihdls.hmenu_nLPC_set_list_1st, 'Callback', {@set_nLPC_list_1st, dacacheFN, 
 set(uihdls.hmenu_nLPC_restore_user, 'Callback', {@restore_user_nLPC, dacacheFN, stateFN, uihdls});
 
 set(uihdls.hmenu_rmsThresh_scan, 'Callback', {@rmsThresh_scan_cbk, dacacheFN, stateFN, uihdls});
+set(uihdls.hmenu_genASRTimeLabels, 'Callback', {@genASRTimeLabels_cbk, dacacheFN, stateFN, uihdls});
+set(uihdls.hmenu_asrOnFB, 'Callback', {@runASROnFB_cbk, dacacheFN, stateFN, uihdls});
 % set(uihdls.bt_best_nLPC, 'Callback', {@best_nLPC_cbk, dacacheFN, stateFN, uihdls});
 
 set(uihdls.hmenu_comments_recover, 'Callback', {@recover_comments_from_file, dacacheFN, stateFN, uihdls});
