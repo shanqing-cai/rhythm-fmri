@@ -523,6 +523,8 @@ this_utter.idx_shira_v2 = idx_shira_v2;
 % -- ~Shira's method --
 
 % --- Manually set the key consonant land marks --- %
+bDoMarks = get(uihdls.rb_doMarks, 'Value');
+
 bMarksDone = 1;
 for n = 1 : numel(marks)
     t_mark = marks{n};
@@ -534,7 +536,7 @@ for n = 1 : numel(marks)
 end
 
 ys = get(gca, 'YLim');
-if bMarksDone == 0          
+if bMarksDone == 0 && bDoMarks == 1
     if FOCUS_AND_RELABEL
         set(gca, 'XLim', [taxis1(1), taxis1(end)]);
         

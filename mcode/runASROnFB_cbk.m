@@ -3,7 +3,7 @@ MAX_FMT_DEV = 5;
 
 a_nLPCs = [7, 9, 11, 13, 15];
 
-ASR_FRAME_LEN = 0.002; % Unit: s
+ASR_FRAME_LEN = 0.008; % Unit: s
 
 %%
 if ~iscell(uihdls)
@@ -30,8 +30,10 @@ if ~iscell(uihdls)
                     continue;
                 end
                 
-                if isnan(pdata.(fld).sOnsetTime(h2)) || ...
-                        isnan(pdata.(fld).p2OnsetTime(h2))
+%                 if isnan(pdata.(fld).sOnsetTime(h2)) || ...
+%                         isnan(pdata.(fld).p2OnsetTime(h2))
+                  if isnan(pdata.(fld).rating(h2)) || ...
+                     isnan(pdata.(fld).bASROkay(h2))
                     bFoundMissing = 1;
                     break;
                 end

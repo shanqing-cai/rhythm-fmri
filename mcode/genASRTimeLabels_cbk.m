@@ -3,7 +3,7 @@ MAX_FMT_DEV = 5;
 
 a_nLPCs = [7, 9, 11, 13, 15];
 
-ASR_FRAME_LEN = 0.002; % Unit: s
+ASR_FRAME_LEN = 0.008; % Unit: s
 
 %%
 if ~iscell(uihdls)
@@ -30,8 +30,10 @@ if ~iscell(uihdls)
                     continue;
                 end
                 
-                if isnan(pdata.(fld).sOnsetTime(h2)) || ...
-                        isnan(pdata.(fld).p2OnsetTime(h2))
+%                 if isnan(pdata.(fld).sOnsetTime(h2)) || ...
+%                         isnan(pdata.(fld).p2OnsetTime(h2))
+                if isnan(pdata.(fld).rating(h2)) || ...
+                   isnan(pdata.(fld).bASROkay(h2))
                     bFoundMissing = 1;
                     break;
                 end
@@ -45,9 +47,7 @@ if ~iscell(uihdls)
         end
         
         i1s = 1 : length(get(uihdls.hlist, 'String'));
-    end
-        
-    
+    end    
 else
     rawfn = uihdls{1};
     dataFld = uihdls{2};
@@ -123,7 +123,7 @@ for n = 1 : length(i1s)
     check_file(tmpfn);
     
     tmpdir = strrep(tmpfn, '.mat', '_asr');
-    julianCmd = run_julian(tmpfn, 'outDir', tmpdir, 'prep', 'output', ...
+    julianCmd = run_julian(tmpfn, 'outDir', tmpdir, 'prep', ...
                            'frameLen', ASR_FRAME_LEN);
     [so] = evalc('system(julianCmd)');
     
@@ -156,7 +156,7 @@ for n = 1 : length(i1s)
     end
     
     pdata.(fld).asrTBeg0(:, idx_trial) = pa0.tbeg(4 : 4 + length(pdata.(dataFld).asrPhns) - 1);
-    pdata.(fld).asrTBeg1(:, idx_trial) = pa1.tbeg(4 : 4 + length(pdata.(dataFld).asrPhns) - 1);
+    pdata.(fld).asrTBeg(:, idx_trial) = pa1.tbeg(4 : 4 + length(pdata.(dataFld).asrPhns) - 1);
     
 end
 

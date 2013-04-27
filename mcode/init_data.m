@@ -64,9 +64,7 @@ for i1 = 1 : numel(phases)
                 
                 if t_pertType == 1 % DEBUG
                     pause(0);
-                end
-                
-                if t_pertType == 2 % DEBUG
+                elseif t_pertType == 2 % DEBUG
                     pause(0);
                     % show_spectrogram(data.signalIn, 16e3); show_spectrogram(data.signalOut, 16e3);
                 else
