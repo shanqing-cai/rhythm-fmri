@@ -76,6 +76,50 @@ for i1 = 1 : numel(rhyConds)
     end
 end
 
+%% Formant trajectory analysis
+analyze_fmts_vwls = {'eh', 'iy', 'ae'};
+
+for i0 = 1 : numel(analyze_fmts_vwls)
+    vwl = analyze_fmts_vwls{i0};
+    
+    F1s.(vwl) = struct;
+
+    figure('Name', sprintf('Vowel formants under: %s', vwl));
+    for i1 = 1 : numel(rhyConds)    
+        rc = rhyConds{i1};
+
+        subplot(1, numel(rhyConds), i1);
+        title(rc);
+        
+        for i2 = 1 : numel(pertTypes)
+            pt = pertTypes{i2};
+
+            F1s.(vwl).(rc).(pt) = {};
+
+            for i3 = 1 : numel(idx.(rc).(pt))
+                t_idx = idx.(rc).(pt)(i3);
+
+                if pdata.mainData.rating(t_idx) == 0
+                    continue;
+                end           
+                if pdata.mainData.bASROkay(t_idx) == 0
+                    continue
+                end
+
+                F1s.(vwl).(rc).(pt){end + 1} = pdata.mainData.vwlFmts{t_idx}.(vwl)(:, 1);
+            end
+
+            aF1s.(vwl).(rc).(pt) = avgTrace1(F1s.(vwl).(rc).(pt));
+            mnF1s.(vwl).(rc).(pt) = aF1s.(vwl).(rc).(pt)(:, 1);
+            seF1s.(vwl).(rc).(pt) = aF1s.(vwl).(rc).(pt)(:, 2);
+
+            hold on;
+            plot(mnF1s.(vwl).(rc).(pt), 'Color', colors.(pt));
+        end
+
+
+    end
+end
 
 %% Manual labels
 int_s_t1 = struct;
@@ -234,6 +278,9 @@ for i1 = 1 : numel(hsp)
     set(gcf, 'CurrentAxes', hsp(i1));
     set(gca, 'XLim', [0, max(xlims{1}(2), xlims{2}(2))]);
 end
+
+
+
 
 %% Visualization
 meas = int_s_t1;
