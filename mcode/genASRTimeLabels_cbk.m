@@ -15,7 +15,7 @@ if ~iscell(uihdls)
     else
         % Auto nLPC over all trials.        
         if ~isempty(find(state.stats == 0))       
-            msgbox('There are some unprocessed trials. Please finish a first-pass processing of all trials (vowel bounds and auto rmsThresh) before using Auto nLPC', 'Unable to execute Auto nLPC');
+            msgbox('There are some unprocessed trials. Please finish a first-pass processing of all trials (vowel bounds and auto rmsThresh) before using genASRTimeLabels', 'Unable to execute genASRTimeLabels');
             return;
         end
         
@@ -41,8 +41,8 @@ if ~iscell(uihdls)
         end
         
         if bFoundMissing
-            msgbox('auto nLPC all cannot proceed at this time because vowel onset and end times have not been labeled in some trials', ...
-                   'auto nLPC all cannot proceed', 'error');
+            msgbox('genASRTimeLabels cannot proceed at this time because vowel onset and end times have not been labeled in some trials', ...
+                   'genASRTimeLabels cannot proceed', 'error');
             return
         end
         
@@ -93,20 +93,10 @@ for n = 1 : length(i1s)
     end
     
     if pdata.(dataFld).bASROkay(idx_trial) == 0
-        fprintf(1, 'INFO: Trial #%d in the list has a bASROkay ==  0. Auto nLPC will not be extracted for this trial.\n', i1);
+        fprintf(1, 'INFO: Trial #%d in the list has a bASROkay ==  0. genASRTimeLabels will not be extracted for this trial.\n', i1);
         continue;
     end
     
-    % --- Check if auto nLPC has already been done on this trial --- 
-%     if isfield(pdata.(dataFld), 'srt_nLPCs')
-%         if ~isempty(pdata.(dataFld).srt_nLPCs{idx_trial})
-%             if hObject == uihdls.bt_auto_nLPC_all
-%                 fprintf(1, 'INFO: Trial #%d in the list has already been processed by auto nLPC. Skipping it.\n', i1);
-%                 continue;
-%             end
-%         end
-%     end
-
     rawfn = getRawFN_(state.rawDataDir, state.trialList.fn{i1});
     
     asrDir = strrep(rawfn, '.mat', '_asr');

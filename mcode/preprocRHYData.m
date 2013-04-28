@@ -190,6 +190,12 @@ uihdls.hmenu_genASRTimeLabels = uimenu('Parent', uihdls.hmenu_asr, ...
                                        'Label', 'Generate time labels from ASR results');
 uihdls.hmenu_asrOnFB = uimenu('Parent', uihdls.hmenu_asr, ...
                                        'Label', 'Run ASR on auditory feedback');
+                                   
+uihdls.hmenu_formants = uimenu('Parent', uihdls.hfig, 'Label', 'Formants');
+uihdls.hmenu_gen_vwl_fmts_trial = uimenu('Parent', uihdls.hmenu_formants, ...
+                                         'Label', 'Generate vowel formant for current trial');
+uihdls.hmenu_gen_vwl_fmts_all = uimenu('Parent', uihdls.hmenu_formants, ...
+                                       'Label', 'Generate vowel formant for all valid trials');
 
 hreveal = uicontrol('Style', 'pushbutton', ...
                     'Unit', 'Normalized', ...
@@ -563,6 +569,9 @@ set(uihdls.hmenu_nLPC_restore_user, 'Callback', {@restore_user_nLPC, dacacheFN, 
 set(uihdls.hmenu_rmsThresh_scan, 'Callback', {@rmsThresh_scan_cbk, dacacheFN, stateFN, uihdls});
 set(uihdls.hmenu_genASRTimeLabels, 'Callback', {@genASRTimeLabels_cbk, dacacheFN, stateFN, uihdls});
 set(uihdls.hmenu_asrOnFB, 'Callback', {@runASROnFB_cbk, dacacheFN, stateFN, uihdls});
+
+set(uihdls.hmenu_gen_vwl_fmts_trial, 'Callback', {@gen_vwl_fmts_trial_cbk, dacacheFN, stateFN, uihdls});
+set(uihdls.hmenu_gen_vwl_fmts_all, 'Callback', {@gen_vwl_fmts_all_cbk, dacacheFN, stateFN, uihdls});
 % set(uihdls.bt_best_nLPC, 'Callback', {@best_nLPC_cbk, dacacheFN, stateFN, uihdls});
 
 set(uihdls.hmenu_comments_recover, 'Callback', {@recover_comments_from_file, dacacheFN, stateFN, uihdls});
