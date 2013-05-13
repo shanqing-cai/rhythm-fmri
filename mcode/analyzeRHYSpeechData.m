@@ -1,4 +1,4 @@
-function analyzeRHYSpeechData(subjID)
+function varargout = analyzeRHYSpeechData(subjID, varargin)
 %% 
 rhyConds = {'N', 'R'};
 pertTypes = {'noPert', 'F1Up', 'decel'};
@@ -56,7 +56,7 @@ idx.R.decel = find(idxRun == 1 & ...
                    pdata.mainData.rating > 0 & ...
                    pdata.mainData.bRhythm == 1 & ...
                    pdata.mainData.pertType == 2);
-%% 
+%% Comparing ASR results on input and output
 figure;
 spCnt = 1;
 for i1 = 1 : numel(rhyConds)    
@@ -73,51 +73,6 @@ for i1 = 1 : numel(rhyConds)
         plot(1e3 * (tbegs_FB - tbegs));
         
         set(gca, 'YLim', [-50, 150]);
-    end
-end
-
-%% Formant trajectory analysis
-analyze_fmts_vwls = {'eh', 'iy', 'ae'};
-
-for i0 = 1 : numel(analyze_fmts_vwls)
-    vwl = analyze_fmts_vwls{i0};
-    
-    F1s.(vwl) = struct;
-
-    figure('Name', sprintf('Vowel formants under: %s', vwl));
-    for i1 = 1 : numel(rhyConds)    
-        rc = rhyConds{i1};
-
-        subplot(1, numel(rhyConds), i1);
-        title(rc);
-        
-        for i2 = 1 : numel(pertTypes)
-            pt = pertTypes{i2};
-
-            F1s.(vwl).(rc).(pt) = {};
-
-            for i3 = 1 : numel(idx.(rc).(pt))
-                t_idx = idx.(rc).(pt)(i3);
-
-                if pdata.mainData.rating(t_idx) == 0
-                    continue;
-                end           
-                if pdata.mainData.bASROkay(t_idx) == 0
-                    continue
-                end
-
-                F1s.(vwl).(rc).(pt){end + 1} = pdata.mainData.vwlFmts{t_idx}.(vwl)(:, 1);
-            end
-
-            aF1s.(vwl).(rc).(pt) = avgTrace1(F1s.(vwl).(rc).(pt));
-            mnF1s.(vwl).(rc).(pt) = aF1s.(vwl).(rc).(pt)(:, 1);
-            seF1s.(vwl).(rc).(pt) = aF1s.(vwl).(rc).(pt)(:, 2);
-
-            hold on;
-            plot(mnF1s.(vwl).(rc).(pt), 'Color', colors.(pt));
-        end
-
-
     end
 end
 
@@ -193,6 +148,8 @@ end
 
 %% 
 asr_ints = {'s_t1', 't1_d', 'd_b1', 'b1_g', 'g_b2', 'b2_t2', 't2_p1'};
+content_phones = {'s', 't eh', 'd iy', 'b ae t', 'g ey v', 'b er th', 't uw'};
+assert(length(asr_ints) == length(content_phones));
 
 figure('Position', [100, 100, 800, 600]);
 tBarW = 0.05;
@@ -218,11 +175,17 @@ for i0 = 1 : numel(rhyConds)
         pt = vis_pertTypes{i1};
 
         for i2 = 1 : numel(asr_ints)
-            eval(sprintf('tlens = 1e3 * asr_%s.(rc).(pt)', asr_ints{i2}));
+            eval(sprintf('tlens = 1e3 * asr_%s.(rc).(pt);', asr_ints{i2}));
 
             rectangle('Position', [cum_mean(i2, i1), (tBarW + tBarSpace) * (i1 - 1), mean(tlens), tBarW], ...
                       'EdgeColor', colors.(pt));
-            cum_mean(i2 + 1, i1) = cum_mean(i2, i1) + mean(tlens);            
+            cum_mean(i2 + 1, i1) = cum_mean(i2, i1) + mean(tlens);
+            
+            if isequal(pt, 'noPert')
+                text(cum_mean(i2, i1) + mean(tlens) * 0.2, ...
+                     (tBarW + tBarSpace) * (i1 - 0.6), content_phones{i2}, ...
+                     'Color', 'k');
+            end
             
             if isempty(cum_vals{i1})
                 cum_vals{i1} = [cum_vals{i1}, tlens(:)];
@@ -280,7 +243,50 @@ for i1 = 1 : numel(hsp)
 end
 
 
+%% Formant trajectory analysis
+analyze_fmts_vwls = {'eh', 'iy', 'ae'};
 
+for i0 = 1 : numel(analyze_fmts_vwls)
+    vwl = analyze_fmts_vwls{i0};
+    
+    F1s.(vwl) = struct;
+
+    figure('Name', sprintf('Vowel formants under: %s', vwl));
+    for i1 = 1 : numel(rhyConds)    
+        rc = rhyConds{i1};
+
+        subplot(1, numel(rhyConds), i1);
+        title(rc);
+        
+        for i2 = 1 : numel(pertTypes)
+            pt = pertTypes{i2};
+
+            F1s.(vwl).(rc).(pt) = {};
+
+            for i3 = 1 : numel(idx.(rc).(pt))
+                t_idx = idx.(rc).(pt)(i3);
+
+                if pdata.mainData.rating(t_idx) == 0
+                    continue;
+                end           
+                if pdata.mainData.bASROkay(t_idx) == 0
+                    continue
+                end
+
+                F1s.(vwl).(rc).(pt){end + 1} = pdata.mainData.vwlFmts{t_idx}.(vwl)(:, 1);
+            end
+
+            aF1s.(vwl).(rc).(pt) = avgTrace1(F1s.(vwl).(rc).(pt));
+            mnF1s.(vwl).(rc).(pt) = aF1s.(vwl).(rc).(pt)(:, 1);
+            seF1s.(vwl).(rc).(pt) = aF1s.(vwl).(rc).(pt)(:, 2);
+
+            hold on;
+            plot(mnF1s.(vwl).(rc).(pt), 'Color', colors.(pt));
+        end
+
+
+    end
+end
 
 %% Visualization
 meas = int_s_t1;
@@ -306,5 +312,21 @@ meta_rc_pt_plot(meas, measName, colors);
 meas = asr_s_t1;
 measName = 'asr_s_t1';
 meta_rc_pt_plot(meas, measName, colors);
+
+%% Output
+varargout = {};
+
+if nargout == 1
+    res = struct;
+    res.asr_ints = struct('asr_s_t1', asr_s_t1, ...
+                          'asr_t1_d', asr_t1_d, ...
+                          'asr_d_b1', asr_d_b1, ...
+                          'asr_b1_g', asr_b1_g, ...
+                          'asr_g_b2', asr_g_b2, ...
+                          'asr_b2_t2', asr_b2_t2, ...
+                          'asr_t2_p1', asr_t2_p1);
+    varargout{1} = res;
+end
+
 
 return
