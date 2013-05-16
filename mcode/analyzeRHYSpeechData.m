@@ -15,6 +15,9 @@ dacacheDir = '../dacache';
 pdataFN = fullfile(dacacheDir, [subjID, '.mat']);
 check_file(pdataFN);
 
+%% Additional input options
+bMan = ~isempty(fsic(varargin, '--man')); % Use manual time labels
+
 %%
 load(pdataFN);  % gives pdata
 
@@ -101,6 +104,51 @@ for i1 = 1 : numel(rhyConds)
     end
 end
 
+%% Manual time labels
+man_s_t1 = struct;
+man_t1_d = struct;
+man_d_b1 = struct;
+man_b1_g = struct;
+man_g_b2 = struct;
+man_b2_t2 = struct;
+man_t2_p1 = struct;
+
+for i1 = 1 : numel(rhyConds)
+    rc = rhyConds{i1};
+    
+    for i2 = 1 : numel(pertTypes)
+        pt = pertTypes{i2};
+        
+        man_s_t1.(rc).(pt) = pdata.mainData.t1OnsetTime(idx.(rc).(pt)) - ...
+                             pdata.mainData.sOnsetTime(idx.(rc).(pt));
+        man_s_t1.(rc).(pt) = man_s_t1.(rc).(pt)(~isnan(man_s_t1.(rc).(pt)));
+        
+        man_t1_d.(rc).(pt) = pdata.mainData.dOnsetTime(idx.(rc).(pt)) - ...
+                             pdata.mainData.t1OnsetTime(idx.(rc).(pt));
+        man_t1_d.(rc).(pt) = man_t1_d.(rc).(pt)(~isnan(man_t1_d.(rc).(pt)));
+        
+        man_d_b1.(rc).(pt) = pdata.mainData.b1OnsetTime(idx.(rc).(pt)) - ...
+                             pdata.mainData.dOnsetTime(idx.(rc).(pt));
+        man_d_b1.(rc).(pt) = man_d_b1.(rc).(pt)(~isnan(man_d_b1.(rc).(pt)));
+        
+        man_b1_g.(rc).(pt) = pdata.mainData.gOnsetTime(idx.(rc).(pt)) - ...
+                             pdata.mainData.b1OnsetTime(idx.(rc).(pt));
+        man_b1_g.(rc).(pt) = man_b1_g.(rc).(pt)(~isnan(man_b1_g.(rc).(pt)));
+        
+        man_g_b2.(rc).(pt) = pdata.mainData.b2OnsetTime(idx.(rc).(pt)) - ...
+                             pdata.mainData.gOnsetTime(idx.(rc).(pt));
+        man_g_b2.(rc).(pt) = man_g_b2.(rc).(pt)(~isnan(man_g_b2.(rc).(pt)));
+        
+        man_b2_t2.(rc).(pt) = pdata.mainData.t2OnsetTime(idx.(rc).(pt)) - ...
+                              pdata.mainData.b2OnsetTime(idx.(rc).(pt));
+        man_b2_t2.(rc).(pt) = man_b2_t2.(rc).(pt)(~isnan(man_b2_t2.(rc).(pt)));
+        
+        man_t2_p1.(rc).(pt) = pdata.mainData.p1OnsetTime(idx.(rc).(pt)) - ...
+                              pdata.mainData.t2OnsetTime(idx.(rc).(pt));
+        man_t2_p1.(rc).(pt) = man_t2_p1.(rc).(pt)(~isnan(man_t2_p1.(rc).(pt)));
+    end
+end
+
 %% ASR time labels
 asr_s_t1 = struct;
 asr_t1_d = struct;
@@ -147,9 +195,9 @@ for i1 = 1 : numel(rhyConds)
 end
 
 %% 
-asr_ints = {'s_t1', 't1_d', 'd_b1', 'b1_g', 'g_b2', 'b2_t2', 't2_p1'};
+time_ints = {'s_t1', 't1_d', 'd_b1', 'b1_g', 'g_b2', 'b2_t2', 't2_p1'};
 content_phones = {'s', 't eh', 'd iy', 'b ae t', 'g ey v', 'b er th', 't uw'};
-assert(length(asr_ints) == length(content_phones));
+assert(length(time_ints) == length(content_phones));
 
 figure('Position', [100, 100, 800, 600]);
 tBarW = 0.05;
@@ -169,13 +217,17 @@ for i0 = 1 : numel(rhyConds)
     end
     
     cum_vals = cell(1, 3);
-    cum_mean = zeros(length(asr_ints) + 1, 3);
+    cum_mean = zeros(length(time_ints) + 1, 3);
     
     for i1 = 1 : numel(vis_pertTypes)
         pt = vis_pertTypes{i1};
 
-        for i2 = 1 : numel(asr_ints)
-            eval(sprintf('tlens = 1e3 * asr_%s.(rc).(pt);', asr_ints{i2}));
+        for i2 = 1 : numel(time_ints)
+            if ~bMan % - Use ASR time labels - %
+                eval(sprintf('tlens = 1e3 * asr_%s.(rc).(pt);', time_ints{i2}));
+            else % - Use manual time labels - %
+                eval(sprintf('tlens = 1e3 * man_%s.(rc).(pt);', time_ints{i2}));
+            end
 
             rectangle('Position', [cum_mean(i2, i1), (tBarW + tBarSpace) * (i1 - 1), mean(tlens), tBarW], ...
                       'EdgeColor', colors.(pt));
@@ -196,7 +248,7 @@ for i0 = 1 : numel(rhyConds)
         
     end
     
-    for i2 = 1 : numel(asr_ints) + 1
+    for i2 = 1 : numel(time_ints) + 1
         if i2 > 1
             [~, p] = ttest2(cum_vals{1}(:, i2 - 1), cum_vals{2}(:, i2 - 1));          
         else
@@ -318,7 +370,7 @@ varargout = {};
 
 if nargout == 1
     res = struct;
-    res.asr_ints = struct('asr_s_t1', asr_s_t1, ...
+    res.time_ints = struct('asr_s_t1', asr_s_t1, ...
                           'asr_t1_d', asr_t1_d, ...
                           'asr_d_b1', asr_d_b1, ...
                           'asr_b1_g', asr_b1_g, ...
