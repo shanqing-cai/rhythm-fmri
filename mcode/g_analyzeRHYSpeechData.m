@@ -8,6 +8,8 @@ colors.R = [0, 0, 1];
 
 gray = [0.5, 0.5, 0.5];
 
+P_THRESH_UNC = 0.05;
+
 %% Read subject list
 check_file(subjListFN);
 subjIDs = read_struct_from_text(subjListFN);
@@ -113,5 +115,75 @@ for i0 = 1 : numel(tIntItems)
            strrep(ti, '_', '\_')))
 end
 
+%% 
+figure('Position', [50, 150, 800, 400]);
+hsp = nan(1, numel(pertTypes(2 : end)));
+for i1 = 1 : numel(pertTypes(2 : end))
+    hsp(i1) = subplot(1, 2, i1);
+    hold on;
+end
+
+for i1 = 1 : length(rhyConds)
+    rc = rhyConds{i1};
+    
+    mn_TIntChgs.(rc) = nan(0, 2);
+    se_TIntChgs.(rc) = nan(0, 2);
+    p_vals = nan(0, 2);    
+    for j1 = 1 : numel(tIntItems)
+        t_item = tIntItems{j1};
+        
+        mn_TIntChgs.(rc) = [mn_TIntChgs.(rc); mean(tIntChgs.(t_item).(rc))];
+        se_TIntChgs.(rc) = [se_TIntChgs.(rc); ste(tIntChgs.(t_item).(rc))];
+        
+        t_p_vals = nan(1, size(tIntChgs.(t_item).(rc), 2));
+        
+        for j2 = 1 : size(tIntChgs.(t_item).(rc), 2)
+            [~, t_p_vals(j2)] = ttest(tIntChgs.(t_item).(rc)(:, j2));
+        end
+        
+        p_vals = [p_vals; t_p_vals];
+    end
+                 
+    for i2 = 1 : numel(pertTypes(2 : end))
+        set(gcf, 'CurrentAxes', hsp(i2));
+        errorbar(1 : size(mn_TIntChgs.(rc), 1), ...
+                 1e3 * mn_TIntChgs.(rc)(:, i2), ...
+                 1e3 * se_TIntChgs.(rc)(:, i2), ...
+                 'o-', 'Color', colors.(rc));
+             
+    end
+    
+    for i2 = 1 : numel(pertTypes(2 : end))
+        for i3 = 1 : size(p_vals, 1)
+            if p_vals(i3, i2) < P_THRESH_UNC
+                plot(i3, 1e3 * mn_TIntChgs.(rc)(i3, i2), 'o', ...
+                     'MarkerFaceColor', colors.(rc));
+            end
+            
+            if p_vals(i3, i2) < P_THRESH_UNC / numel(p_vals)
+                    plot(i3, 1e3 * mn_TIntChgs.(rc)(i3, i2), 's', ...
+                         'MarkerEdgeColor',  colors.(rc), 'MarkerFaceColor', 'none');
+            end
+            
+        end
+    end
+end
+
+for i2 = 1 : numel(pertTypes(2 : end))
+    pt = pertTypes{i2 + 1};
+    set(gcf, 'CurrentAxes', hsp(i2));
+    
+    set(gca, 'XTick', 1 : 7 , ...
+        'XTickLabel', {'s', 't-eh', 'd-iy', 'b-ae-t', 'g-ey-v', 'b-er-th', 't-uw'});
+    xs = get(gca, 'XLim');
+    plot(xs, [0, 0], '-', 'Color', [0.5, 0.5, 0.5]);
+    
+    set(gca, 'YLim', [-20, 30]);
+    xlabel('Phones');
+    ylabel('Time inteval change from noPert (ms) (mean\pm1 SEM)');
+    legend(rhyConds);
+   
+    title(pt);
+end
 
 return
