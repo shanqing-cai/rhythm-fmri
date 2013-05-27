@@ -1,4 +1,4 @@
-function test1
+function test1(b)
    figure('KeyPressFcn',@printfig);
    function printfig(src,evnt)
       if evnt.Character == 'e'

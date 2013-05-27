@@ -538,6 +538,20 @@ for n=startPhase:length(allPhases)
             msglog(logFN, sprintf('Generated time-warping perturbation configuration file for trialType %s: %s', ...
                                   tt, pcf_twarp_fns.(tt)));
         end
+        
+        pcf_noPert_fn = fullfile(subdirname, 'noPert.pcf');
+        format_pcf(expt.subject.basePCF, pcf_noPert_fn, ...
+                   timeWarpCfg.timeWarp_initStat.(tt), ...
+                   timeWarpCfg.timeWarp_tBegin.(tt), ...
+                   1.0, ...
+                   timeWarpCfg.timeWarp_dur1.(tt), ...
+                   timeWarpCfg.timeWarp_durHold.(tt), ...
+                   1.0, ...
+                   0, expt.subject.FmtShiftStat0, expt.subject.FmtShiftStat1);
+        check_file(pcf_noPert_fn);
+        
+        msglog(logFN, sprintf('Generated no-perturbation configuration file for trialType: %s', ...
+                              pcf_noPert_fn));
     end
     msglog(logFN, sprintf('\n'));
     
@@ -799,6 +813,9 @@ for n=startPhase:length(allPhases)
                     TransShiftMex(8, ost_fns.(tt), 0);
                     TransShiftMex(9, pcf_fmt_fns.(tt), 0);
                     
+                    % --- Take care of the feedback intensity mismatch issue --- %
+                    TransShiftMex(3, 'scale', p.dScale * 1.4);
+                    
                 elseif thisPert == 2 % Time warping
                     TransShiftMex(3, 'bbypassfmt', 1, 0);
                     TransShiftMex(3, 'bshift', 0, 0);
@@ -807,10 +824,17 @@ for n=startPhase:length(allPhases)
                     TransShiftMex(8, ost_fns.(tt), 0);
                     TransShiftMex(9, pcf_twarp_fns.(tt), 0);
                     
-                else
-                    TransShiftMex(3, 'bbypassfmt', 0, 0);
+                    TransShiftMex(3, 'scale', p.dScale);
+                    
+                else % noPert
+                    TransShiftMex(3, 'bbypassfmt', 1, 0);
                     TransShiftMex(3, 'bshift', 0, 0);
-                    TransShiftMex(3, 'bpitchshift', 0, 0);
+                    TransShiftMex(3, 'bpitchshift', 1, 0);
+                    
+                    TransShiftMex(8, ost_fns.(tt), 0);
+                    TransShiftMex(9, pcf_noPert_fn, 0);
+                    
+                    TransShiftMex(3, 'scale', p.dScale);
                     
                 end
             else
@@ -818,6 +842,7 @@ for n=startPhase:length(allPhases)
                 TransShiftMex(3, 'bshift', 0, 0);
                 TransShiftMex(3, 'bpitchshift', 0, 0);
                 
+                TransShiftMex(3, 'scale', p.dScale * 1.4);
             end
             TransShiftMex(3, 'nfb', 1, 0);
             % == ~Perturbation related configurations == %

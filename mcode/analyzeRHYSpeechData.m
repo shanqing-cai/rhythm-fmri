@@ -199,6 +199,8 @@ time_ints = {'s_t1', 't1_d', 'd_b1', 'b1_g', 'g_b2', 'b2_t2', 't2_p1'};
 content_phones = {'s', 't eh', 'd iy', 'b ae t', 'g ey v', 'b er th', 't uw'};
 assert(length(time_ints) == length(content_phones));
 
+fontSize = 14;
+
 figure('Position', [100, 100, 800, 600]);
 tBarW = 0.05;
 tBarSpace = 0.02;
@@ -208,6 +210,7 @@ hsp = nan(1, numel(rhyConds));
 for i0 = 1 : numel(rhyConds)
     rc = rhyConds{i0};
     hsp(i0) = subplot(2, 1, i0);
+    set(gca, 'FontSize', fontSize);
     hold on;
     
     if isequal(rc, 'N')
@@ -236,7 +239,7 @@ for i0 = 1 : numel(rhyConds)
             if isequal(pt, 'noPert')
                 text(cum_mean(i2, i1) + mean(tlens) * 0.2, ...
                      (tBarW + tBarSpace) * (i1 - 0.6), content_phones{i2}, ...
-                     'Color', 'k');
+                     'Color', 'k', 'FontSize', fontSize - 2);
             end
             
             if isempty(cum_vals{i1})
