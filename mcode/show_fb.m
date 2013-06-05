@@ -153,8 +153,14 @@ set(gca, 'XTick', []);
 set(gca, 'YLim', [0, 1]);
 set(gca, 'YTick', []);
 
-t_rate_max = 1 / h.minSylDur;
-t_rate_min = 1 / h.maxSylDur;
+if h.trialType == 1 % Non-rhythmic
+    t_rate_max = 1 / h.minSylDur;
+    t_rate_min = 1 / h.maxSylDur;
+else % Rhythmic
+%     sylDurRange_R = 0.1; % One-sided
+    t_rate_max = 1 / (h.meanSylDur * (1 - h.sylDurRange_R));
+    t_rate_min = 1 / (h.meanSylDur * (1 + h.sylDurRange_R));
+end
 
 if ~isnan(h.t_mean_ivi)
     t_rate = 1 / h.t_mean_ivi;
@@ -162,6 +168,7 @@ else
     t_rate = NaN;
 end
     
+
 if ~isempty(fsic(h.showRateFB_phases, h.phase))
     udat.rateRangeBars = nan(1, 2);
     
@@ -211,7 +218,10 @@ else
     plot([0, 1], [1, 0], 'k-');
 end
 
+% showRateFB_R_runs = 1;
 if ~isempty(fsic(h.showRateWarn_phases, h.phase)) && ~isnan(t_rate)
+%     (length(h.phase > 3) && isequal(h.phase(1 : 3), 'run') && h.trialType == 2 && showRateFB_R_runs)
+    
     set(gcf, 'CurrentAxes', h.figUFBDat.axes_warn)
     cla;
     if t_rate > t_rate_max
@@ -221,7 +231,15 @@ if ~isempty(fsic(h.showRateWarn_phases, h.phase)) && ~isnan(t_rate)
     else
         warnMsg = '';
     end
-
+    
+    % -- In the runs, show rate warning message for an R trial only if the
+    % following trial is also an R trial -- %
+    if  h.showRateWarn_run_R_sameType ...
+        && length(h.phase) > 3 && isequal(h.phase(1 : 3), 'run') ...
+            && h.trialType == 2 && h.nextTrialType ~= h.trialType
+        warnMsg = '';
+    end
+    
     if ~isempty(warnMsg)
         for i1 = 1 : nBlink_warn
             hwarn = text(0.2, 0.5, warnMsg, 'Color', 'm', ...

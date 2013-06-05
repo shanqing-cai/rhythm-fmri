@@ -1,4 +1,4 @@
-name            TEST_20130527_2
+name            TEST_20130527_1
 sex             female
 
 interfaceMode   0
@@ -60,6 +60,7 @@ vumeterMode     2
 paceStim_meanSylDur     0.27 % s
 minSylDur               0.22 % s. Set to -Inf for disabling user warning message
 maxSylDur               0.32 % %. Set to +Inf for disabling user warning message
+sylDurRange_R           0.10 % One-sided syllable duration range width: Recommended: 0.1
 
 minVwlLevel_male        67.5 % dB SPL A
 maxVwlLevel_male        77.5 % dB SPL A
@@ -75,6 +76,8 @@ showIntFB_phases            pract1,pract2,pre
 % showRhythmicityWarn_phases  pre,run1
 showRateWarn_phases         pract2,pre,run1,run2,run3,run4
 showIntWarn_phases          pract1,pract2,pre,run1,run2,run3,run4
+
+showRateWarn_run_R_sameType 1 % Option to show rate warning in the (main) runs for an R trial, only if the R trial is immediately followed by an R trial.
 
 rateErrRepeat_phases        pract2,pre
 intErrRepeat_phases         pract1,pract2,pre

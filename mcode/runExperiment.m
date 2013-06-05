@@ -319,6 +319,7 @@ hgui.manualTrigPhases = expt.subject.manualTrigPhases;
 hgui.meanSylDur=expt.subject.paceStim.meanSylDur;
 hgui.minSylDur = expt.subject.minSylDur;
 hgui.maxSylDur = expt.subject.maxSylDur;
+hgui.sylDurRange_R = expt.subject.sylDurRange_R;
 
 hgui.minVwlLevel = expt.subject.(['minVwlLevel_', lower(expt.subject.sex)]);
 hgui.maxVwlLevel = expt.subject.(['maxVwlLevel_', lower(expt.subject.sex)]);
@@ -334,6 +335,8 @@ hgui.showIntFB_phases = expt.subject.showIntFB_phases;
 % hgui.showRhythmicityWarn_phases = expt.subject.showRhythmicityWarn_phases;
 hgui.showRateWarn_phases = expt.subject.showRateWarn_phases;
 hgui.showIntWarn_phases = expt.subject.showIntWarn_phases;
+
+hgui.showRateWarn_run_R_sameType = expt.subject.showRateWarn_run_R_sameType;
 
 hgui.rateErrRepeat_phases = expt.subject.rateErrRepeat_phases;
 hgui.intErrRepeat_phases = expt.subject.intErrRepeat_phases;
@@ -731,6 +734,15 @@ for n=startPhase:length(allPhases)
             hgui.nSyls = nSyls;
             hgui.saveDataFN = fullfile(subsubdirname, ['trial-', num2str(k), '-', num2str(thisTrial)]);
             hgui.asrDir = fullfile(subsubdirname, ['trial-', num2str(k), '-', num2str(thisTrial), '_asr']);
+            
+            % -- Get the next trial type -- %
+            if k < nTrials
+                hgui.nextTrialType = expt.script.(thisphase).(repString).trialOrder(k + 1);
+            elseif i0 < nReps
+                hgui.nextTrialType = expt.script.(thisphase).(['rep', num2str(i0 + 1)]).trialOrder(1);
+            else
+                hgui.nextTrialType = NaN;
+            end
             
             if expt.subject.bAdaptRate
                 hgui.meanSylDur=adaptMeanSylDur;
