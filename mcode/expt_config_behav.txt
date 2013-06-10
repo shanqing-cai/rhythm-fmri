@@ -6,7 +6,7 @@ simDataDir      E:\DATA\RHYTHM-FMRI\PWS01
 
 designNum       2
 
-colorReverseNR  1 % Default: 0
+colorReverseNR  0 % Default: 0
 
 mouthMicDist    10 % cm
 closedLoopGain  0 % dB
