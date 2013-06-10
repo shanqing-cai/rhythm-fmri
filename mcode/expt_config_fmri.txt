@@ -6,6 +6,8 @@ simDataDir      E:\DATA\RHYTHM-FMRI\PWS01
 
 designNum       2
 
+colorReverseNR  1 % Default: 0
+
 trigByScanner   1 % 0 - behavioral session; 1 - fMRI session
 mouthMicDist    10 % cm
 closedLoopGain  10 % dB

@@ -83,6 +83,8 @@ else
 	isTrad=0;
 end
 
+handles.colors = struct();
+
 handles.trigByScanner=0;
 handles.TA=2.5;
 handles.phase='';
@@ -768,24 +770,28 @@ if (handles.debug==0)
         return
     end
     
-    colors.rhythm = [0, 0, 1];
-    colors.nonRhythm = [0, 0.4, 0];
+%     colors.rhythm = [0, 0, 1];
+%     colors.nonRhythm = [0, 0.4, 0];    
     if (handles.trialType==1 || handles.trialType==2 || handles.trialType==3 || handles.trialType==4)
         if handles.trialType == 1 || handles.trialType == 3
-            set(handles.strh, 'ForegroundColor', colors.nonRhythm);
+            set(handles.strh, 'ForegroundColor', handles.colors.nonRhythm);
         else
-            set(handles.strh, 'ForegroundColor', colors.rhythm);
+            set(handles.strh, 'ForegroundColor', handles.colors.rhythm);
         end
         
         if handles.showRhythmHint
             if handles.trialType == 1
-                set(handles.msgh, 'String', handles.type1Prompt, 'Visible', 'on', 'ForegroundColor', colors.nonRhythm, 'FontSize', 30);
+                set(handles.msgh, 'String', handles.type1Prompt, 'Visible', 'on', 'ForegroundColor', ...
+                    handles.colors.nonRhythm, 'FontSize', 30);
             elseif handles.trialType == 2
-                set(handles.msgh, 'String', handles.type2Prompt, 'Visible', 'on', 'ForegroundColor', colors.rhythm, 'FontSize', 30);
+                set(handles.msgh, 'String', handles.type2Prompt, 'Visible', 'on', 'ForegroundColor', ...
+                    handles.colors.rhythm, 'FontSize', 30);
             elseif handles.trialType == 3
-                set(handles.msgh, 'String', handles.type3Prompt, 'Visible', 'on', 'ForegroundColor', colors.nonRhythm, 'FontSize', 30);
+                set(handles.msgh, 'String', handles.type3Prompt, 'Visible', 'on', 'ForegroundColor', ...
+                    handles.colors.nonRhythm, 'FontSize', 30);
             elseif handles.trialType == 4
-                set(handles.msgh, 'String', handles.type4Prompt, 'Visible', 'on', 'ForegroundColor', colors.rhythm, 'FontSize', 30);
+                set(handles.msgh, 'String', handles.type4Prompt, 'Visible', 'on', 'ForegroundColor', ...
+                    handles.colors.rhythm, 'FontSize', 30);
             end
             
             if handles.modePromptDur > 0

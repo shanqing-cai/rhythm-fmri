@@ -240,6 +240,13 @@ dconfig = dir(fullfile(dirname, 'config*.txt'));
 configBackupFN = fullfile(dirname, sprintf('config_%.2d.txt', length(dconfig) + 1));
 copyfile(configFN, configBackupFN);
 
+% --- Optional N-R color reversal --- %
+if expt.subject.colorReverseNR == 1
+    clrTmp = colors.rhythm;
+    colors.rhythm = colors.nonRhythm;
+    colors.nonRhythm = clrTmp;
+end
+
 %% Determine the log file name
 dlogs = dir(fullfile(dirname, 'log_*.txt'));
 logFN = fullfile(dirname, sprintf('log_%.2d.txt', numel(dlogs) + 1));
@@ -322,6 +329,8 @@ if ~isempty(hgui.simDataDir)
 end
 
 hgui.stcsData = load(sentMatFN);
+
+hgui.colors = colors;
 
 hgui.pcrKnob=subject.pcrKnob;
 hgui.ITI=expt.subject.ITI;
