@@ -29,6 +29,11 @@ function phaseScript = ...
     ptwCnt=1;
     for n=1:nReps
         bt=[trialTypes];
+        
+        if length(stage) > 5 && (isequal(stage(1 : 5), 'pract') || isequal(stage(1 : 5), 'inter'))
+            bt = bt(find(bt <= 2)); % Discard the baseline trials
+        end
+        
         trainWordsRep = trainWordsUsed((n - 1) * nSpeech + 1 : n * nSpeech);
         nSylsRep = nSylsUsed((n - 1) * nSpeech + 1 : n * nSpeech);
         

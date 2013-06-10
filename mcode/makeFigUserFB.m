@@ -12,7 +12,7 @@ figDat.fid = figure('Position', [200, 200, 320, 240], ...
                     'Name', 'Subject feedback', 'NumberTitle', 'off');
 
 % cv_ivis feedback
-figDat.axes_cv_ivis = subplot('Position', [0.1, bot, 0.275, hgt]);
+figDat.axes_cv_ivis = subplot('Position', [0.65, bot, 0.275, hgt]);
 set(figDat.axes_cv_ivis, 'XTick', [], 'YTick', []);
 box on;
 title('Rhythmicity');
@@ -24,7 +24,7 @@ box on;
 title('Speed');
 
 % Intensity feedback
-figDat.axes_int = subplot('Position', [0.65, bot, 0.275, hgt]);
+figDat.axes_int = subplot('Position', [0.1, bot, 0.275, hgt]);
 set(figDat.axes_int, 'XTick', [], 'YTick', []);
 box on;
 title('Intensity');

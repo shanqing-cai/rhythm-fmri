@@ -84,27 +84,49 @@ if bNew % set up new experiment
     mkdir(dirname)
     
     if expt.subject.trigByScanner    % fMRI experiment
-        expt.allPhases={'pre', 'run1', 'run2', 'run3', 'run4', 'run5', 'run6'};
-        expt.recPhases={'pre', 'run1', 'run2', 'run3', 'run4', 'run5', 'run6'}; %SC The pahses during which the data are recorded
+        expt.allPhases={'pre', 'pract1', 'pract2', ...
+                        'run1', 'inter1', 'run2', 'inter2', ...
+                        'run3', 'inter3', 'run4', 'inter4', ...
+                        'run5', 'inter5', 'run6', 'inter6'};       
+        expt.recPhases={'pre', 'pract1', 'pract2', ...
+                        'run1', 'inter1', 'run2', 'inter2', ...
+                        'run3', 'inter3', 'run4', 'inter4', ...
+                        'run5', 'inter5', 'run6', 'inter6'}; %SC The pahses during which the data are recorded
+        expt.skippablePhases = {'pract1', 'pract2', 'inter1', 'inter2', 'inter3', 'inter4', 'inter5', 'inter6'};
+                    
         
         expt.script.pre.nReps = expt.subject.NREPS_PRE;    %SC Numbers of repetitions in the stages   % !!1!!	
+        expt.script.pract1.nReps = expt.subject.NREPS_PRACT1;
+        expt.script.pract2.nReps = expt.subject.NREPS_PRACT2;
+        
         expt.script.run1.nReps = expt.subject.NREPS_RUN;  %SC Default 10   %SC-Mod(09/26/2007)       % !!8!!
+        expt.script.inter1.nReps = expt.subject.NREPS_INTER;
         expt.script.run2.nReps = expt.subject.NREPS_RUN;   %SC Default 15   %SC-Mod(09/26/2007)       % !!2!!
+        expt.script.inter2.nReps = expt.subject.NREPS_INTER;
         expt.script.run3.nReps = expt.subject.NREPS_RUN;   %SC Default 20   %SC-Mod(09/26/2007)       % !!8!!
+        expt.script.inter3.nReps = expt.subject.NREPS_INTER;
         expt.script.run4.nReps = expt.subject.NREPS_RUN;    %SC Default 20   %SC-Mod(09/26/2007)       % !!8!!
+        expt.script.inter4.nReps = expt.subject.NREPS_INTER;
         expt.script.run5.nReps = expt.subject.NREPS_RUN;
+        expt.script.inter5.nReps = expt.subject.NREPS_INTER;
         expt.script.run6.nReps = expt.subject.NREPS_RUN;
+        expt.script.inter6.nReps = expt.subject.NREPS_INTER;
     else
 %         expt.allPhases={'pract1', 'pract2', 'pre', 'run1', 'run2', 'run3', 'run4'};
 %         expt.recPhases={'pract1', 'pract2', 'pre', 'run1', 'run2', 'run3', 'run4'}; %SC The pahses during which the data are recorded
-        expt.allPhases={'pract1', 'pract2', 'pre', 'run1', 'run2', 'run3'};
-        expt.recPhases={'pract1', 'pract2', 'pre', 'run1', 'run2', 'run3'}; %SC The pahses during which the data are recorded
+        expt.allPhases={'pract1', 'pract2', 'pre', ...
+                        'run1', 'inter1', 'run2', 'inter2', 'run3'};
+        expt.recPhases={'pract1', 'pract2', 'pre', ...
+                        'run1', 'inter1', 'run2', 'inter2', 'run3'}; %SC The pahses during which the data are recorded
+        expt.skippablePhases = {'inter1', 'inter2'};
         
         expt.script.pract1.nReps = expt.subject.NREPS_PRACT1;
         expt.script.pract2.nReps = expt.subject.NREPS_PRACT2;
         expt.script.pre.nReps = expt.subject.NREPS_PRE;
         expt.script.run1.nReps = expt.subject.NREPS_RUN;
+        expt.script.inter1.nReps = expt.subject.NREPS_INTER;
         expt.script.run2.nReps = expt.subject.NREPS_RUN;
+        expt.script.inter2.nReps = expt.subject.NREPS_INTER;
         expt.script.run3.nReps = expt.subject.NREPS_RUN;
     end
     
@@ -124,7 +146,8 @@ if bNew % set up new experiment
                 expt.script.run4.nReps+expt.script.run5.nReps+expt.script.run6.nReps) * nSpeechTrialsPerRep;
     else
         nSents=(expt.script.pract1.nReps+expt.script.pract2.nReps+expt.script.pre.nReps+...
-                expt.script.run1.nReps+expt.script.run2.nReps+expt.script.run3.nReps) * nSpeechTrialsPerRep;
+                expt.script.run1.nReps+expt.script.run2.nReps+expt.script.run3.nReps+...
+                expt.script.inter1.nReps + expt.script.inter2.nReps) * nSpeechTrialsPerRep;
     end
     
     if expt.subject.trigByScanner == 0
@@ -262,9 +285,13 @@ lenMTB=round(2.5*fs_mtb);
 
 %% expt
 figIdDat = makeFigDataMon;
-if expt.subject.trigByScanner == 0
-    figUFBDat = makeFigUserFB;
-    guidata(figUFBDat.fid, figUFBDat);
+% if expt.subject.trigByScanner == 0
+figUFBDat = makeFigUserFB;
+guidata(figUFBDat.fid, figUFBDat);
+% end
+
+if expt.subject.trigByScanner == 1
+    set(figUFBDat.fid, 'visible', 'off')
 end
 
 
@@ -274,11 +301,11 @@ allPhases=expt.allPhases;
 recPhases=expt.recPhases;
 % nWords=length(wordList);
 
-if expt.subject.trigByScanner == 0
+% if expt.subject.trigByScanner == 0
     hgui = UIRecorder('figIdDat', figIdDat, 'figUFBDat', figUFBDat);
-else
-    hgui = UIRecorder('figIdDat', figIdDat);
-end
+% else
+%     hgui = UIRecorder('figIdDat', figIdDat);
+% end
 
 % if (expt.subject.designNum==2)
 %     expt.script=addFaceInfo(expt.script,hgui.skin.dFaces);
@@ -411,13 +438,13 @@ else
 		set(hgui.speed_too_fast,'Position',[(pos_win(3)-pos_speed_axes(3))/2+pos_speed_axes(3)-pos_speed_too_fast(3),pos_speed_too_fast(2),pos_speed_too_fast(3),pos_speed_too_fast(4)]);
         set(hgui.msgh, 'FontSize', 20);
         
-        if hgui.trigByScanner == 0
-            fpos = get(figUFBDat.fid, 'Position');
-            set(figUFBDat.fid, 'Position', ...
-                [ms(2, 1) + (ms(2, 3) - ms(2, 1) - fpos(3)) / 2, ...
-                 ms(1, 4) - ms(2, 4) + (ms(2, 4) - fpos(4)), ...
-                 fpos(3), fpos(4)]);
-        end
+%         if hgui.trigByScanner == 0
+        fpos = get(figUFBDat.fid, 'Position');
+        set(figUFBDat.fid, 'Position', ...
+            [ms(2, 1) + (ms(2, 3) - ms(2, 1) - fpos(3)) / 2, ...
+             ms(1, 4) - ms(2, 4) + (ms(2, 4) - fpos(4)), ...
+             fpos(3), fpos(4)]);
+%         end
 % 	else
 % 		set(hgui.UIrecorder,'Position',[-1400,180,1254,857],'toolbar','none');
 % 	end
@@ -462,6 +489,39 @@ for n=startPhase:length(allPhases)
     subdirname = fullfile(dirname,thisphase);
     if ~isdir(subdirname)
         mkdir(subdirname);
+    end
+    
+    % -- Option to skip phases -- %
+    if ~isempty(fsic(expt.skippablePhases, thisphase))
+        inputOK = 0;
+        while ~inputOK
+            optDo = input(sprintf('Perform the optional phase {%s} (yes | no): ', thisphase), 's');
+            if ~(isequal(lower(optDo), 'yes') || isequal(lower(optDo), 'no'))
+                inputOK = 0;
+                fprintf(2, 'Please input only yes or no\n');
+            else
+                inputOK = 1;
+            end                                
+        end
+
+        if isequal(lower(optDo), 'yes')
+            msglog(logFN, sprintf('User chose to include optional phase {%s}', thisphase));
+        else
+            msglog(logFN, sprintf('User chose to skip optional phase {%s}', thisphase));
+        end
+
+        if isequal(lower(optDo), 'no')
+            continue;
+        end
+    end
+    
+    if expt.subject.trigByScanner == 1
+        % -- Set the visibility of the user visual feedback window -- %
+        if ~isempty(fsic(expt.skippablePhases, thisphase))
+            set(figUFBDat.fid, 'visible', 'on');
+        else
+            set(figUFBDat.fid, 'visible', 'off');
+        end
     end
     
     hgui.phase=thisphase;
@@ -867,10 +927,17 @@ for n=startPhase:length(allPhases)
                     suffix = suffix(1 : 3);
                 end
                 
-                hgui.trialLen = expt.subject.(['trialLen_', suffix]);
-                TransShiftMex(3, 'triallen', expt.subject.(['trialLen_', suffix]), 0);                
+                if length(thisphase) > 5 && isequal(thisphase(1 : 5), 'inter')
+                    hgui.trialLen = expt.subject.trialLen_pre;
+                else
+                    hgui.trialLen = expt.subject.(['trialLen_', suffix]);
+                end
+                
+                TransShiftMex(3, 'triallen', hgui.trialLen, 0);                
             end
             
+            b_fMRI_practInter = (expt.subject.trigByScanner == 1 && (thisTrial == 1 || thisTrial == 2) ...
+                                 && length(thisphase) > 5 && (isequal(thisphase(1 : 5), 'pract') || isequal(thisphase(1 : 5), 'inter')));
             % == Loop trial until trial is performed correctly or no
             % repetition requirement is in place == %
             bRepeat = 1;
@@ -884,9 +951,9 @@ for n=startPhase:length(allPhases)
                 hgui1 = guidata(hgui.UIrecorder);
                 
                 % == Save timing data == %
-                if expt.subject.trigByScanner == 0 % Behavioral sessions
+                if expt.subject.trigByScanner == 0 || b_fMRI_practInter % Behavioral sessions or fMRI practice / inter trials 
                     tDatIdx = timingDat.trialCnt;
-                    bToSaveTimingDat = timingDat.trialType(tDatIdx) <= 2;                    
+                    bToSaveTimingDat = timingDat.trialType(tDatIdx) <= 2;
                 else % fMRI sessions
                     tDatIdx = timingDat.trialCnt - 1;
                     if tDatIdx <= 0
@@ -994,11 +1061,11 @@ for n=startPhase:length(allPhases)
     %                 end
     %             end
                 
-                if expt.subject.trigByScanner 
+                if expt.subject.trigByScanner && ~b_fMRI_practInter
                     bRepeat = 0;   % -- Override -- %
                     dataFN = fullfile(subsubdirname, ...
                                       ['trial-', num2str(k), '-', num2str(thisTrial), '.mat']);
-                else
+                else 
                     bRepeat = 0;
                     if isequal(expt.subject.intErrRepeat_phases, 'all') || ...
                         ~isempty(fsic(strsplit(expt.subject.intErrRepeat_phases, ','), thisphase))

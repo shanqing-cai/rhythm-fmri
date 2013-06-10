@@ -1,4 +1,4 @@
-name            TEST_20130527_1
+name            TEST_20130610_2
 sex             female
 
 interfaceMode   0
@@ -31,7 +31,8 @@ manualTrigPhases    none      % Examples: all | pract1,pract2 (no space) | none
 NREPS_PRACT1    1       % Default: 2
 NREPS_PRACT2    1       % Default: 2
 NREPS_PRE       2       % Default: 2
-NREPS_RUN       8       % Default: 8
+NREPS_RUN       1       % Default: 8
+NREPS_INTER     1       % Default: 1
 
 % --- Trial lengths: ** For behavioral sessions only --- %
 trialLen_pract1     6       % Unit: s. Default: 6
@@ -53,14 +54,14 @@ nTrialsF1UpPerRep   2      % Number of F1Up-perturbation trials per rep
 nTrialsDecelPerRep  2      % Number of decel-pertubatin trials per rep
 nTrialsOtherPerRep  2      % Number of other sentences per rep
 
-bAdaptRate      1
+bAdaptRate      0       % Used to be 1
 vumeterMode     2
 
 % --- Performance feedback --- %
 paceStim_meanSylDur     0.27 % s
 minSylDur               0.22 % s. Set to -Inf for disabling user warning message
 maxSylDur               0.32 % %. Set to +Inf for disabling user warning message
-sylDurRange_R           0.10 % One-sided syllable duration range width: Recommended: 0.1
+sylDurRange_R           0.1852 % One-sided syllable duration range width: Recommended: 0.1
 
 minVwlLevel_male        67.5 % dB SPL A
 maxVwlLevel_male        77.5 % dB SPL A
@@ -69,18 +70,18 @@ maxVwlLevel_female      75 % dB SPL A
 
 % -- NOTE: these feedback options are valid only with trigByScanner == 0 --
 % --    DO NOT USE SPACES AFTER COMMAS --
-showRhythmicityFB_phases    pre,run1,run2,run3,run4,run5,run6 % Examples: all | pre,run1 | none
-showRateFB_phases           pract2,pre
-showIntFB_phases            pract1,pract2,pre
+showRhythmicityFB_phases    pre,run1,run2,run3,run4,run5,run6,inter1,inter2 % Examples: all | pre,run1 | none
+showRateFB_phases           pract2,pre,inter1,inter2
+showIntFB_phases            pract1,pract2,pre,inter1,inter2
 
-% showRhythmicityWarn_phases  pre,run1
-showRateWarn_phases         pract2,pre,run1,run2,run3,run4
-showIntWarn_phases          pract1,pract2,pre,run1,run2,run3,run4
+% showRhythmicityWarn_phases  pre,run1,inter1,inter2
+showRateWarn_phases         pract2,pre,run1,run2,run3,run4,inter1,inter2
+showIntWarn_phases          pract1,pract2,pre,run1,run2,run3,run4,inter1,inter2
 
 showRateWarn_run_R_sameType 1 % Option to show rate warning in the (main) runs for an R trial, only if the R trial is immediately followed by an R trial.
 
-rateErrRepeat_phases        pract2,pre
-intErrRepeat_phases         pract1,pract2,pre
+rateErrRepeat_phases        pract2,pre,inter1,inter2
+intErrRepeat_phases         pract1,pract2,pre,inter1,inter2
 
 colorAcceptRanges           1 % Whether to include a green colored acceptance region in each subplot
 

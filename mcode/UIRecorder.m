@@ -718,11 +718,12 @@ if (handles.debug==0)
     handles.time1=clock;
 
 %     if (handles.trigByScanner==1)
-        if (~isequal(handles.phase,'pre') && ~isequal(handles.phase,'pract1') && ~isequal(handles.phase,'pract2')) && handles.trigByScanner
-            pause(handles.TA);
-        else
+    if (~isequal(handles.phase,'pre') && ~isequal(handles.phase,'pract1') && ~isequal(handles.phase,'pract2') ...
+            && ~(length(handles.phase) > 5 && isequal(handles.phase(1 : 5), 'inter'))) && handles.trigByScanner
+        pause(handles.TA);
+    else
 %             pause(0.05);
-        end
+    end
 %     else
 %         pause(0.25);
 %     end
@@ -874,7 +875,9 @@ if (handles.debug==0)
         [dataOut, t_rms] = checkData(getData, handles, paceStimParams);
     end
     
-    if handles.trigByScanner == 0 % -- During a behavioral experiment. ASR will be done sequentially -- %
+    b_fMRI_practInter = (handles.trigByScanner == 1 && (handles.trialType == 1 || handles.trialType == 2) ...
+                         && length(handles.phase) > 5 && (isequal(handles.phase(1 : 5), 'pract') || isequal(handles.phase(1 : 5), 'inter')));
+    if handles.trigByScanner == 0 || b_fMRI_practInter % -- During a behavioral experiment. ASR will be done sequentially -- %
         if handles.trialType==1 || handles.trialType==2
             julianCmd = run_julian(dataOut, 'outDir', handles.asrDir, 'prep');
             [so] = evalc('system(julianCmd)');
@@ -887,7 +890,8 @@ if (handles.debug==0)
     
     % --- Perform ASR on the latest speech data: parse julian output --- %
     if (handles.trigByScanner == 1 && isfield(handles, 'lastData')) ...
-       || (handles.trigByScanner == 0 && (handles.trialType==1 || handles.trialType==2))
+       || (handles.trigByScanner == 0 && (handles.trialType==1 || handles.trialType==2)) ...
+       || b_fMRI_practInter
         if isfile(julianStdOutFN)
             asrPAlign = parse_asr_out(julianStdOutFN,  julianWavFN);
 
@@ -897,14 +901,14 @@ if (handles.debug==0)
             set(gcf, 'CurrentAxes', handles.figIdDat(7));
             cla;
             
-            if handles.trigByScanner
+            if handles.trigByScanner == 1 && ~b_fMRI_practInter
                 show_spectrogram(handles.lastData.signalIn, handles.lastData.params.sr, 'noFig');
             else
                 show_spectrogram(dataOut.signalIn, dataOut.params.sr, 'noFig');
             end
             set(gca, 'XTick', []);
             
-            if handles.trigByScanner == 0
+            if handles.trigByScanner == 0 || b_fMRI_practInter
                 frameDur = dataOut.params.frameLen / dataOut.params.sr;
                 tAxis = 0 : frameDur : frameDur * (size(dataOut.fmts, 1) - 1);
                 plot(tAxis, dataOut.fmts(:, 1 : 2), 'w-');
@@ -925,7 +929,7 @@ if (handles.debug==0)
 
             plot_phn_align(asrPAlign);
             
-            if handles.trigByScanner
+            if handles.trigByScanner && ~b_fMRI_practInter
                 title(['Last speech trial: "', handles.lastData.params.name, '"']);
             else
                 title(['This speech trial: "', dataOut.params.name, '"']);
@@ -935,15 +939,15 @@ if (handles.debug==0)
             set(gcf, 'CurrentAxes', handles.figIdDat(4))
             set(gca, 'XLim', xs);
             
-            if handles.trigByScanner == 0
+            if handles.trigByScanner == 0 || b_fMRI_practInter
                 % --- Output signal --- %
                 set(gcf, 'CurrentAxes', handles.figIdDat(9));
                 cla;
-                if handles.trigByScanner
-                    show_spectrogram(handles.lastData.signalOut, handles.lastData.params.sr, 'noFig');
-                else
+%                 if handles.trigByScanner
+%                     show_spectrogram(handles.lastData.signalOut, handles.lastData.params.sr, 'noFig');
+%                 else
                     show_spectrogram(dataOut.signalOut, dataOut.params.sr, 'noFig');
-                end
+%                 end
             
                 set(gca, 'XLim', xs);
                 
@@ -953,14 +957,14 @@ if (handles.debug==0)
             
             % --- Calculate vowel timing --- %
             % TODO: code to deal with production error
-            if handles.trigByScanner
+            if handles.trigByScanner && ~b_fMRI_practInter
                 t_stc = handles.lastStc;
             else
                 t_stc = dataOut.params.name;
             end
             
             if asrPAlign.nphns ~= length(get_sent_phones(t_stc, handles.stcsData.stcs, handles.stcsData.sentPhns)) + 2
-                if handles.trigByScanner
+                if handles.trigByScanner && ~b_fMRI_practInter
                     msglog(handles.logFN, sprintf('INFO: It appears that no valid speech was recorded in last speech trial: %s', ...
                             handles.lastSaveDataFN))
                 else
@@ -976,7 +980,7 @@ if (handles.debug==0)
                 bRmsGood = NaN;
                 bSpeedGood = NaN;
             else
-                if handles.trigByScanner
+                if handles.trigByScanner && ~b_fMRI_practInter
                     vidx = get_vowel_indices(handles.lastData.params.name);
                 else
                     vidx = get_vowel_indices(dataOut.params.name);
@@ -1047,15 +1051,17 @@ if (handles.debug==0)
 %         end
 
         if handles.trigByScanner
-            handles = rmfield(handles, ...
-                {'lastData', 'lastSaveDataFN', 'lastStc', 'lastAsrDir', 'lastTrialType'});
+            if isfield(handles, 'lastData');
+                handles = rmfield(handles, ...
+                    {'lastData', 'lastSaveDataFN', 'lastStc', 'lastAsrDir', 'lastTrialType'});
+            end
         end
         
             
     end
     % --- ~Perform ASR on the latest speech data: parse julian output --- %
     
-    if handles.trigByScanner == 0
+    if handles.trigByScanner == 0 || b_fMRI_practInter
         dataOut.bASRGood = bASRGood;
         dataOut.bRmsGood = bRmsGood;
         dataOut.bSpeedGood = bSpeedGood;
@@ -1073,8 +1079,10 @@ if (handles.debug==0)
     end
     % --- ~Store speech data of the current trial for later ASR --- %
     
-    if (handles.trialType == 1 || handles.trialType == 2) && handles.trigByScanner == 0
-        show_fb(handles);        
+    if (handles.trialType == 1 || handles.trialType == 2) && ...
+       (handles.trigByScanner == 0 || ...
+        (handles.trigByScanner == 1 && length(handles.phase) > 5 && (isequal(handles.phase(1 : 5), 'pract') || isequal(handles.phase(1 : 5), 'inter'))))
+        show_fb(handles);
     end
     
     bRmsRepeat=handles.bRmsRepeat;

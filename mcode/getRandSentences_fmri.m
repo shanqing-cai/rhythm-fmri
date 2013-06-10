@@ -12,7 +12,7 @@ sents = {};
 nSyls = [];
 
 nSpeechN = numel(find(expt.trialTypes == 1));
-nSpeechR = numel(find(expt.trialTypes == 2));    
+nSpeechR = numel(find(expt.trialTypes == 2));
 if nSpeechN ~= nSpeechR
     error('Unequal number of non-rhythmic and rhytmic trials');
 end
@@ -21,7 +21,7 @@ nSpeech = nSpeechN * 2;
 for i1 = 1 : numel(all_phases)
     ph = all_phases{i1};
     nst = expt.script.(ph).nReps * nSpeech;
-    if isequal(ph, 'pre')
+    if isequal(ph, 'pre') || isequal(ph, 'pract1') || isequal(ph, 'pract2') || (length(ph) > 5 && isequal(ph(1 : 5), 'inter'))
         idxrp = [];
         while length(idxrp) < nst;
             idxrp = [idxrp, randperm(length(selStcs))];
