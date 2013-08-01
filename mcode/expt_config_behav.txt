@@ -9,7 +9,7 @@ designNum       2
 colorReverseNR  0 % Default: 0
 
 mouthMicDist    10 % cm
-closedLoopGain  0 % dB
+closedLoopGain  6 % dB
 dBRange1        20 % dB
 trialLen        4.5 % s
 trigByScanner   0 % 0 - behavioral session; 1 - fMRI session

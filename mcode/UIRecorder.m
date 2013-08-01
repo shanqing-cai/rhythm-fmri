@@ -890,7 +890,7 @@ if (handles.debug==0)
             
             t_items = splitstring(julianCmd);
             julianStdOutFN = t_items{end};
-            julianWavFN = strrep(t_items{5}, 'wavlist', 'speech.wav');           
+            julianWavFN = strrep(t_items{5}, 'wavlist', 'speech.wav');
         end
     end
     

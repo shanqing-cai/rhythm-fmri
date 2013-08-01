@@ -1,4 +1,4 @@
-name            FMRI_TEST_7
+name            BERRY_COLLAB_DATA_1
 sex             male
 
 interfaceMode   0
@@ -10,14 +10,14 @@ colorReverseNR  1 % Default: 0
 
 trigByScanner   1 % 0 - behavioral session; 1 - fMRI session
 mouthMicDist    10 % cm
-closedLoopGain  10 % dB
+closedLoopGain  6 % dB
 dBRange1        20 % dB
-trialLen        4.5 % s
-TA              2.5 % s
+trialLen        4.6 % s
+TA              2.8 % s
 TPaceStim       3.0 % s
 TVisStim        5.5 % s
 
-modePromptDur   0.5 % Unit: s. Use 0 if mode prompt is not needed. This duration is included in the trialLen
+modePromptDur   0.35 % Unit: s. Use 0 if mode prompt is not needed. This duration is included in the trialLen
 type1Prompt     Normal % Normal
 type2Prompt     Rhythm % Rhythm
 type3Prompt     Silent % Alternative: Normal
