@@ -1,12 +1,20 @@
 function RHY_stim2mat(subjID, TR, TA)
 % this script has to be executed inside the subject's directory.
 % read subjid from directory name
-%% Constants
-behavDataDir = 'G:\DATA\RHYTHM-FMRI';
+%% Paths
+if isequal(getHostName, 'ba3')
+    behavDataDir = '/users/cais/RHY/BEHAV_DATA';
+    dataDir = '/users/cais/RHY/DATA';
+    genDesMatPath = '/users/cais/RHY/scripts';
+else
+    behavDataDir = '/speechlab/5/scai/RHY/BEHAV_DATA';
+    dataDir = '/uses/cais/RHY/DATA';
+    genDesMatPath = '/speechlab/5/scai/RHY/scripts';
+end
 
 %% Parameters
-TR = 11500;    % ms
-TA = 2470;    % ms
+% TR = 11500;    % ms
+% TA = 2470;    % ms
 
 % DATA_dir = '/users/cais/STUT/DATA';
 % funcloc_dir = '/users/cais/STUT/funcloc';
@@ -62,8 +70,19 @@ for i1 = 1 : nRunsAct
     stims{i1} = [3, stims{i1}(1 : end - 1)];     % Padded one: the first volume doesn't capture any task-related neural responses
 end
 
-% 1 - Speech production: oral reading of disyllabic words
-% 2 - Baseline
+%% Generate the design matrices
+% 1 - Speech production: rhythmic (SR)
+% 2 - Speech production: normal / non-rhytmic (SN)
+% 3 - Baseline: no speech: (BL)
+
+tPath = which('gen_design_matrix');
+if isempty(tPath)
+    addpath(genDesMatPath);
+end
+
+tPath = which('gen_design_matrix');
+assert(~isempty(tPath));
+
 for i1 = 1 : numel(stims)
     [R1, R2] = gen_design_matrix(stims{i1}, TA, TR);
 %     sess(1).R = R1(:,1:end/2);
@@ -76,53 +95,58 @@ for i1 = 1 : numel(stims)
     close all
 end
 
-% if iscell(sess)
-%     sess=sess{1};
-% end
-save(fullfile(DATA_dir, subjID, 'funcloc_model.mat'), 'sess');
-fprintf('%s saved.\n', fullfile(DATA_dir, subjID, 'funcloc_model.mat'));
+%% Save design mat file
+check_dir(dataDir);
+
+subjDataDir = fullfile(dataDir, strrep(subjID, 'MRI_', ''));
+check_dir(subjDataDir, '-create');
+
+modelFN = fullfile(subjDataDir, 'fmri_model.mat');
+save(modelFN, 'sess');
+check_file(modelFN);
+fprintf('Design matrix saved to file: %s\n', modelFN);
 
 %% Create the text files for the use of nipype
-str = cell(1, numel(stims));
-for i1 = 1 : numel(stims)
-    stim = stims{i1};
-    str{i1}.speech = sprintf('Run %d: speech: ', i1);
-    str{i1}.baseline = sprintf('Run %d: baseline: ', i1);
-    %if ~isempty(find(stim == 3))
-    str{i1}.invalid = sprintf('Run %d: invalid: ', i1);
-    %end
-    
-    for i2 = 1 : numel(stim)
-        if stim(i2) == 1    % Valid speech trial 
-            spOnset = tOK.voiceOnset{i1}(i2 - 1);
-            if isnan(spOnset)
-                error('NaN value found in spOnset');
-            end
+% str = cell(1, numel(stims));
+% for i1 = 1 : numel(stims)
+%     stim = stims{i1};
+%     str{i1}.speech = sprintf('Run %d: speech: ', i1);
+%     str{i1}.baseline = sprintf('Run %d: baseline: ', i1);
+%     %if ~isempty(find(stim == 3))
+%     str{i1}.invalid = sprintf('Run %d: invalid: ', i1);
+%     %end
+%     
+%     for i2 = 1 : numel(stim)
+%         if stim(i2) == 1    % Valid speech trial 
+%             spOnset = tOK.voiceOnset{i1}(i2 - 1);
+%             if isnan(spOnset)
+%                 error('NaN value found in spOnset');
+%             end
+% %             str{i1}.speech = [str{i1}.speech, ...
+% %                                 num2str((TA + (i2 - 1) * TR) / 1e3 + spOnset), ' '];
 %             str{i1}.speech = [str{i1}.speech, ...
-%                                 num2str((TA + (i2 - 1) * TR) / 1e3 + spOnset), ' '];
-            str{i1}.speech = [str{i1}.speech, ...
-                                num2str((TA + (i2 - 1) * TR) / 1e3), ' '];
-        elseif stim(i2) == 2    % Baseline trial
-            str{i1}.baseline = [str{i1}.baseline, ...
-                                num2str((TA + (i2 - 1) * TR) / 1e3), ' '];
-        elseif stim(i2) == 3    % Invalid speech trial
-            str{i1}.invalid = [str{i1}.invalid, ...
-                                num2str((TA + (i2 - 1) * TR) / 1e3), ' '];
-        end
-    end
-end
-
-% Write to file
-text_sched_fn = fullfile(DATA_dir, subjID, 'funcloc_sched.txt');
-f1 = fopen(text_sched_fn, 'w');
-for i1 = 1 : numel(str)
-    fprintf(f1, '%s\n', str{i1}.speech);
-    fprintf(f1, '%s\n', str{i1}.baseline);
-    %if isfield(str{i1}, 'invalid')
-        fprintf(f1, '%s\n', str{i1}.invalid);
-    %end
-end
-fclose(f1);
-fprintf('Stimulus schedlue written to file %s.\n', text_sched_fn);
+%                                 num2str((TA + (i2 - 1) * TR) / 1e3), ' '];
+%         elseif stim(i2) == 2    % Baseline trial
+%             str{i1}.baseline = [str{i1}.baseline, ...
+%                                 num2str((TA + (i2 - 1) * TR) / 1e3), ' '];
+%         elseif stim(i2) == 3    % Invalid speech trial
+%             str{i1}.invalid = [str{i1}.invalid, ...
+%                                 num2str((TA + (i2 - 1) * TR) / 1e3), ' '];
+%         end
+%     end
+% end
+% 
+% % Write to file
+% text_sched_fn = fullfile(DATA_dir, subjID, 'funcloc_sched.txt');
+% f1 = fopen(text_sched_fn, 'w');
+% for i1 = 1 : numel(str)
+%     fprintf(f1, '%s\n', str{i1}.speech);
+%     fprintf(f1, '%s\n', str{i1}.baseline);
+%     %if isfield(str{i1}, 'invalid')
+%         fprintf(f1, '%s\n', str{i1}.invalid);
+%     %end
+% end
+% fclose(f1);
+% fprintf('Stimulus schedlue written to file %s.\n', text_sched_fn);
 
 return
