@@ -18,6 +18,9 @@ if size(ms, 1) == 2
     
     figX = scr2X0 + (scr2W - figW) * 0.5;
     figY = ms(1, 4) - ms(2, 4) + (scr2H - figH) / 2;
+else
+    figX = 0;
+    figY = 0;
 end
 
 hfig = figure('Position', [figX, figY, figW, figH], ...

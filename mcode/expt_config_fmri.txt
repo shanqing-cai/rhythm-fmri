@@ -1,4 +1,4 @@
-name            BERRY_COLLAB_DATA_1
+name            MRI_ANS_M01
 sex             male
 
 interfaceMode   0
