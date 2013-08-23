@@ -31,9 +31,9 @@ sig=sig(:,1);
 clear functions;
 
 if ~isempty(fsic(varargin, 'twoScreens'))
-    figure('Position', [1700, 400, 400, 300]);
+    hf = figure('Position', [1700, 400, 400, 300]);
 else
-    figure;
+    hf = figure;
 end
 sr=12e3;
 taxis=0:(1/sr):((length(sig)-1)/sr);
@@ -61,4 +61,5 @@ fprintf('rms(sig_sel) = %.5f\n', rms(sig_sel));
 fprintf('micRMS_100dBA = %.5f\n', micRMS_100dBA);
 
 
+close(hf)
 return
