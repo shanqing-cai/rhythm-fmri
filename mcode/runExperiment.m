@@ -972,11 +972,11 @@ for n=startPhase:length(allPhases)
                 hgui1 = guidata(hgui.UIrecorder);
                 
                 % == Save timing data == %
+                tDatIdx = get_trial_index(expt.script, thisphase, i0, k);
                 if expt.subject.trigByScanner == 0 || b_fMRI_practInter % Behavioral sessions or fMRI practice / inter trials 
-                    tDatIdx = timingDat.trialCnt;
                     bToSaveTimingDat = timingDat.trialType(tDatIdx) <= 2;
                 else % fMRI sessions
-                    tDatIdx = timingDat.trialCnt - 1;
+                    tDatIdx = tDatIdx - 1;
                     if tDatIdx <= 0
                         bToSaveTimingDat = 0;
                     else
@@ -1147,7 +1147,7 @@ end
 set(hgui.play,'cdata',hgui.skin.play,'userdata',0);
 set(hgui.msgh,'string',...
 	{'Congratulations!';...
-	'You have finished the expt.'},'visible','on');
+	'You have finished this experiment'},'visible','on');
 % set(hgui.msgh_imgh,'CData',CDataMessage.finish,'visible','on');
 pause(3);
 close(hgui.UIrecorder)
