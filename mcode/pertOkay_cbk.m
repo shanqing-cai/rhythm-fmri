@@ -20,5 +20,5 @@ save(dacacheFN, 'pdata');
 fprintf('Saved to %s\n', dacacheFN);
 
 fn = state.trialList.fn{i1};
-fprintf('INFO: trial: %s: bPertOkay -> %d\n', fn, pdata.(dataFld).bASROkay(idx_trial));
+fprintf('INFO: trial: %s: bPertOkay -> %d\n', fn, pdata.(dataFld).bPertOkay(idx_trial));
 return

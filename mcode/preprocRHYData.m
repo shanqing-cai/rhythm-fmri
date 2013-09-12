@@ -621,6 +621,31 @@ end
 
 updateTrialList(state, uihdls);
 
+%% Optional: jump to specified trial
+if ~isempty(fsic(varargin, 'phase'))
+    sp_phase = varargin{fsic(varargin, 'phase') + 1};
+    sp_rep = varargin{fsic(varargin, 'rep') + 1};
+    sp_tn = varargin{fsic(varargin, 'trial') + 1};
+    
+    bFound = 0;
+    for idx = 1 : length(trialList.phase)
+        if isequal(trialList.phase{idx}, sp_phase) && ...
+           isequal(trialList.block(idx), sp_rep) && ...
+           isequal(trialList.trialN(idx), sp_tn)
+            bFound = 1;
+            break;
+        end
+    end
+    
+    if ~bFound
+        error('Cannot find specified trial in the trial list: phase=%s, rep=%d, trial=%d', sp_phase, sp_rep, sp_tn);
+    end
+    
+    set(uihdls.hlist, 'Value', idx);
+    list_cbk(uihdls.hlist, [], dacacheFN, stateFN, uihdls);
+    drawnow;
+end
+
 return
 
 function next_cbk(hObject, eventdata, dacacheFN, stateFN, uihdls)
