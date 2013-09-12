@@ -20,8 +20,32 @@ load(rfn); % gives data
 
 if isequal(mode, 'in')
     soundsc(data.signalIn, data.params.sr);
-else
+elseif isequal(mode, 'out')
     soundsc(data.signalOut, data.params.sr);
+elseif isequal(mode, 'in/out')
+    set(uihdls.hfig_aux, 'Visible', 'on');
+    set(0, 'CurrentFigure', uihdls.hfig_aux);
+    
+    clf;
+    subplot('Position', [0.1, 0.5, 0.8, 0.4]);
+    show_spectrogram(data.signalIn, data.params.sr, 'noFig');
+    set(gca, 'YTick', [0 : 500 : 4000]);
+    grid on;
+    
+    ylabel('Frequency (Hz)');
+    xlabel('Time (s)');
+    
+    subplot('Position', [0.1, 0.1, 0.8, 0.4]);
+    show_spectrogram(data.signalOut, data.params.sr, 'noFig');
+    set(gca, 'YTick', [0 : 500 : 4000]);
+    grid on;
+    
+    ylabel('Frequency (Hz)');
+    xlabel('Time (s)');
+    drawnow;
+    
+%     soundsc(data.signalIn, data.params.sr);
+%     soundsc(data.signalOut, data.params.sr); 
 end
 
 return

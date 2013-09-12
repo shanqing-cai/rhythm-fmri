@@ -73,7 +73,7 @@ for i0 = 1 : numel(tIntItems)
             for j2 = 1 : numel(pertTypes)
                 pt = pertTypes{j2};
 
-                tInts.(ti).(rc)(i1, j2) = nanmean(sres{i1}.asr_ints.(['asr_', ti]).(rc).(pt));
+                tInts.(ti).(rc)(i1, j2) = nanmean(sres{i1}.time_ints.(['asr_', ti]).(rc).(pt));
             end
         end
     end

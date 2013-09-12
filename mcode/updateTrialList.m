@@ -1,4 +1,9 @@
 function updateTrialList(state, uihdls, varargin)
+%% CONSTANTS
+ALL_PERT_TYPES = {'noPert', 'F1Up', 'decel'};
+
+%%
+
 listItems = cell(1, numel(state.trialList.fn));
 nFirstUnproc = Inf;
 
@@ -22,8 +27,13 @@ for i1 = 1 : numel(state.trialList.fn)
     t_trialN = state.trialList.trialN(i1);
     t_word = state.trialList.word{i1};
     
-    strDet = sprintf('%s, block %d, trial %d (%s)', ...
-                     t_phase, t_block, t_trialN, t_word);
+    t_pertType = ALL_PERT_TYPES{state.trialList.pertType(i1) + 1};
+    if isequal(t_pertType, 'noPert')
+        t_pertType = '';
+    end
+    
+    strDet = sprintf('{%s} %s, block %d, trial %d (%s)', ...
+                     t_pertType, t_phase, t_block, t_trialN, t_word);
     
     if state.stats(i1) == 0
         if bReveal == 0
