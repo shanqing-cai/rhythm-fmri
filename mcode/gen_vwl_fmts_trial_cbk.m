@@ -1,10 +1,15 @@
-function gen_vwl_fmts_trial_cbk(hObject, eventdata, dacacheFN, stateFN, uihdls, varargin)
+function varargout = gen_vwl_fmts_trial_cbk(hObject, eventdata, dacacheFN, stateFN, uihdls, varargin)
 %% Ad hoc
 sent = 'The steady bat gave birth to pups';
 
 vwls = {'eh', 'iy', 'ae', 'ey', 'er', 'uw', 'ah'};
 
 N_FMTS = 2;
+
+%% CONSTANTS
+N_FREQ = 1024;
+SPECTRO_WIN_SIZE = 128;
+SPECTRO_OVERLAP = 64;
 
 %%
 load(stateFN);      % gives state
@@ -54,6 +59,24 @@ end
 if pdata.(dataFld).bASROkay == 0
     fprintf(1, 'Trial %s: rating == 0, skipped it.\n', rawfn);
     return
+end
+
+if ~isfield(pdata.(dataFld), 'vwlSpectrogram');
+     pdata.(dataFld).vwlSpectrogram = cell(1, length(pdata.(dataFld).vwlFmts));
+     
+     f_vwls = fields(pdata.(dataFld).vwlFmts{1});
+     for i1 = 1 : length(pdata.(dataFld).vwlFmts)
+         pdata.(dataFld).vwlSpectrogram{i1} = struct;
+         
+         for i2 = 1 : numel(f_vwls)
+             v = f_vwls{i2};
+             pdata.(dataFld).vwlSpectrogram{i1}.(v) = [];
+         end
+     end
+end
+
+if hObject == uihdls.hmenu_calc_avg_vwl_spect
+    spectrograms = struct;
 end
 
 for i1 = 1 : numel(vwls)
@@ -106,11 +129,21 @@ for i1 = 1 : numel(vwls)
     
     pdata.(dataFld).cntFmts{idx_trial}((sidx0 - 1) / data.params.frameLen + 1 : (sidx1 / data.params.frameLen), :) = fmts;
     
+    % --- Get spectrogram --- %
+    if hObject == uihdls.hmenu_calc_avg_vwl_spect
+        [s, f, t] = spectrogram(vwl_wf, SPECTRO_WIN_SIZE, SPECTRO_OVERLAP, N_FREQ, data.params.sr);
+        s = 20 * log10(abs(s));
+
+        spectrograms.(v) = s;
+%         pdata.(dataFld).vwlSpectrogram{idx_trial}.(v) = s;
+    end
 end
 
 %%
 save(dacacheFN, 'pdata');
 fprintf(1, 'Saved results to pdata file: %s\n', dacacheFN);
 
-
+if hObject == uihdls.hmenu_calc_avg_vwl_spect
+    varargout{1} = spectrograms;
+end
 return

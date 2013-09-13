@@ -201,6 +201,8 @@ uihdls.hmenu_gen_vwl_fmts_trial = uimenu('Parent', uihdls.hmenu_formants, ...
                                          'Label', 'Generate vowel formant for current trial');
 uihdls.hmenu_gen_vwl_fmts_all = uimenu('Parent', uihdls.hmenu_formants, ...
                                        'Label', 'Generate vowel formant for all valid trials');
+uihdls.hmenu_calc_avg_vwl_spect = uimenu('Parent', uihdls.hmenu_formants, ...
+                                       'Label', 'Calculate average vowel spectrogram from all valid trials');
 
 hreveal = uicontrol('Style', 'pushbutton', ...
                     'Unit', 'Normalized', ...
@@ -591,6 +593,7 @@ set(uihdls.hmenu_asrOnFB, 'Callback', {@runASROnFB_cbk, dacacheFN, stateFN, uihd
 
 set(uihdls.hmenu_gen_vwl_fmts_trial, 'Callback', {@gen_vwl_fmts_trial_cbk, dacacheFN, stateFN, uihdls});
 set(uihdls.hmenu_gen_vwl_fmts_all, 'Callback', {@gen_vwl_fmts_all_cbk, dacacheFN, stateFN, uihdls});
+set(uihdls.hmenu_calc_avg_vwl_spect, 'Callback', {@gen_vwl_fmts_all_cbk, dacacheFN, stateFN, uihdls});
 % set(uihdls.bt_best_nLPC, 'Callback', {@best_nLPC_cbk, dacacheFN, stateFN, uihdls});
 
 set(uihdls.hmenu_comments_recover, 'Callback', {@recover_comments_from_file, dacacheFN, stateFN, uihdls});

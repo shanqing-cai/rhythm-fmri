@@ -346,10 +346,14 @@ end
 %% Formant trajectory analysis
 analyze_fmts_vwls = {'eh', 'iy', 'ae'};
 
+F1s = struct;
+spect = struct;
+
 for i0 = 1 : numel(analyze_fmts_vwls)
     vwl = analyze_fmts_vwls{i0};
-    
+      
     F1s.(vwl) = struct;
+    spec.(vwl) = struct;
 
     figure('Name', sprintf('Vowel formants under: %s', vwl));
     for i1 = 1 : numel(rhyConds)    
