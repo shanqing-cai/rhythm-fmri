@@ -72,6 +72,7 @@ if hObject == uihdls.hmenu_gen_vwl_fmts_all
 elseif hObject == uihdls.hmenu_calc_avg_vwl_spect
     a_spect = struct;
     a_spect_pt = [];
+    a_spect_br = [];
     
     for n = 1 : length(i1s)    
         set(uihdls.hlist, 'Value', n);
@@ -103,6 +104,7 @@ elseif hObject == uihdls.hmenu_calc_avg_vwl_spect
             
         end
         a_spect_pt(end + 1) = pdata.(dataFld).pertType(idx_trial);
+        a_spect_br(end + 1) = pdata.(dataFld).bRhythm(idx_trial);
     end
     
     %--- Calcualte averages of the spectrograms ---%
@@ -112,6 +114,7 @@ elseif hObject == uihdls.hmenu_calc_avg_vwl_spect
     a_spect_realt = struct;
     a_spect_normt = struct;
     
+    nrh = max(pdata.(dataFld).bRhythm) + 1
     npt = max(pdata.(dataFld).pertType) + 1;
     
     flds = fields(a_spect);
@@ -121,8 +124,8 @@ elseif hObject == uihdls.hmenu_calc_avg_vwl_spect
         nfr = size(a_spect.(fld){1}, 1);
         
 %         assert(length(pdata.(dataFld).pertType) == length(a_spect.(fld)));
-        avg_spect_realt.(fld) = cell(1, npt);
-        avg_spect_normt.(fld) = cell(1, npt);
+        avg_spect_realt.(fld) = cell(nrh, npt);
+        avg_spect_normt.(fld) = cell(nrh, npt);
         
         a_lens = nan(1, length(a_spect.(fld)));
         for i2 = 1 : length(a_spect.(fld))
@@ -130,35 +133,41 @@ elseif hObject == uihdls.hmenu_calc_avg_vwl_spect
         end
         
         max_len = max(a_lens);
-        
+                
         for i2 = 1 : npt
-            avg_spect_realt.(fld){i2} = nan(nfr, max_len);
-            a_spect_realt.(fld){i2} = nan(nfr, max_len, 0);
-            
-            avg_spect_normt.(fld){i2} = nan(nfr, SPECT_NORMT_N);
-            a_spect_normt.(fld){i2} = nan(nfr, SPECT_NORMT_N, 0);
+            for i3 = 1 : nrh
+                avg_spect_realt.(fld){i3, i2} = nan(nfr, max_len);
+                a_spect_realt.(fld){i3, i2} = nan(nfr, max_len, 0);
+    
+                avg_spect_normt.(fld){i3, i2} = nan(nfr, SPECT_NORMT_N);
+                a_spect_normt.(fld){i3, i2} = nan(nfr, SPECT_NORMT_N, 0);
+            end
         end
         
         assert(length(a_spect_pt) == length(a_spect.(fld)));             
         for i2 = 1 : length(a_spect.(fld))
             padded_s = [a_spect.(fld){i2}, nan(nfr, max_len - size(a_spect.(fld){i2}, 2))];
             
+            rn = a_spect_br(i2);
             pt = a_spect_pt(i2);
-            a_spect_realt.(fld){pt + 1}(:, :, end + 1) = padded_s;
+            
+            a_spect_realt.(fld){rn + 1, pt + 1}(:, :, end + 1) = padded_s;
             
             tx = 1 : size(a_spect.(fld){i2}, 2);
             txi = linspace(1, size(a_spect.(fld){i2}, 2), SPECT_NORMT_N);
             
 %             a_spect_normt.(fld){pt + 1}(:, :, end + 1) = nan(nfr, SPECT_NORMT_N);
 %             for i3 = 1 : nfr
-            a_spect_normt.(fld){pt + 1}(:, :, end + 1) = interp1(tx, a_spect.(fld){i2}', txi)';
+            a_spect_normt.(fld){rn + 1, pt + 1}(:, :, end + 1) = interp1(tx, a_spect.(fld){i2}', txi)';
 %             end
         end
         
         %--- Get arithmetic mean ---%
         for i2 = 1 : npt
-            avg_spect_realt.(fld){i2} = nanmean(a_spect_realt.(fld){i2}, 3);
-            avg_spect_normt.(fld){i2} = nanmean(a_spect_normt.(fld){i2}, 3);
+            for i3 = 1 : nrh
+                avg_spect_realt.(fld){i3, i2} = nanmean(a_spect_realt.(fld){i3, i2}, 3);
+                avg_spect_normt.(fld){i3, i2} = nanmean(a_spect_normt.(fld){i3, i2}, 3);
+            end
         end
         
         a_spect_realt = rmfield(a_spect_realt, fld); % For saving memory
