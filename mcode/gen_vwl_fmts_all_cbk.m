@@ -114,7 +114,7 @@ elseif hObject == uihdls.hmenu_calc_avg_vwl_spect
     a_spect_realt = struct;
     a_spect_normt = struct;
     
-    nrh = max(pdata.(dataFld).bRhythm) + 1
+    nrh = max(pdata.(dataFld).bRhythm) + 1;
     npt = max(pdata.(dataFld).pertType) + 1;
     
     flds = fields(a_spect);
