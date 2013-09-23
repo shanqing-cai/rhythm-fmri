@@ -940,7 +940,16 @@ if (handles.debug==0)
             if handles.trigByScanner && ~b_fMRI_practInter
                 title(['Last speech trial: "', handles.lastData.params.name, '"']);
             else
-                title(['This speech trial: "', dataOut.params.name, '"']);
+                if handles.trialType == 1 || handles.trialType == 3
+                    trialTypeStr = 'normal';
+                elseif handles.trialType == 2 || handles.trialType == 4
+                    trialTypeStr = 'rhythm';
+                else
+                    trialTypeStr = '';
+                end
+                
+                title(sprintf('This speech trial (type=%s): %s', ...
+                              trialTypeStr, dataOut.params.name));
             end
             
             xs = get(gca, 'XLim');
