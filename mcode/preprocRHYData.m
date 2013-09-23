@@ -40,13 +40,13 @@ stateFN = fullfile(dacacheDir, [pdata.subject.name, '_state.mat']);
 
 %% Calculate the total number of speech trials
 procPhases = {'pract1', 'pract2', 'pre', 'run1', 'run2', 'run3'};
-mainData = init_data('', MAIN_UTTER, procPhases, expt, rawDataDir, subjID);
+[mainData, exptType] = init_data('', MAIN_UTTER, procPhases, expt, rawDataDir, subjID);
 
 pdata.mainData = mainData;
 
 %% Build a list of all trials
 if isfile(stateFN)
-    fprintf('Found state.mat at %s.\n',stateFN);
+    fprintf('Found state.mat at %s.\n', stateFN);
     if isempty(fsic(varargin, 'phase')) && isempty(fsic(varargin, 'pdata_fixAutoRMS'))
         a = input('Resume? (0/1): ');
     else
@@ -78,7 +78,7 @@ if bNew
     
     fprintf('\nstate.mat not found.\n');
     fprintf('Getting information about all trials...\n');
-        
+
     trialList.fn={};
     trialList.phase={};
     trialList.block=[];
@@ -123,6 +123,8 @@ if bNew
     trialListPert.bRhythm = trialList.bRhythm(idx_pert);
     trialListPert.pertType = trialList.pertType(idx_pert);
     
+    state.exptType = exptType;
+    
     state.trialList = trialList;
     state.trialListPert = trialListPert;
     
@@ -162,7 +164,6 @@ hlist_title = uicontrol('Style', 'text', ...
                   'String', 'Trial list: (*: Vowel bounds done)', ...
                   'HorizontalAlignment', 'left');
 uihdls.hlist_title = hlist_title;
-
 
 
 hlist = uicontrol('Style', 'listbox', ...

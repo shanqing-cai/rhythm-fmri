@@ -43,6 +43,8 @@ pdata.(dataFld).fluencyCode{idx_trial} = t_fluencyCode;
 save(dacacheFN, 'pdata');
 
 fn = state.trialList.fn{i1};
-fprintf('INFO: trial: %s: fluencyCode', fn);
-disp(t_fluencyCode);
+    fprintf(1, 'INFO: trial: %s: fluencyCode = \n\t', fn);
+    disp(t_fluencyCode);
+    
+    fprintf(1, '\n');
 return
