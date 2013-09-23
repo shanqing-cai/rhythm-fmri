@@ -135,16 +135,29 @@ else
     set(uihdls.pm_pertOkay, 'Value', fsic(items, 'Bad'));
 end
 
-for i1 = 1 : numel(uihdls.utterWords)
-    uWord = uihdls.utterWords{i1};    
-    btnName = sprintf('bt_%s', uWord);
+utterWords = splitstring(pdata.(dataFld).words{idx});
+if length(utterWords) > length(uihdls.btnFluencyWords)
+    error('The number of words in the utterance "%s" exceeds the number of fluency buttons (%d)', ...
+          pdata.(dataFld).words{idx}, length(uihdls.btnFluencyWords));
+end
+
+for i1 = 1 : numel(utterWords)
+    uWord = utterWords{i1};
+%     btnName = sprintf('bt_%s', uWord);
+    set(uihdls.btnFluencyWords(i1), 'string', uWord);
     
     if ~isempty(find(fluencyCode == i1, 1))
-        set(uihdls.(btnName), 'ForegroundColor', [1, 0, 0]);
+        set(uihdls.btnFluencyWords(i1), 'ForegroundColor', [1, 0, 0]);
     else
-        set(uihdls.(btnName), 'ForegroundColor', [0, 1, 0]);
+        set(uihdls.btnFluencyWords(i1), 'ForegroundColor', [0, 1, 0]);
     end
     
+    set(uihdls.btnFluencyWords(i1), 'Enable', 'on');
+    
+end
+
+for i1 = numel(utterWords) + 1 : length(uihdls.btnFluencyWords)
+    set(uihdls.btnFluencyWords(i1), 'Enable', 'off');
 end
 
 return

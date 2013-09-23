@@ -14,10 +14,24 @@ dataFld = 'mainData';
 
 idx_trial = state.trialList.allOrderN(i1);
 
-str = get(uihdls.edit_comments, 'String');
-pdata.(dataFld).comments{idx_trial} = str;
-save(dacacheFN, 'pdata');
+str = get(uihdls.edit_fluency, 'String');
 
-fn = state.trialList.fn{i1};
-fprintf('INFO: trial: %s: comments -> [%s]\n', fn, pdata.(dataFld).comments{idx_trial});
+bChanged = 0;
+if ~isfield(pdata.(dataFld), 'fluency_comments')
+    pdata.(dataFld).fluency_comments = cell(size(pdata.(dataFld).rawDataFNs));
+    bChanged = 1;
+end
+
+if ~isequal(pdata.(dataFld).fluency_comments{idx_trial}, str)
+    pdata.(dataFld).fluency_comments{idx_trial} = str;
+    bChanged = 1;
+end
+
+if bChanged
+    save(dacacheFN, 'pdata');
+
+    fn = state.trialList.fn{i1};
+    fprintf('INFO: %s: trial: %s: fluency_comments -> [%s]\n', ...
+            mfilename, fn, pdata.(dataFld).fluency_comments{idx_trial});
+end
 return

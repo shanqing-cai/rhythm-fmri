@@ -160,6 +160,7 @@ for i1 = 1 : size(dataFlds, 1)
 end
 
 rData.comments = cell(size(rData.rawDataFNs));
+rData.fluency_comments = cell(size(rData.rawDataFNs));
 
 rData.bPertOkay = nan(size(rData.rawDataFNs));
 
