@@ -61,19 +61,7 @@ if pdata.(dataFld).bASROkay == 0
     return
 end
 
-if ~isfield(pdata.(dataFld), 'vwlSpectrogram');
-     pdata.(dataFld).vwlSpectrogram = cell(1, length(pdata.(dataFld).vwlFmts));
-     
-     f_vwls = fields(pdata.(dataFld).vwlFmts{1});
-     for i1 = 1 : length(pdata.(dataFld).vwlFmts)
-         pdata.(dataFld).vwlSpectrogram{i1} = struct;
-         
-         for i2 = 1 : numel(f_vwls)
-             v = f_vwls{i2};
-             pdata.(dataFld).vwlSpectrogram{i1}.(v) = [];
-         end
-     end
-end
+%--
 
 if hObject == uihdls.hmenu_calc_avg_vwl_spect
     spectrograms = struct;
@@ -137,6 +125,20 @@ for i1 = 1 : numel(vwls)
         spectrograms.(v) = s;
 %         pdata.(dataFld).vwlSpectrogram{idx_trial}.(v) = s;
     end
+end
+
+if ~isfield(pdata.(dataFld), 'vwlSpectrogram');
+     pdata.(dataFld).vwlSpectrogram = cell(1, length(pdata.(dataFld).vwlFmts));
+     
+     f_vwls = fields(pdata.(dataFld).vwlFmts{idx_trial});
+     for i1 = 1 : length(pdata.(dataFld).vwlFmts)
+         pdata.(dataFld).vwlSpectrogram{i1} = struct;
+         
+         for i2 = 1 : numel(f_vwls)
+             v = f_vwls{i2};
+             pdata.(dataFld).vwlSpectrogram{i1}.(v) = [];
+         end
+     end
 end
 
 %%

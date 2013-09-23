@@ -33,6 +33,7 @@ if nargin == 2 % data
     bPertOkay = DEFAULT_PERT_OKAY;
     
     comments = '';
+    fluency_comments = '';
     
     fluencyCode = DEFAULT_FLUENCY_CODE;
     
@@ -79,6 +80,7 @@ elseif nargin == 4 % pdata
     bPertOkay = pdata.(dataFld).bPertOkay(idx);
     
     comments = pdata.(dataFld).comments{idx};
+    fluency_comments = pdata.(dataFld).fluency_comments{idx};
     
     fluencyCode = pdata.(dataFld).fluencyCode{idx};
     
@@ -129,6 +131,8 @@ else
 end
 
 set(uihdls.edit_comments, 'String', comments);
+
+set(uihdls.edit_fluency, 'String', fluency_comments);
 
 items = get(uihdls.pm_pertOkay, 'String');
 if isnan(bPertOkay)
