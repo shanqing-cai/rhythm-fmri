@@ -35,6 +35,8 @@ if nargin == 2 % data
     comments = '';
     
     fluencyCode = DEFAULT_FLUENCY_CODE;
+    
+    utterWords = splitstring(data.params.name);
 elseif nargin == 4 % pdata
     pdata = varargin{1};
     dataFld = varargin{2};
@@ -79,6 +81,8 @@ elseif nargin == 4 % pdata
     comments = pdata.(dataFld).comments{idx};
     
     fluencyCode = pdata.(dataFld).fluencyCode{idx};
+    
+    utterWords = splitstring(pdata.(dataFld).words{idx});
 else
     return;
 end
@@ -135,10 +139,10 @@ else
     set(uihdls.pm_pertOkay, 'Value', fsic(items, 'Bad'));
 end
 
-utterWords = splitstring(pdata.(dataFld).words{idx});
+
 if length(utterWords) > length(uihdls.btnFluencyWords)
     error('The number of words in the utterance "%s" exceeds the number of fluency buttons (%d)', ...
-          pdata.(dataFld).words{idx}, length(uihdls.btnFluencyWords));
+          utterWords, length(uihdls.btnFluencyWords));
 end
 
 for i1 = 1 : numel(utterWords)
