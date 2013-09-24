@@ -80,6 +80,7 @@ elseif nargin == 4 % pdata
     bPertOkay = pdata.(dataFld).bPertOkay(idx);
     
     comments = pdata.(dataFld).comments{idx};
+    
     fluency_comments = pdata.(dataFld).fluency_comments{idx};
     
     fluencyCode = pdata.(dataFld).fluencyCode{idx};

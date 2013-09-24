@@ -178,7 +178,7 @@ for i2 = 1 : numel(pertTypes(2 : end))
     xs = get(gca, 'XLim');
     plot(xs, [0, 0], '-', 'Color', [0.5, 0.5, 0.5]);
     
-    set(gca, 'YLim', [-20, 30]);
+    set(gca, 'YLim', [-20, 40]);
     xlabel('Phones');
     ylabel('Time inteval change from noPert (ms) (mean\pm1 SEM)');
     legend(rhyConds);
