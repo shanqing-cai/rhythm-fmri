@@ -16,8 +16,6 @@ utterWords = splitstring(pdata.(dataFld).words{idx_trial});
 fluencyCode_old = pdata.(dataFld).fluencyCode{idx_trial};
 
 for i1 = 1 : numel(utterWords)
-    uWord = uihdls.utterWords{i1};
-    
     if hObject == uihdls.btnFluencyWords(i1)
         if isequal(get(uihdls.btnFluencyWords(i1), 'ForegroundColor'), clrG);
             set(uihdls.btnFluencyWords(i1), 'ForegroundColor', clrR);

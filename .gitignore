@@ -1,6 +1,7 @@
 ADAPT_VC_RATIO*/
 asr/*.dict
-dacode
+dacode/
+dacache/
 eqfilt
 julius-3.5.2-quickstart-windows/
 mcode/*.asv

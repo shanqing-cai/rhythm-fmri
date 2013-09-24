@@ -42,6 +42,19 @@ stateFN = fullfile(dacacheDir, [pdata.subject.name, '_state.mat']);
 
 %% Calculate the total number of speech trials
 procPhases = {'pract1', 'pract2', 'pre', 'run1', 'run2', 'run3'};
+
+%--- In the case of an MRI experiment, there may be more runs ---%
+%--- If so, include them! ---%
+nRunsAct = 0;   % Actual number of runs
+while isdir(fullfile(expDir, sprintf('run%d', nRunsAct + 1)))
+    nRunsAct = nRunsAct + 1;
+    
+    runStr = sprintf('run%d', nRunsAct);
+    if isempty(fsic(procPhases, runStr));
+        procPhases{end + 1} = runStr;
+    end
+end
+
 [mainData, exptType] = init_data('', MAIN_UTTER, procPhases, expt, rawDataDir, subjID);
 
 pdata.mainData = mainData;
@@ -50,19 +63,21 @@ pdata.mainData = mainData;
 if isfile(stateFN)
     fprintf('Found state.mat at %s.\n', stateFN);
     if isempty(fsic(varargin, 'phase')) && isempty(fsic(varargin, 'pdata_fixAutoRMS'))
-        a = input('Resume? (0/1): ');
+        answer = input('Resume? (0/1): ');
     else
-        a = 1;
+        answer = 1;
     end
-    if a==1
+    if answer==1
         load(stateFN);  % gives state
         load(dacacheFN);    % gives pdata
-        trialList=state.trialList;
-        trialListPert=state.trialListPert;
-        bNew=0;
+        
+        trialList = state.trialList;
+        trialListPert = state.trialListPert;
+        
+        bNew = 0;
     else
-        a = input('Are you sure you want to start the screening process over? (0/1): ');
-        if a == 1
+        answer = input('Are you sure you want to start the screening process over? (0/1): ');
+        if answer == 1
             bNew=1;
         else
             return
@@ -169,7 +184,7 @@ uihdls.hfig = figure('Position', [20, 150, 1560, 600]);
 hlist_title = uicontrol('Style', 'text', ...
                   'Unit', 'Normalized', ...
                   'Position', [0.02, 0.93, 0.18, 0.05], ...
-                  'String', 'Trial list: (*: Vowel bounds done)', ...
+                  'String', 'Trial list: (*: preprocessing done)', ...
                   'HorizontalAlignment', 'left');
 uihdls.hlist_title = hlist_title;
 
