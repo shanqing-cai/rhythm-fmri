@@ -35,8 +35,8 @@ rate_LB = 1 / sylDur_UB;
 rate_UB = 1 / sylDur_LB;
 
 % --- Related to intensity -- %
-int_LB = 60;
-int_UB = 90;
+int_LB = 50;
+int_UB = 85;
 
 xlim_rate = [0, 1];
 xlim_int = [0, 1];

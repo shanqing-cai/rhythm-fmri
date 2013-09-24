@@ -15,11 +15,38 @@ dacacheDir = '../dacache';
 pdataFN = fullfile(dacacheDir, [subjID, '.mat']);
 check_file(pdataFN);
 
+T_INT_P_THRESH = 0.05;
+
+prodRatingThresh = 0; % Most liberal: 0; More conservative: 1
+
 %% Additional input options
 bMan = ~isempty(fsic(varargin, '--man')); % Use manual time labels
 
 %%
 load(pdataFN);  % gives pdata
+
+%% Check whether the pert screening is complete
+for i0 = 2 : 3
+    t_pertType = pertTypes{i0};
+    
+    idx_pert = find(pdata.mainData.pertType == i0 - 1);
+    idx_noScreen = find(isnan(pdata.mainData.bPertOkay(idx_pert)));
+    idx_noScreen = idx_pert(idx_noScreen);
+
+    if length(idx_noScreen) > 0
+        fprintf(2, 'ERROR: the perturbation screening step of preprocessing is incomplete.\n');
+
+        for i1 = 1 : numel(idx_noScreen)
+            fprintf(2, '\t%s: phase=%s; rep=%d; trialNum=%d\n', ...
+                    t_pertType, ...
+                    pdata.mainData.phases{idx_noScreen(i1)}, ...
+                    pdata.mainData.blockNums(idx_noScreen(i1)), ...
+                    pdata.mainData.trialNums(idx_noScreen(i1)));
+        end
+        
+        return;
+    end
+end
 
 %%
 idxRuns = [];
@@ -35,32 +62,37 @@ isRun = zeros(1, length(pdata.mainData.phases));
 idxRun(idxRuns) = 1;
 
 idx.N.noPert = find(idxRun == 1 & ...
-                    pdata.mainData.rating > 0 & ...
+                    pdata.mainData.rating > prodRatingThresh & ...
                     pdata.mainData.bRhythm == 0 & ...
                     pdata.mainData.pertType == 0);
 idx.N.F1Up = find(idxRun == 1 & ...
-                  pdata.mainData.rating > 0 & ...
+                  pdata.mainData.rating > prodRatingThresh & ...
                   pdata.mainData.bRhythm == 0 & ...
-                  pdata.mainData.pertType == 1);
+                  pdata.mainData.pertType == 1 & ...
+                  pdata.mainData.bPertOkay == 1);
 idx.N.decel = find(idxRun == 1 & ...
-                   pdata.mainData.rating > 0 & ...
+                   pdata.mainData.rating > prodRatingThresh & ...
                    pdata.mainData.bRhythm == 0 & ...
-                   pdata.mainData.pertType == 2);
+                   pdata.mainData.pertType == 2 & ...
+                   pdata.mainData.bPertOkay == 1);
                 
 idx.R.noPert = find(idxRun == 1 & ...
-                    pdata.mainData.rating > 0 & ...
+                    pdata.mainData.rating > prodRatingThresh & ...
                     pdata.mainData.bRhythm == 1 & ...
                     pdata.mainData.pertType == 0);
 idx.R.F1Up = find(idxRun == 1 & ...
-                  pdata.mainData.rating > 0 & ...
+                  pdata.mainData.rating > prodRatingThresh & ...
                   pdata.mainData.bRhythm == 1 & ...
-                  pdata.mainData.pertType == 1);
+                  pdata.mainData.pertType == 1 & ...
+                  pdata.mainData.bPertOkay == 1);
 idx.R.decel = find(idxRun == 1 & ...
-                   pdata.mainData.rating > 0 & ...
+                   pdata.mainData.rating > prodRatingThresh & ...
                    pdata.mainData.bRhythm == 1 & ...
-                   pdata.mainData.pertType == 2);
+                   pdata.mainData.pertType == 2 & ...
+                   pdata.mainData.bPertOkay == 1);
+
 %% Comparing ASR results on input and output
-figure;
+figure('Position', [50, 150, 1500, 600]);
 spCnt = 1;
 for i1 = 1 : numel(rhyConds)    
     rc = rhyConds{i1};
@@ -76,6 +108,10 @@ for i1 = 1 : numel(rhyConds)
         plot(1e3 * (tbegs_FB - tbegs));
         
         set(gca, 'YLim', [-50, 150]);
+        
+        set(gca, 'XTick', 1 : size(tbegs_FB - tbegs, 1));
+        set(gca, 'XTickLabel', pdata.mainData.asrPhns);
+        title(sprintf('%s - %s', rc, pt));
     end
 end
 
@@ -166,7 +202,7 @@ for i1 = 1 : numel(rhyConds)
         
         asr_s_t1.(rc).(pt) = pdata.mainData.asrTBeg(3, idx.(rc).(pt)) - ...
                             pdata.mainData.asrTBeg(1, idx.(rc).(pt));
-        asr_s_t1.(rc).(pt) = asr_s_t1.(rc).(pt)(~isnan(asr_s_t1.(rc).(pt)));
+        asr_s_t1.(rc).(pt) = asr_s_t1.(rc).(pt)(~isnan(asr_s_t1.(rc).(pt)));                
         
         asr_t1_d.(rc).(pt) = pdata.mainData.asrTBeg(5, idx.(rc).(pt)) - ...
                             pdata.mainData.asrTBeg(3, idx.(rc).(pt));
@@ -191,6 +227,15 @@ for i1 = 1 : numel(rhyConds)
         asr_t2_p1.(rc).(pt) = pdata.mainData.asrTBeg(18, idx.(rc).(pt)) - ...
                               pdata.mainData.asrTBeg(16, idx.(rc).(pt));
         asr_t2_p1.(rc).(pt) = asr_t2_p1.(rc).(pt)(~isnan(asr_t2_p1.(rc).(pt)));
+        
+        % --- Cumulative intervals --- %
+        asr_s_d.(rc).(pt) = pdata.mainData.asrTBeg(5, idx.(rc).(pt)) - ...
+                            pdata.mainData.asrTBeg(1, idx.(rc).(pt));
+        asr_s_d.(rc).(pt) = asr_s_d.(rc).(pt)(~isnan(asr_s_d.(rc).(pt)));
+        
+        asr_s_b1.(rc).(pt) = pdata.mainData.asrTBeg(7, idx.(rc).(pt)) - ...
+                            pdata.mainData.asrTBeg(1, idx.(rc).(pt));
+        asr_s_b1.(rc).(pt) = asr_s_b1.(rc).(pt)(~isnan(asr_s_b1.(rc).(pt)));
     end
 end
 
@@ -257,7 +302,7 @@ for i0 = 1 : numel(rhyConds)
         else
             p = 1;
         end
-        if p >= 0.05
+        if p >= T_INT_P_THRESH
             lc = [0.6, 0.6, 0.6];
             lw = 0.5;
         else
@@ -273,7 +318,7 @@ for i0 = 1 : numel(rhyConds)
         else
             p = 1;
         end
-        if p >= 0.05
+        if p >= T_INT_P_THRESH
             lc = [0.6, 0.6, 0.6];
             lw = 0.5;
         else
@@ -301,10 +346,14 @@ end
 %% Formant trajectory analysis
 analyze_fmts_vwls = {'eh', 'iy', 'ae'};
 
+F1s = struct;
+spect = struct;
+
 for i0 = 1 : numel(analyze_fmts_vwls)
     vwl = analyze_fmts_vwls{i0};
-    
+      
     F1s.(vwl) = struct;
+    spec.(vwl) = struct;
 
     figure('Name', sprintf('Vowel formants under: %s', vwl));
     for i1 = 1 : numel(rhyConds)    
@@ -344,29 +393,29 @@ for i0 = 1 : numel(analyze_fmts_vwls)
 end
 
 %% Visualization
-meas = int_s_t1;
-measName = 'int_s_t1';
-meta_rc_pt_plot(meas, measName, colors);
+% meas = asr_s_t1;
+% measName = 'asr_s_t1';
+% meta_rc_pt_plot(meas, measName, colors);
+% 
+% meas = asr_s_d;
+% measName = 'asr_s_d';
+% meta_rc_pt_plot(meas, measName, colors);
+% 
+% meas = asr_s_b1;
+% measName = 'asr_s_b1';
+% meta_rc_pt_plot(meas, measName, colors);
+% 
+% meas = asr_s_g;
+% measName = 'asr_s_g';
+% meta_rc_pt_plot(meas, measName, colors);
+% 
+% meas = asr_s_b2;
+% measName = 'asr_s_b2';
+% meta_rc_pt_plot(meas, measName, colors);
 
-meas = int_s_d;
-measName = 'int_s_d';
-meta_rc_pt_plot(meas, measName, colors);
-
-meas = int_s_b1;
-measName = 'int_s_b1';
-meta_rc_pt_plot(meas, measName, colors);
-
-meas = int_s_g;
-measName = 'int_s_g';
-meta_rc_pt_plot(meas, measName, colors);
-
-meas = int_s_b2;
-measName = 'int_s_b2';
-meta_rc_pt_plot(meas, measName, colors);
-
-meas = asr_s_t1;
-measName = 'asr_s_t1';
-meta_rc_pt_plot(meas, measName, colors);
+% meas = asr_s_t1;
+% measName = 'asr_s_t1';
+% meta_rc_pt_plot(meas, measName, colors);
 
 %% Output
 varargout = {};

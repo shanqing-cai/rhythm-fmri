@@ -3,6 +3,7 @@ function updateParamsUI(uihdls, varargin)
 DEFAULT_RATING = 2;
 DEFAULT_ASR_OKAY= 1;
 DEFAULT_OST_OKAY = 1;
+DEFAULT_PERT_OKAY = 1;
 DEFAULT_FLUENCY_CODE = [];
 
 %%
@@ -29,10 +30,14 @@ if nargin == 2 % data
     rating = DEFAULT_RATING;
     bOSTOkay = DEFAULT_OST_OKAY;
     bASROkay = DEFAULT_ASR_OKAY;
+    bPertOkay = DEFAULT_PERT_OKAY;
     
     comments = '';
+    fluency_comments = '';
     
     fluencyCode = DEFAULT_FLUENCY_CODE;
+    
+    utterWords = splitstring(data.params.name);
 elseif nargin == 4 % pdata
     pdata = varargin{1};
     dataFld = varargin{2};
@@ -68,9 +73,19 @@ elseif nargin == 4 % pdata
     rating = pdata.(dataFld).rating(idx);
     bOSTOkay = pdata.(dataFld).bOSTOkay(idx);
     bASROkay = pdata.(dataFld).bASROkay(idx);
+    
+    if ~isfield(pdata.(dataFld), 'bPertOkay')
+        pdata.(dataFld).bPertOkay = ones(size(pdata.(dataFld).bASROkay));
+    end
+    bPertOkay = pdata.(dataFld).bPertOkay(idx);
+    
     comments = pdata.(dataFld).comments{idx};
     
+    fluency_comments = pdata.(dataFld).fluency_comments{idx};
+    
     fluencyCode = pdata.(dataFld).fluencyCode{idx};
+    
+    utterWords = splitstring(pdata.(dataFld).words{idx});
 else
     return;
 end
@@ -118,16 +133,40 @@ end
 
 set(uihdls.edit_comments, 'String', comments);
 
-for i1 = 1 : numel(uihdls.utterWords)
-    uWord = uihdls.utterWords{i1};    
-    btnName = sprintf('bt_%s', uWord);
+set(uihdls.edit_fluency, 'String', fluency_comments);
+
+items = get(uihdls.pm_pertOkay, 'String');
+if isnan(bPertOkay)
+    set(uihdls.pm_pertOkay, 'Value', fsic(items, 'N/A'));
+elseif bPertOkay == 1 
+    set(uihdls.pm_pertOkay, 'Value', fsic(items, 'Good'));
+else
+    set(uihdls.pm_pertOkay, 'Value', fsic(items, 'Bad'));
+end
+
+
+if length(utterWords) > length(uihdls.btnFluencyWords)
+    error('The number of words in the utterance "%s" exceeds the number of fluency buttons (%d)', ...
+          utterWords, length(uihdls.btnFluencyWords));
+end
+
+for i1 = 1 : numel(utterWords)
+    uWord = utterWords{i1};
+%     btnName = sprintf('bt_%s', uWord);
+    set(uihdls.btnFluencyWords(i1), 'string', uWord);
     
     if ~isempty(find(fluencyCode == i1, 1))
-        set(uihdls.(btnName), 'ForegroundColor', [1, 0, 0]);
+        set(uihdls.btnFluencyWords(i1), 'ForegroundColor', [1, 0, 0]);
     else
-        set(uihdls.(btnName), 'ForegroundColor', [0, 1, 0]);
+        set(uihdls.btnFluencyWords(i1), 'ForegroundColor', [0, 1, 0]);
     end
     
+    set(uihdls.btnFluencyWords(i1), 'Enable', 'on');
+    
+end
+
+for i1 = numel(utterWords) + 1 : length(uihdls.btnFluencyWords)
+    set(uihdls.btnFluencyWords(i1), 'Enable', 'off');
 end
 
 return

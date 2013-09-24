@@ -1,4 +1,4 @@
-function rData = init_data(type, mainUtter, phases, expt, rawDataDir, subjID)
+function [rData, exptType] = init_data(type, mainUtter, phases, expt, rawDataDir, subjID)
 rData.rawDataFNs = cell(1,0);
 rData.phases = cell(1,0);
 rData.blockNums = [];
@@ -9,8 +9,17 @@ rData.bRhythm = [];
 rData.pertType = [];
 
 if isequal(type, 'rand')
-    rData.pertType = [];
+    
 end
+
+%% Determine if this is a behav or MRI experiment
+if isfield(expt.script.run1.rep1, 'pertType')
+    exptType = 'behav';
+else
+    exptType = 'fMRI';
+end
+
+%%
 
 % sustData.rawDataFNs=cell(1,0);
 % sustData.phases=cell(1,0);
@@ -32,8 +41,8 @@ for i1 = 1 : numel(phases)
             for i3 = 1 : numel(d2)
                 t_fn=fullfile(t_dir, d2(i3).name);
                 load(t_fn);     % gives data
-                
-                if ~isequal(data.params.name, mainUtter)
+                               
+                if isequal(exptType, 'behav') && ~isequal(data.params.name, mainUtter)
                     continue;
                 end
                 
@@ -45,33 +54,30 @@ for i1 = 1 : numel(phases)
                 rData.datenums(end+1) = datenum(data.timeStamp);
                 rData.bRhythm(end + 1) = isequal(d2(i3).name(end - 5 : end), '-2.mat');
                 
-                t_pertType = expt.script.(rData.phases{end}).(['rep', num2str(rData.blockNums(end))]).pertType(rData.trialNums(end));
-%                 if data.params.bPitchShift == 1
-%                     t_pertType = 2;
-%                 elseif data.params.bShift == 1
-%                     t_pertType = 1;
-%                 else
-%                     t_pertType = 0;
-%                 end
-
+                if isequal(exptType, 'behav')
+                    t_pertType = expt.script.(rData.phases{end}).(['rep', num2str(rData.blockNums(end))]).pertType(rData.trialNums(end));
+                else
+                    t_pertType = 0;
+                end
+                
                 if ~isequal(data.params.name, expt.script.(rData.phases{end}).(['rep', num2str(rData.blockNums(end))]).word{rData.trialNums(end)})
                     fprintf(2, 'WARNING: mismatch in word between data and expt in file %s\n', t_fn);
                 end
 
-                if t_pertType < 0 || t_pertType > 3
+                if isequal(exptType, 'behav') && (t_pertType < 0 || t_pertType > 3)
                     fprintf(2, 'WARNING: Unexpected pertType (%d) in trial %s\n', t_pertType, t_fn);
                 end
                 
-                if t_pertType == 1 % DEBUG
-                    pause(0);
-                elseif t_pertType == 2 % DEBUG
-                    pause(0);
-                    % show_spectrogram(data.signalIn, 16e3); show_spectrogram(data.signalOut, 16e3);
-                else
-                    pause(0);
-                end
-                
-                rData.pertType(end + 1) = t_pertType;
+%                 if t_pertType == 1 % DEBUG
+%                     pause(0);
+%                 elseif t_pertType == 2 % DEBUG
+%                     pause(0);
+%                     % show_spectrogram(data.signalIn, 16e3); show_spectrogram(data.signalOut, 16e3);
+%                 else
+%                     pause(0);
+%                 end
+                                
+                rData.pertType(end + 1) = t_pertType;                
                 
                 if isequal(type, 'rand')
                     t_fn = fullfile(t_dir, d2(i3).name);
@@ -137,9 +143,10 @@ dataFlds = {'rmsThresh',  0;
               'bSpeedGood', 0;
               'bASROkay', 0;
               'bOSTOkay', 0;
-              'bPertOkay',  0;
+              'bPertOkay', 0;
               'rating', 0;
               'comments', 1};
+          
 
 for i1 = 1 : size(dataFlds, 1)
     fld = dataFlds{i1, 1};
@@ -153,6 +160,7 @@ for i1 = 1 : size(dataFlds, 1)
 end
 
 rData.comments = cell(size(rData.rawDataFNs));
+rData.fluency_comments = cell(size(rData.rawDataFNs));
 
 rData.bPertOkay = nan(size(rData.rawDataFNs));
 

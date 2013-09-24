@@ -211,7 +211,7 @@ hgui.TVisStim=expt.subject.TVisStim;
 hgui.vumeterMode=expt.subject.vumeterMode;
 
 hgui.rmsTransTarg_spl=getSPLTarg(expt.subject.mouthMicDist);
-load('../../signals/leveltest/micRMS_100dBA.mat');  % Gives micRMS_100dBA: the rms the microphone should read when the sound is at 100 dBA SPL
+load('micRMS_100dBA.mat');  % Gives micRMS_100dBA: the rms the microphone should read when the sound is at 100 dBA SPL
 hgui.rmsTransTarg=micRMS_100dBA / (10^((100-hgui.rmsTransTarg_spl)/20));
 
 fprintf('\n');

@@ -71,8 +71,10 @@ this_utter.bCepsLift_orig = data.params.bCepsLift;
 this_utter.cepsWinWidth_orig = data.params.cepsWinWidth;
 this_utter.nLPC_orig = data.params.nLPC;
 
-this_utter.bRmsGood = data.bRmsGood;
-this_utter.bSpeedGood = data.bSpeedGood;
+if ~isfield(state, 'exptType') || isequal(state.exptType, 'behav')
+    this_utter.bRmsGood = data.bRmsGood;
+    this_utter.bSpeedGood = data.bSpeedGood;
+end
 
 if isnan(pdata.(dataFld).rmsThresh(idx_trial))
     this_utter.rmsThresh = data.params.rmsThresh;
@@ -115,7 +117,7 @@ if ~isnan(state.persist_rmsThresh)
     this_utter.rmsThresh = persist_rmsThresh;
 end
 
-for h = 1 : 2
+for h = 1 : 1
     data=reprocData(dataOrig,'rmsThresh',this_utter.rmsThresh,'fn1',this_utter.fn1,'fn2',this_utter.fn2,...
                     'aFact',this_utter.aFact,'bFact',this_utter.bFact,'gFact',this_utter.gFact, 'nLPC', this_utter.nLPC, ...
                     'bCepsLift', this_utter.bCepsLift, 'cepsWinWidth', this_utter.cepsWinWidth);
@@ -584,13 +586,8 @@ if bMarksDone == 0 && bDoMarks == 1
 
         lblOkay = check_marks(this_utter, marks);
     end
-%     [foo, this_utter.vowelOnsetIdx] = min(abs(taxis1 - this_utter.vowelOnset));
-%     [foo, this_utter.vowelEndIdx] = min(abs(taxis1 - this_utter.vowelEnd));
+
 else
-%     this_utter.vowelOnsetIdx = pdata.(dataFld).vowelOnsetIdx(idx_trial);
-%     this_utter.vowelEndIdx = pdata.(dataFld).vowelEndIdx(idx_trial);
-%     this_utter.vowelOnset = pdata.(dataFld).vowelOnset(idx_trial);
-%     this_utter.vowelEnd = pdata.(dataFld).vowelEnd(idx_trial);
     for n = 1 : numel(marks)
         t_mark = marks{n};
         this_utter.(t_mark) = pdata.(dataFld).(t_mark)(idx_trial);
@@ -599,116 +596,8 @@ else
     
 end
 
-% Check the validity of Shira bounds
-% bShiraValid = check_shira_bounds(this_utter);
-% if bShiraValid == 0
-%     msgbox('Shira methods bounds are not within the vowel bounds.', 'Vowel bounds error', 'error', 'modal');
-% end
-
-% nzero = numel(find(data.fmts(this_utter.vowelOnsetIdx : this_utter.vowelEndIdx, 1) == 0));
-% if nzero > 0
-%     fprintf('WARNING: %d data points between vowelOnsetIdx and vowelEndIdx contain zero formant values.\n', nzero)
-% end
-
-% this_utter.f1Traj = f1v(this_utter.vowelOnsetIdx : this_utter.vowelEndIdx);
-% this_utter.f2Traj = f2v(this_utter.vowelOnsetIdx : this_utter.vowelEndIdx);
-
-% ylm = get(gca, 'YLim');
-% plot(repmat(this_utter.vowelOnset, 1, 2), ylm, 'w--', 'LineWidth', 1.5);
-% plot(repmat(this_utter.vowelEnd, 1, 2), ylm, 'w-', 'LineWidth', 1.5);
-% % ~Manually set the beginning and end of the vowel
-% set(gca,'XLim',xlim);
-% zdat = guidata(uihdls.haxes1);
-% zdat.currXLim = xlim;
-% zdat.defXLim = xlim;
-% guidata(uihdls.haxes1, zdat);
 
 %% ------------ Re-compute the three F1/F2 averages ------------ %
-% if this_utter.vowelOnsetIdx < this_utter.vowelEndIdx
-%     t_rms = data.rms(this_utter.vowelOnsetIdx : this_utter.vowelEndIdx);
-%     t_rms = mva_nz(t_rms, mvaWinWidth, 'Hamming');
-%     [max_rms, idx_max_rms] = max(t_rms);
-%     rms_lb = max_rms * rmsLBRatio;
-%     idx_v1 = max([1, round(this_utter.vowelOnsetIdx + idx_max_rms-1-rmsOneSide/frameDur)]);
-%     idx_v2 = min([length(data.fmts(:, 1)), round(this_utter.vowelOnsetIdx+idx_max_rms-1+rmsOneSide/frameDur)]);
-%     idx_lb_v1 = this_utter.vowelOnsetIdx + min(find(t_rms>rms_lb))-1;
-%     idx_lb_v2 = this_utter.vowelOnsetIdx + max(find(t_rms>rms_lb))-1;
-%     this_utter.prodF1 = nanmean(f1v(idx_v1 : idx_v2));
-%     this_utter.prodF2 = nanmean(f2v(idx_v1 : idx_v2));
-%     this_utter.prodF1_LB = nanmean(f1v(idx_lb_v1 : idx_lb_v2));
-%     this_utter.prodF2_LB = nanmean(f2v(idx_lb_v1 : idx_lb_v2));
-% 
-%     % -- Shira's method --
-%     idx_max_rms = idx_max_rms + this_utter.vowelOnsetIdx - 1;
-%     t_rms = mva_nz(data.rms(:, 1), mvaWinWidth, 'Hamming');
-%     rms_lb_shira = max_rms * 0.4;
-%     for k2 = idx_max_rms : -1 : 1
-%         if t_rms(k2) < rms_lb_shira
-%             break;
-%         end
-%     end
-%     idx_shira_v1 = k2;
-% 
-%     for k2 = idx_max_rms : 1 : length(t_rms)
-%         if t_rms(k2) < rms_lb_shira
-%             break;
-%         end
-%     end
-%     idx_shira_v2 = k2;
-% 
-%     idx_shira_mid = (idx_shira_v1 + idx_shira_v2) / 2;
-%     idx_shira_v1 = round(idx_shira_mid - shiraOneSide / frameDur);
-%     idx_shira_v2 = round(idx_shira_mid + shiraOneSide / frameDur);
-% 
-%     t_f1v = f1v(idx_shira_v1 : idx_shira_v2);
-%     t_f2v = f2v(idx_shira_v1 : idx_shira_v2);    
-%     this_utter.prodF1_shira = nanmean(t_f1v(t_f1v > 0));
-%     this_utter.prodF2_shira = nanmean(t_f2v(t_f2v > 0));
-%     this_utter.rms_lb_shira = rms_lb_shira;
-%     this_utter.idx_shira_v1 = idx_shira_v1;
-%     this_utter.idx_shira_v2 = idx_shira_v2;
-%     % -- ~Shira's method --
-%     % ------------ ~Compute the three F1/F2 averages ------------ %
-% end
-
-
-%% Visualization
-% plot(repmat(taxis1(idx_max_rms), 1, 2), ylim, 'k-.');
-% if isequal(pertStr,'none')
-%     this_utter.audF1=this_utter.prodF1;
-%     this_utter.audF2=this_utter.prodF2;
-% else
-%     this_utter.audF1=nanmean(sf1v(idx_v1:idx_v2));
-%     this_utter.audF2=nanmean(sf2v(idx_v1:idx_v2));
-% end
-% 
-% if ~isempty(idx_v1) && ~isempty(idx_v2)
-%     plot(repmat(taxis1(idx_v1),1,2),ylim,'k--');
-%     plot(repmat(taxis1(idx_v2),1,2),ylim,'k--');
-% end
-% if ~isempty(idx_lb_v1) && ~isempty(idx_lb_v2)
-%     plot(repmat(taxis1(idx_lb_v1),1,2),ylim,'k-');
-%     plot(repmat(taxis1(idx_lb_v2),1,2),ylim,'k-');
-% end
-% if ~isempty(idx_shira_v1) && ~isempty(idx_shira_v2)
-%     plot(repmat(taxis1(idx_shira_v1),1,50),linspace(ylim(1),ylim(2),50),'k.');
-%     plot(repmat(taxis1(idx_shira_v2),1,50),linspace(ylim(1),ylim(2),50),'k.');
-%     
-%     t_xlim = get(gca, 'XLim');
-%     t_ylim = get(gca, 'YLim');
-%     plot(t_xlim, repmat(this_utter.prodF1_shira, 1, 2), '--', 'Color', [0.5, 0.5, 0.5]);
-%     plot(t_xlim, repmat(this_utter.prodF2_shira, 1, 2), '--', 'Color', [0.5, 0.5, 0.5]);
-%     text(t_xlim(1) + 0.01 * range(t_xlim), this_utter.prodF1_shira + 0.012 * range(t_ylim), ...
-%          sprintf('F1(shira) = %.1f Hz', this_utter.prodF1_shira), ...
-%          'Color', 'w');
-%     text(t_xlim(1) + 0.01 * range(t_xlim), this_utter.prodF2_shira + 0.012 * range(t_ylim), ...
-%          sprintf('F2(shira) = %.1f Hz', this_utter.prodF2_shira), ...
-%          'Color', 'w');
-% end
-% if ~isnan(this_utter.idx_mnlBound_1) && ~isnan(this_utter.idx_mnlBound_1)
-%     plot(repmat(taxis1(this_utter.idx_mnlBound_1),1,50),linspace(ylim(1),ylim(2),50),'g-');
-%     plot(repmat(taxis1(this_utter.idx_mnlBound_2),1,50),linspace(ylim(1),ylim(2),50),'g-');
-% end
 
 title(t_title, 'Color', titleClr);
 
@@ -834,8 +723,10 @@ pdata.(dataFld).bDiscard(idx_trial)=this_utter.bDiscard;
 pdata.(dataFld).rating(idx_trial)=this_utter.rating;
 pdata.(dataFld).comments{idx_trial}=this_utter.comments;
 
-pdata.(dataFld).bRmsGood = this_utter.bRmsGood;
-pdata.(dataFld).bSpeedGood = this_utter.bSpeedGood;
+if ~isfield(state, 'exptType') || isequal(state.exptType, 'behav')
+    pdata.(dataFld).bRmsGood = this_utter.bRmsGood;
+    pdata.(dataFld).bSpeedGood = this_utter.bSpeedGood;
+end
 
 pdata1 = pdata;
 return

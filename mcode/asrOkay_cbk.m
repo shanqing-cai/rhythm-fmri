@@ -17,11 +17,17 @@ idx_trial = state.trialList.allOrderN(i1);
 val = get(uihdls.pm_asrOkay, 'Value');
 items = get(uihdls.pm_asrOkay, 'String');
 
-pdata.(dataFld).bASROkay(idx_trial) = isequal(items{val}, 'Good');
+bChanged = 0;
+if pdata.(dataFld).bASROkay(idx_trial) ~= isequal(items{val}, 'Good')
+    pdata.(dataFld).bASROkay(idx_trial) = isequal(items{val}, 'Good');
+    bChanged = 1;
+end
 
-save(dacacheFN, 'pdata');
-fprintf('Saved to %s\n', dacacheFN);
+if bChanged
+    save(dacacheFN, 'pdata');
+    fprintf('Saved to %s\n', dacacheFN);
 
-fn = state.trialList.fn{i1};
-fprintf('INFO: trial: %s: bASROkay -> %d\n', fn, pdata.(dataFld).bASROkay(idx_trial));
+    fn = state.trialList.fn{i1};
+    fprintf('INFO: trial: %s: bASROkay -> %d\n', fn, pdata.(dataFld).bASROkay(idx_trial));
+end
 return

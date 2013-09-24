@@ -37,8 +37,8 @@ pdata = pdata1;
 state.stats(i1) = 1;
 
 save(stateFN, 'state');
-save(dacacheFN, 'pdata');
-fprintf('Saved to %s\n', dacacheFN);
+% save(dacacheFN, 'pdata');
+% fprintf('Saved to %s\n', dacacheFN);
 
 rating_cbk(uihdls.pm_rating, [], dacacheFN, stateFN, uihdls);
 ostOkay_cbk(uihdls.pm_ostOkay, [], dacacheFN, stateFN, uihdls);

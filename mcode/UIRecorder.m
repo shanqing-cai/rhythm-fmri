@@ -262,7 +262,8 @@ handles.showTextCue=0;  %SC(2008/01/06)
 handles.dBRange=NaN;
 handles.rmsTransTarg_spl=NaN;
 % load calibMic;  % gets micGain: wav rms/ Pa rms (Pa^-1)
-load('../../signals/leveltest/micRMS_100dBA.mat');  % Gives micRMS_100dBA: the rms the microphone should read when the sound is at 100 dBA SPL
+% load('../../signals/leveltest/micRMS_100dBA.mat');  % Gives micRMS_100dBA: the rms the microphone should read when the sound is at 100 dBA SPL
+load('micRMS_100dBA');
 handles.rmsTransTarg=micRMS_100dBA / (10^((100-handles.rmsTransTarg_spl)/20));
 
 handles.nextMessage=imread(fullfile(handles.msgImgDir,'message_pre2.bmp'));
@@ -470,7 +471,8 @@ ylabel('Wave Out');
 % 	end
 
 %         load calibMic;  % gets micGain: wav rms/ Pa rms (Pa^-1)
-	load('../../signals/leveltest/micRMS_100dBA.mat');  % Gives micRMS_100dBA: the rms the microphone should read when the sound is at 100 dBA SPL
+% 	load('../../signals/leveltest/micRMS_100dBA.mat');  % Gives micRMS_100dBA: the rms the microphone should read when the sound is at 100 dBA SPL
+    load('micRMS_100dBA.mat');  % Gives micRMS_100dBA: the rms the microphone should read when the sound is at 100 dBA SPL
 %     text(xs(1)+0.05*range(xs),ys(2)-0.1*range(ys),['RMS(In)=',num2str(tRMSIn)]);
     xs=get(gca,'XLim'); ys=get(gca,'YLim');
 	text(xs(1)+0.05*range(xs),ys(2)-0.21*range(ys),...
@@ -938,7 +940,16 @@ if (handles.debug==0)
             if handles.trigByScanner && ~b_fMRI_practInter
                 title(['Last speech trial: "', handles.lastData.params.name, '"']);
             else
-                title(['This speech trial: "', dataOut.params.name, '"']);
+                if handles.trialType == 1 || handles.trialType == 3
+                    trialTypeStr = 'normal';
+                elseif handles.trialType == 2 || handles.trialType == 4
+                    trialTypeStr = 'rhythm';
+                else
+                    trialTypeStr = '';
+                end
+                
+                title(sprintf('This speech trial (type=%s): %s', ...
+                              trialTypeStr, dataOut.params.name));
             end
             
             xs = get(gca, 'XLim');
@@ -998,7 +1009,8 @@ if (handles.debug==0)
                 t_cv_ivis = std(t_ivis) / mean(t_ivis);
                 
                 % --- Calculate mean vowel intensity (in dB SPL A) --- %
-                micRMS = load('../../signals/leveltest/micRMS_100dBA.mat');
+%                 micRMS = load('../../signals/leveltest/micRMS_100dBA.mat');
+                micRMS = load('micRMS_100dBA.mat');
                 t_mean_vwl_lv = get_mean_vwl_level(dataOut, asrPAlign, vidx, micRMS.micRMS_100dBA);                
 
                 msglog(handles.logFN, sprintf('t_cv_ivis = %f', t_cv_ivis));

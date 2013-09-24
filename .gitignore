@@ -5,3 +5,8 @@ eqfilt
 julius-3.5.2-quickstart-windows/
 mcode/*.asv
 
+mcode/input_*.wav
+mcode/output_*.wav
+mcode/expt_config_fmri.txt
+mcode/expt_config_behav.txt
+

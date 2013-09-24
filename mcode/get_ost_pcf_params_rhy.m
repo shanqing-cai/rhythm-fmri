@@ -147,7 +147,7 @@ for i0 = 1 : numel(inputDirs)
     drep = dir(fullfile(inputDir, 'rep*'));
     if isempty(drep)
         fprintf(2, 'WARNING: cannot find matching reps in directory: %s\n', inputDir);
-        return;
+        continue;
     end
     for i1 = 1 : numel(drep)
         repDir = fullfile(inputDir, drep(i1).name);    

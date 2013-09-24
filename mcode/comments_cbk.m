@@ -15,9 +15,18 @@ dataFld = 'mainData';
 idx_trial = state.trialList.allOrderN(i1);
 
 str = get(uihdls.edit_comments, 'String');
-pdata.(dataFld).comments{idx_trial} = str;
-save(dacacheFN, 'pdata');
 
-fn = state.trialList.fn{i1};
-fprintf('INFO: trial: %s: comments -> [%s]\n', fn, pdata.(dataFld).comments{idx_trial});
+comments_old = pdata.(dataFld).comments{idx_trial};
+
+pdata.(dataFld).comments{idx_trial} = str;
+
+bChanged = ~isequal(comments_old, pdata.(dataFld).comments{idx_trial});
+
+if bChanged
+    save(dacacheFN, 'pdata');
+    fprintf('Saved to %s\n', dacacheFN);
+
+    fn = state.trialList.fn{i1};
+    fprintf('INFO: trial: %s: comments -> [%s]\n', fn, pdata.(dataFld).comments{idx_trial});
+end
 return

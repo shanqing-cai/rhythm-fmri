@@ -8,7 +8,7 @@ colors.nonRhythm = [0, 0.4, 0];
 sentMatFN = '../asr/vowel_indices.mat';
 check_file(sentMatFN);
 
-%% ---- Modify -----
+%% ---- Load config ---- %%
 subject = read_subject_config(configFN);
 
 if isequal(getHostName, 'smcg_w510')
@@ -21,6 +21,18 @@ end
 if subject.trigByScanner == 0
     check_file(subject.basePCF);
 end
+
+%% --- In case of fMRI experiment, force input of mouthMicDist ---
+if subject.trigByScanner
+    if ~isempty(fsic(varargin, 'mouthMicDist'))
+        subject.mouthMicDist = varargin{fsic(varargin, 'mouthMicDist') + 1};
+    else
+        subject.mouthMicDist = input('Please input mouth-mic distance (cm): ');
+    end
+end
+
+modify_expt_config(configFN, 'mouthMicDist', subject.mouthMicDist);
+fprintf(1, 'INFO: Modified the mouthMicDist field config file: %s\n', configFN);
 
 %% Check current working directory
 cwd = pwd;
@@ -391,7 +403,7 @@ hgui.TVisStim=expt.subject.TVisStim;
 hgui.vumeterMode=expt.subject.vumeterMode;
 
 hgui.rmsTransTarg_spl=getSPLTarg(expt.subject.mouthMicDist);
-load('../../signals/leveltest/micRMS_100dBA.mat');  % Gives micRMS_100dBA: the rms the microphone should read when the sound is at 100 dBA SPL
+load('micRMS_100dBA.mat');  % Gives micRMS_100dBA: the rms the microphone should read when the sound is at 100 dBA SPL
 hgui.rmsTransTarg=micRMS_100dBA / (10^((100-hgui.rmsTransTarg_spl)/20));
 
 msglog(logFN, ' ');
@@ -960,11 +972,11 @@ for n=startPhase:length(allPhases)
                 hgui1 = guidata(hgui.UIrecorder);
                 
                 % == Save timing data == %
+                tDatIdx = get_trial_index(expt.script, thisphase, i0, k);
                 if expt.subject.trigByScanner == 0 || b_fMRI_practInter % Behavioral sessions or fMRI practice / inter trials 
-                    tDatIdx = timingDat.trialCnt;
                     bToSaveTimingDat = timingDat.trialType(tDatIdx) <= 2;
                 else % fMRI sessions
-                    tDatIdx = timingDat.trialCnt - 1;
+                    tDatIdx = tDatIdx - 1;
                     if tDatIdx <= 0
                         bToSaveTimingDat = 0;
                     else
@@ -1135,7 +1147,7 @@ end
 set(hgui.play,'cdata',hgui.skin.play,'userdata',0);
 set(hgui.msgh,'string',...
 	{'Congratulations!';...
-	'You have finished the expt.'},'visible','on');
+	'You have finished this experiment'},'visible','on');
 % set(hgui.msgh_imgh,'CData',CDataMessage.finish,'visible','on');
 pause(3);
 close(hgui.UIrecorder)
