@@ -31,6 +31,7 @@ fprintf(1, 'INFO: Found %d runs in design matrix %s\n', ...
 %                        }
 %     };
 
+
 %--- Speech vs Baseline ---%
 RegNameTContrasts{1} = {'SvBL'};
 for i1 = 1 : nRuns
@@ -44,9 +45,21 @@ for i1 = 1 : nRuns
    RegNameTContrasts{1}{end + 1} = -1;
 end
 
+%--- R vs NR ---%
+RegNameTContrasts{2} = {'RvN'};
+for i1 = 1 : nRuns
+   RegNameTContrasts{2}{end + 1} = sprintf('Sn(%d) R1', i1);
+   RegNameTContrasts{2}{end + 1} = -1;
+   
+   RegNameTContrasts{2}{end + 1} = sprintf('Sn(%d) R2', i1);
+   RegNameTContrasts{2}{end + 1} = 1;
+end
+
+
+
 contrastFN = fullfile(subjDataDir, 'fmri_contrasts.mat');
 save(contrastFN, 'RegNameTContrasts');
 check_file(contrastFN);
-fprintf('%s saved.\n', contrastFN);
+fprintf(1, '%s saved.\n', contrastFN);
 
 return

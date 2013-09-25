@@ -1,13 +1,19 @@
 function RHY_stim2mat(subjID, TR, TA)
 % this script has to be executed inside the subject's directory.
 % read subjid from directory name
+% Inputs:
+%       TR - unit: ms
+%       TA - unit: ms
+%
 %% Paths
 if isequal(getHostName, 'ba3')
     behavDataDir = '/users/cais/RHY/BEHAV_DATA';
+    dacacheDir = '/users/cais/RHY/BEHAV_DATA/_dacache';
     dataDir = '/users/cais/RHY/DATA';
     genDesMatPath = '/users/cais/RHY/scripts';
 else
     behavDataDir = '/speechlab/5/scai/RHY/BEHAV_DATA';
+    dacacheDir = '/usersc/cais/RHY/BEHAV_DATA/_dacache';
     dataDir = '/uses/cais/RHY/DATA';
     genDesMatPath = '/speechlab/5/scai/RHY/scripts';
 end
@@ -18,6 +24,11 @@ end
 
 % DATA_dir = '/users/cais/STUT/DATA';
 % funcloc_dir = '/users/cais/STUT/funcloc';
+
+%%
+if ~(length(subjID) > 4 && isequal(subjID(1 : 4), 'MRI_'))
+    fprintf(2, 'WARNING: the subjID for an MRI session usually begins with MRI_. \nThe subjID you inputted (%s) does not fit this expectation.\n', subjID);
+end
 
 %% Load expt.mat
 check_dir(behavDataDir);
@@ -47,6 +58,25 @@ fprintf(1, 'INFO: Number of runs actually delivered = %d\n', nRunsAct);
 
 assert(nRunsAct <= nRunsScr);
 
+%% Load dacache file
+pdataFN = fullfile(dacacheDir, sprintf('%s.mat', subjID));
+check_file(pdataFN);
+
+load(pdataFN);
+assert(exist('pdata', 'var') == 1);
+
+if ~isfield(pdata, 'mainData')
+    error('Cannot find mainData in pdata');
+end
+
+if ~isfield(pdata.mainData, 'rating');
+    error('Cannot find mainData in pdata.mainData');
+end
+
+if ~isfield(pdata.mainData, 'fluencyCode')
+    error('Cannot find fluencyCode in pdata.mainData');
+end
+
 %% Read the stim-schedule for the delivered runs
 isInvalid = 0;
 runinfo = {};
@@ -64,6 +94,28 @@ for i1 = 1 : nRunsAct
         for i3 = 1 : numel(expt.script.(runStr).(repStr).trialOrder)
             
             stims{i1}(trCnt) = min([3, expt.script.(runStr).(repStr).trialOrder(i3)]);
+            
+            if stims{i1}(trCnt) <= 2
+                %-- Locate trial in pdata --%
+                idxPhase = fsic(pdata.mainData.phases, runStr);
+                idxBlock = find(pdata.mainData.blockNums == i2);
+                idxTrial = find(pdata.mainData.trialNums == i3);
+                idx = intersect(intersect(idxPhase, idxBlock), idxTrial);
+
+                if numel(idx) ~= 1
+                    error('Cannot find exactly one entry for trial: [%s, %s, trial-%d] in pdata', ...
+                          runStr, repStr, i3);
+                end
+
+                %-- Check for fluency and speech error --%
+                if ~isempty(pdata.mainData.fluencyCode{idx})
+                    stims{i1}(trCnt) = 4;
+                elseif pdata.mainData.rating(idx) == 0
+                    stims{i1}(trCnt) = 5;
+                end
+
+            end
+            
             trCnt = trCnt + 1;
         end
     end
@@ -71,9 +123,11 @@ for i1 = 1 : nRunsAct
 end
 
 %% Generate the design matrices
-% 1 - Speech production: rhythmic (SR)
-% 2 - Speech production: normal / non-rhytmic (SN)
+% 1 - Speech production: normal / non-rhytmic (SN)
+% 2 - Speech production: rhythmic (SR)
 % 3 - Baseline: no speech: (BL)
+% 4 - Disfluent
+% 5 - Error (not disfluent)
 
 tPath = which('gen_design_matrix');
 if isempty(tPath)
@@ -104,7 +158,7 @@ check_dir(subjDataDir, '-create');
 modelFN = fullfile(subjDataDir, 'fmri_model.mat');
 save(modelFN, 'sess');
 check_file(modelFN);
-fprintf('Design matrix saved to file: %s\n', modelFN);
+fprintf(1, 'Design matrix saved to file: %s\n', modelFN);
 
 %% Create the text files for the use of nipype
 % str = cell(1, numel(stims));
