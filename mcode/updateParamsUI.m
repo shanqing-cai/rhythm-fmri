@@ -6,9 +6,12 @@ DEFAULT_OST_OKAY = 1;
 DEFAULT_PERT_OKAY = 1;
 DEFAULT_FLUENCY_CODE = [];
 
-%%
 red = [1, 0, 0];
 green = [0, 0.5, 0];
+
+%%
+bIsRHY = ~isfield(uihdls, 'exptType') || isequal(uihdls.exptType, 'behav') || isequal(uihdls.exptType, 'fMRI') || ...
+         isequal(uihdls.exptType, 'rand-twarp-fmt') || isequal(uihdls.exptType, 'rand-RHY-fmri');
 
 if nargin == 2 % data
     data = varargin{1};
@@ -71,7 +74,11 @@ elseif nargin == 4 % pdata
     cepsWinWidth = pdata.(dataFld).cepsWinWidth(idx);
     
     rating = pdata.(dataFld).rating(idx);
-    bOSTOkay = pdata.(dataFld).bOSTOkay(idx);
+    
+    if bIsRHY
+        bOSTOkay = pdata.(dataFld).bOSTOkay(idx);
+    end
+    
     bASROkay = pdata.(dataFld).bASROkay(idx);
     
     if ~isfield(pdata.(dataFld), 'bPertOkay')
@@ -117,11 +124,13 @@ for i1 = 1 : numel(items)
 end
 set(uihdls.pm_rating, 'Value', i1);
 
-items = get(uihdls.pm_ostOkay, 'String');
-if bOSTOkay == 1
-    set(uihdls.pm_ostOkay, 'Value', fsic(items, 'Good'));
-else
-    set(uihdls.pm_ostOkay, 'Value', fsic(items, 'Bad'));
+if bIsRHY
+    items = get(uihdls.pm_ostOkay, 'String');
+    if bOSTOkay == 1
+        set(uihdls.pm_ostOkay, 'Value', fsic(items, 'Good'));
+    else
+        set(uihdls.pm_ostOkay, 'Value', fsic(items, 'Bad'));
+    end
 end
 
 items = get(uihdls.pm_asrOkay, 'String');

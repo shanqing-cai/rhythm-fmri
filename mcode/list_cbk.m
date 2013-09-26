@@ -41,7 +41,12 @@ save(stateFN, 'state');
 % fprintf('Saved to %s\n', dacacheFN);
 
 rating_cbk(uihdls.pm_rating, [], dacacheFN, stateFN, uihdls);
-ostOkay_cbk(uihdls.pm_ostOkay, [], dacacheFN, stateFN, uihdls);
+
+if ~isfield(uihdls, 'exptType') || isequal(uihdls.exptType, 'behav') || isequal(uihdls.exptType, 'fMRI') || ...
+   isequal(uihdls.exptType, 'rand-twarp-fmt') || isequal(uihdls.exptType, 'rand-RHY-fmri')
+    ostOkay_cbk(uihdls.pm_ostOkay, [], dacacheFN, stateFN, uihdls);
+end
+
 asrOkay_cbk(uihdls.pm_asrOkay, [], dacacheFN, stateFN, uihdls);
 comments_cbk(uihdls.edit_comments, [], dacacheFN, stateFN, uihdls);
 fluencyBtn_cbk(uihdls.hfig, [], dacacheFN, stateFN, uihdls);

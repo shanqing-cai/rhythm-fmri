@@ -1,21 +1,31 @@
 function playSig_cbk(hObject, eventdata, dacacheFN, stateFN, uihdls, mode)
-i1 = get(uihdls.hlist, 'Value');
+bIsRHY = ~isfield(uihdls, 'exptType') || isequal(uihdls.exptType, 'behav') || isequal(uihdls.exptType, 'fMRI') || ...
+         isequal(uihdls.exptType, 'rand-twarp-fmt') || isequal(uihdls.exptType, 'rand-RHY-fmri');
+
+tridx = get(uihdls.hlist, 'Value');
 
 % load(dacacheFN);    % gives pdata
 load(stateFN);      % gives state
 
 hostName=deblank(getHostName);
-if isequal(hostName,'smcg-w510') || isequal(hostName,'smcgw510') || isequal(hostName,'smcg_w510')
-    driveLet = 'G:';
+if bIsRHY
+    if isequal(hostName,'smcg-w510') || isequal(hostName,'smcgw510') || isequal(hostName,'smcg_w510')
+        driveLet = 'G:';
+    else
+        error('Unsupported host: %s', hostName);
+    end
+    
+    rfn = getRawFN_(state.rawDataDir,state.trialList.fn{tridx});
+    if ~isequal(rfn(1 : 2), driveLet)
+        rfn(1 : 2) = driveLet;
+    end
 else
-    error('Unsupported host: %s', hostName);
+    rfn = state.trialList.fn{tridx};
 end
 
-rfn = getRawFN_(state.rawDataDir,state.trialList.fn{i1});
-if ~isequal(rfn(1 : 2), driveLet)
-    rfn(1 : 2) = driveLet;
+if ~isfile(rfn)
+    error_log(sprintf('%s: Failed to find raw data file: %s', mfiename, rfn));
 end
-
 load(rfn); % gives data
 
 if isequal(mode, 'in')

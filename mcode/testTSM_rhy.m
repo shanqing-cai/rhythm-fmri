@@ -7,7 +7,7 @@ dataFN = 'G:\DATA\RHYTHM-FMRI\PILOT_ANS_F01\run1\rep1\trial-6-1.mat';
 ostFN = 'G:\DATA\RHYTHM-FMRI\PILOT_ANS_F01\run1\R.ost';
 pcfFN = 'G:\DATA\RHYTHM-FMRI\PILOT_ANS_F01\run1\twarp_R.pcf';
 
-B_USE_OUT_FILT = 1;
+B_USE_OUT_FILT = 0;
 
 %%
 load(dataFN); % Gives data
