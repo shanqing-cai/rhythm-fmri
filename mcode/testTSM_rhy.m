@@ -7,10 +7,18 @@ dataFN = 'G:\DATA\RHYTHM-FMRI\PILOT_ANS_F01\run1\rep1\trial-6-1.mat';
 ostFN = 'G:\DATA\RHYTHM-FMRI\PILOT_ANS_F01\run1\R.ost';
 pcfFN = 'G:\DATA\RHYTHM-FMRI\PILOT_ANS_F01\run1\twarp_R.pcf';
 
+B_USE_OUT_FILT = 1;
+
 %%
 load(dataFN); % Gives data
 
+%% Load filter coefficients
+if B_USE_OUT_FILT
+    addpath E:\speechres\signals\S14_filter;
 
+    [h0, Fs] = load_filter('EQF_demoL.bin');
+    h = resample(h0, data.params.sr, Fs);
+end
 
 %% Change parameters
 data.params.bPitchShift = 1;
@@ -34,6 +42,17 @@ TransShiftMex(6);   % Reset;\
 % p.rmsClipThresh=0.01;
 % p.bRMSClip=1;
 
+%% Configure filter
+if B_USE_OUT_FILT
+    TransShiftMex(3, 'outfiltlen', length(h));
+    TransShiftMex(3, 'outfircoeff', h);
+    TransShiftMex(3, 'buseoutfilt', 1);
+    fprintf(1, 'INFO: Configured and enabled output filter\n');
+else
+    TransShiftMex(3, 'buseoutfilt', 0);
+end
+
+%%
 MexIO('init', data.params);
 
 for n = 1 : length(sigInCell)
@@ -69,7 +88,7 @@ set(gca, 'XLim', xs);
 % subplot(2, 1, 2);
 % plot(data.signalOut);
 
-soundsc(data1.signalIn, data.params.sr);
+% soundsc(data1.signalIn, data.params.sr);
 soundsc(data1.signalOut, data.params.sr);
 
 return
