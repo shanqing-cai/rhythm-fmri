@@ -33,12 +33,16 @@ else
     pdata1 = updateDataUI(uihdls, pdata, dataFld, idx_trial, state, i1, ...
                           'fromList');
 end
-pdata = pdata1;
+
 state.stats(i1) = 1;
 
 save(stateFN, 'state');
-% save(dacacheFN, 'pdata');
-% fprintf('Saved to %s\n', dacacheFN);
+if ~isequal(pdata, pdata1)
+    pdata = pdata1;
+    save(dacacheFN, 'pdata');
+    fprintf('Saved to updated pdata to %s\n', dacacheFN);
+end
+
 
 rating_cbk(uihdls.pm_rating, [], dacacheFN, stateFN, uihdls);
 
