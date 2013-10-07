@@ -6,9 +6,18 @@ pertTypes = {'noPert', 'F1Up', 'decel'};
 colors.N = [0, 0.5, 0];
 colors.R = [0, 0, 1];
 
+colors.noPert = [0, 0, 0];
+colors.F1Up = [1, 0, 1];
+colors.decel = [1, 0.5, 0];
+
 gray = [0.5, 0.5, 0.5];
 
 P_THRESH_UNC = 0.05;
+
+FMT_ANA_VWLS = {'eh', 'iy', 'ae'};
+MAX_FMT_LEN = 256;
+
+T_STEP = 0.002;     % Unit: s
 
 %% Read subject list
 check_file(subjListFN);
@@ -58,7 +67,7 @@ else
     fprintf(1, 'INFO: Loaded sres to file: %s\n', grpCacheFN);
 end
 
-%%
+%% Time intervals
 assert(isequal(pertTypes{1}, 'noPert'));
 
 for i0 = 1 : numel(tIntItems)
@@ -79,6 +88,60 @@ for i0 = 1 : numel(tIntItems)
     end
 end
 
+%% Formant frequenciesavg
+avgVwlF1 = struct;
+steVwlF1 = struct;
+
+for h1 = 1 : length(FMT_ANA_VWLS)
+    t_vwl = FMT_ANA_VWLS{h1};
+    
+    avgVwlF1.(t_vwl) = struct;
+    chgAvgVwlF1s.(t_vwl) = struct;
+
+    vwlF1s.(t_vwl) = struct;
+    for i1 = 1 : numel(rhyConds)
+        rc = rhyConds{i1};
+
+        avgVwlF1s.(t_vwl).(rc) = struct;
+        steVwlF1s.(t_vwl).(rc) = struct;
+        chgAvgVwlF1s.(t_vwl).(rc) = struct;
+
+        vwlF1s.(t_vwl).(rc) = struct;
+        for i2 = 1 : numel(pertTypes)
+            pt = pertTypes{i2};
+
+            avgVwlF1s.(t_vwl).(rc).(pt) = nan(MAX_FMT_LEN, length(sres));
+            steVwlF1s.(t_vwl).(rc).(pt) = nan(MAX_FMT_LEN, length(sres));
+
+            vwlF1s.(t_vwl).(rc).(pt) = nan(MAX_FMT_LEN, length(sres));
+
+            %--- Collect formant data from subjects ---%
+            for j1 = 1 : length(sres);
+                len = size(sres{j1}.aF1s.(t_vwl).(rc).(pt), 1);
+                vwlF1s.(t_vwl).(rc).(pt)(1 : len, j1) = sres{j1}.aF1s.(t_vwl).(rc).(pt)(:, 1);
+            end
+
+            avgVwlF1s.(t_vwl).(rc).(pt) = mean(vwlF1s.(t_vwl).(rc).(pt), 2);
+            steVwlF1s.(t_vwl).(rc).(pt) = std(vwlF1s.(t_vwl).(rc).(pt), [], 2) / sqrt(size(vwlF1s.(t_vwl).(rc).(pt), 2));
+
+            glen = find(~isnan(avgVwlF1s.(t_vwl).(rc).(pt)), 1, 'last');    % Group-level length
+            avgVwlF1s.(t_vwl).(rc).(pt) = avgVwlF1s.(t_vwl).(rc).(pt)(1 : glen);
+            steVwlF1s.(t_vwl).(rc).(pt) = steVwlF1s.(t_vwl).(rc).(pt)(1 : glen);
+        end
+
+
+        assert(isequal(pertTypes{1}, 'noPert'));
+        for i2 = 2 : numel(pertTypes)
+            pt = pertTypes{i2};
+            clen = min([size(avgVwlF1s.(t_vwl).(rc).(pertTypes{1}), 1), ...
+                        size(avgVwlF1s.(t_vwl).(rc).(pt), 1)]);
+            chgAvgVwlF1s.(t_vwl).(rc).(pt) = avgVwlF1s.(t_vwl).(rc).(pt)(1 : clen) - ...
+                                             avgVwlF1s.(t_vwl).(rc).(pertTypes{1})(1 : clen);
+        end
+    end
+
+end
+
 %% 
 tIntChgs = struct;
 
@@ -93,12 +156,16 @@ for i0 = 1 : numel(tIntItems)
     end
 end
 
-%% Visualization
+%% Visualization: time intervals changes
+figure('Name', sprintf('Changes in time intervals from noPert', ti), ...
+       'Position', [100, 100, 1200, 600]);
+
 for i0 = 1 : numel(tIntItems)
     ti = tIntItems{i0};
     
-    figure('Name', sprintf('Changes in %s', ti), ...
-           'Position', [100, 100, 400, 300]);
+%     figure('Name', sprintf('Changes in %s', ti), ...
+%            'Position', [100, 100, 400, 300]);
+    subplot(2, 4, i0);
     hold on;
     for i1 = 1 : numel(rhyConds)
         rc = rhyConds{i1};
@@ -106,16 +173,17 @@ for i0 = 1 : numel(tIntItems)
         errorbar(1 : npt - 1, 1e3 * mean(tIntChgs.(ti).(rc)), 1e3 * ste(tIntChgs.(ti).(rc)), ...
                  'o-', 'Color', colors.(rc));
     end
-    legend(rhyConds);
+    legend(rhyConds, 'Location', 'Northwest');
     set(gca, 'XLim', [0, npt]);
     set(gca, 'XTick', [1, 2], 'XTickLabel', pertTypes(2 : end));
     xlim = get(gca, 'XLim');
     plot(xlim, [0, 0], '-', 'Color', gray);
     ylabel(sprintf('Change in time interval %s from noPert (ms)', ...
-           strrep(ti, '_', '\_')))
+           strrep(ti, '_', '\_')));
+	title(strrep(sprintf('Changes in %s', ti), '_', '\_'));
 end
 
-%% 
+%% Visualization: time intervals changes 2
 figure('Position', [50, 150, 800, 400]);
 hsp = nan(1, numel(pertTypes(2 : end)));
 for i1 = 1 : numel(pertTypes(2 : end))
@@ -184,6 +252,32 @@ for i2 = 1 : numel(pertTypes(2 : end))
     legend(rhyConds);
    
     title(pt);
+end
+
+%% Visualization: formant changes
+for h1 = 1 : numel(rhyConds)
+    rc = rhyConds{h1};
+    
+    figure('Name', sprintf('Changes in F1 from noPert under rhythm condition: %s', rc), ...
+           'Position', [100, 100, 900, 600]);
+    for i1 = 1 : numel(FMT_ANA_VWLS)
+        t_vwl = FMT_ANA_VWLS{i1};
+        subplot(2, 2, i1);
+        hold on;
+
+        assert(isequal(pertTypes{1}, 'noPert'));
+        for i2 = 2 : length(pertTypes)
+            pt = pertTypes{i2};
+            tAxis = 0 : T_STEP : T_STEP * (length(chgAvgVwlF1s.(t_vwl).(rc).(pt)) - 1);
+            plot(tAxis * 1e3, chgAvgVwlF1s.(t_vwl).(rc).(pt), ...
+                 '-', 'Color', colors.(pt));
+        end
+        xs = get(gca, 'XLim');
+        plot(xs, [0, 0], '-', 'Color', gray);
+
+        legend(pertTypes(2 : end), 'Location', 'Northeast');
+        title(sprintf('%s: %s', rc, t_vwl));
+    end
 end
 
 return

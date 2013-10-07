@@ -48,7 +48,8 @@ for i1 = 1 : numel(phases)
                 t_fn=fullfile(t_dir, d2(i3).name);
                 load(t_fn);     % gives data
                                
-                if (isequal(exptType, 'behav') || isequal(exptType, 'rand-twarp-fmt')) && ~isequal(data.params.name, mainUtter)
+                if ((isequal(exptType, 'behav') || isequal(exptType, 'rand-twarp-fmt')) && ~isequal(data.params.name, mainUtter)) ...
+                    || (isequal(exptType, 'fMRI') && ~(data.params.name(1) >= 'A' && data.params.name(1) <= 'Z' || data.params.name(1) >= 'a' && data.params.name(1) <= 'z'))
                     continue;
                 end
                 
@@ -124,7 +125,7 @@ end
 
 %% Data fields
 % ## Second column: isCell ## %
-if isequal(exptType, 'behav') || isequal(exptType, 'rand-twarp-fmt')
+if isequal(exptType, 'behav') || isequal(exptType, 'rand-twarp-fmt') || isequal(exptType, 'fMRI')
     dataFlds = {'rmsThresh',  0; 
                 'fn1',        0;
                 'fn2',        0;
