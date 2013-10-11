@@ -1,4 +1,4 @@
-function varargout = analyzeRHYSpeechData2(subjID, varargin)
+function varargout = analyzeRHYSpeechData(subjID, varargin)
 %% 
 rhyConds = {'N', 'R'};
 pertTypes = {'noPert', 'F1Up', 'decel', ...
@@ -266,7 +266,7 @@ for h0 = 1 : 2
         fs = fontSize;
     else
         vis_pertTypes = pertTypes([5, 1, 6]);
-        name = 'Timing change (between-trial effects';
+        name = 'Timing change: between-trial effects';
         fs = fontSize * 0.6;
     end
     

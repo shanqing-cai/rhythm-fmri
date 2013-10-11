@@ -34,6 +34,7 @@ if ~iscell(uihdls)
 %                         isnan(pdata.(fld).p2OnsetTime(h2))
                 if isnan(pdata.(fld).rating(h2)) || ...
                    isnan(pdata.(fld).bASROkay(h2))
+                    fprintf(2, 'WARNING: missing rating or bASROkay info in trial #%d\n', h2);
                     bFoundMissing = 1;
                     break;
                 end
