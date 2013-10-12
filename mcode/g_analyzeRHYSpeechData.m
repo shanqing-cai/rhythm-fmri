@@ -205,12 +205,14 @@ for i1 = 1 : numel(pertTypes(2 : end))
     hold on;
 end
 
+p_vals_tIntChg = struct;
+
 for i1 = 1 : length(rhyConds)
     rc = rhyConds{i1};
     
     mn_TIntChgs.(rc) = nan(0, 2);
     se_TIntChgs.(rc) = nan(0, 2);
-    p_vals = nan(0, 2);    
+    p_vals_tIntChg.(rc) = nan(0, 2); % Columns: perturbation types; Col 1 - F1Up, Col 2 - Decel
     for j1 = 1 : numel(tIntItems)
         t_item = tIntItems{j1};
         
@@ -223,9 +225,9 @@ for i1 = 1 : length(rhyConds)
             [~, t_p_vals(j2)] = ttest(tIntChgs.(t_item).(rc)(:, j2));
         end
         
-        p_vals = [p_vals; t_p_vals];
+        p_vals_tIntChg.(rc) = [p_vals_tIntChg.(rc); t_p_vals];
     end
-                 
+
     for i2 = 1 : numel(pertTypes(2 : end))
         set(gcf, 'CurrentAxes', hsp(i2));
         errorbar(1 : size(mn_TIntChgs.(rc), 1), ...
@@ -235,20 +237,6 @@ for i1 = 1 : length(rhyConds)
              
     end
     
-    for i2 = 1 : numel(pertTypes(2 : end))
-        for i3 = 1 : size(p_vals, 1)
-            if p_vals(i3, i2) < P_THRESH_UNC
-                plot(i3, 1e3 * mn_TIntChgs.(rc)(i3, i2), 'o', ...
-                     'MarkerFaceColor', colors.(rc));
-            end
-            
-            if p_vals(i3, i2) < P_THRESH_UNC / numel(p_vals)
-                    plot(i3, 1e3 * mn_TIntChgs.(rc)(i3, i2), 's', ...
-                         'MarkerEdgeColor',  colors.(rc), 'MarkerFaceColor', 'none');
-            end
-            
-        end
-    end
 end
 
 for i2 = 1 : numel(pertTypes(2 : end))
@@ -267,6 +255,30 @@ for i2 = 1 : numel(pertTypes(2 : end))
    
     title(strrep(pt, '_', '\_'));
 end
+
+%% Mark significant changes
+for i1 = 1 : length(rhyConds)
+    rc = rhyConds{i1};
+    
+    for i2 = 1 : numel(pertTypes(2 : end))
+        set(gcf, 'CurrentAxes', hsp(i2));
+        
+        for i3 = 1 : size(p_vals_tIntChg.(rc), 1)
+            if p_vals_tIntChg.(rc)(i3, i2) < P_THRESH_UNC
+                plot(i3, 1e3 * mn_TIntChgs.(rc)(i3, i2), 'o', ...
+                     'MarkerFaceColor', colors.(rc));
+            end
+            
+            if p_vals_tIntChg.(rc)(i3, i2) < P_THRESH_UNC / numel(p_vals_tIntChg.(rc))
+                    plot(i3, 1e3 * mn_TIntChgs.(rc)(i3, i2), 's', ...
+                         'MarkerEdgeColor',  colors.(rc), 'MarkerFaceColor', 'none');
+            end
+            
+        end
+    end
+end
+
+
 
 %% Visualization: formant changes
 for h1 = 1 : numel(rhyConds)
