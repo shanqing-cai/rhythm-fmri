@@ -196,8 +196,9 @@ if bNew % set up new experiment
     end
     
     p = getTSMDefaultParams(subject.sex,'closedLoopGain', expt.subject.closedLoopGain,...
-        'trialLen', expt.subject.trialLen, ...
-        'mouthMicDist', expt.subject.mouthMicDist);
+                            'trialLen', expt.subject.trialLen, ...
+                            'mouthMicDist', expt.subject.mouthMicDist, ...
+                            'micRMS_100dBA', expt.subject.micRMS_100dBA);
     
     state.phase=1;
     state.rep=1;
@@ -403,8 +404,13 @@ hgui.TVisStim=expt.subject.TVisStim;
 hgui.vumeterMode=expt.subject.vumeterMode;
 
 hgui.rmsTransTarg_spl=getSPLTarg(expt.subject.mouthMicDist);
-load('micRMS_100dBA.mat');  % Gives micRMS_100dBA: the rms the microphone should read when the sound is at 100 dBA SPL
-hgui.rmsTransTarg=micRMS_100dBA / (10^((100-hgui.rmsTransTarg_spl)/20));
+
+% load('micRMS_100dBA.mat');  % Gives micRMS_100dBA: the rms the microphone should read when the sound is at 100 dBA SPL
+micRMS_100dBA = expt.subject.micRMS_100dBA;
+info_log(sprintf('micRMS_100dBA = %f\n', micRMS_100dBA));
+
+hgui.micRMS_100dBA = micRMS_100dBA;
+% hgui.rmsTransTarg = micRMS_100dBA / (10^((100-hgui.rmsTransTarg_spl)/20));
 
 msglog(logFN, ' ');
 msglog(logFN, ['Mouth-microphone distance = ',num2str(expt.subject.mouthMicDist),' cm']);

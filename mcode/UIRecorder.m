@@ -93,6 +93,8 @@ handles.trialLen=2.2;
 handles.debug=0;
 handles.vumeterMode=NaN;  % 1: 10 ticks; 2: 3 ticks;
 
+handles.micRMS_100dBA = 0.5;    % Default: 0.5 (for behav); 0.2 (for fMRI)
+
 % handles.modePromptDur = 0;
 % handles.type1Prompt = 'Normal';
 % handles.type2Prompt = 'Rhythm';
@@ -261,10 +263,9 @@ handles.showTextCue=0;  %SC(2008/01/06)
 
 handles.dBRange=NaN;
 handles.rmsTransTarg_spl=NaN;
-% load calibMic;  % gets micGain: wav rms/ Pa rms (Pa^-1)
-% load('../../signals/leveltest/micRMS_100dBA.mat');  % Gives micRMS_100dBA: the rms the microphone should read when the sound is at 100 dBA SPL
-load('micRMS_100dBA');
-handles.rmsTransTarg=micRMS_100dBA / (10^((100-handles.rmsTransTarg_spl)/20));
+
+% load('micRMS_100dBA');
+% handles.rmsTransTarg = handles.micRMS_100dBA / (10^((100-handles.rmsTransTarg_spl)/20));
 
 handles.nextMessage=imread(fullfile(handles.msgImgDir,'message_pre2.bmp'));
 
@@ -395,32 +396,7 @@ dataOut.meanSylDur=meanSylDur;
 dataOut.meanPeakRMS=meanPeakRMS;
 
 if ~isempty(data)
-% 	vocaLen=handles.vocaLen;
-% 	lenRange=handles.lenRange;
-% 	rmsTransTarg=handles.rmsTransTarg;
-
-% 	t1=k1*data.params.frameLen;
-% 	t2=k2*data.params.frameLen;
-
-% 	vocaLenNow=k2-k1+1;   %SC-Mod(2008/04/06)
-
-	%SC-Mod(2008/04/06): Look at the rms during the transition, instead of
-	%   during the entire vocal part.
-% 	if (isnan(t1) | isnan(t2) | isempty(t1) | isempty(t2) | t1>=t2)
-% 		rmsTrans=0;
-% 		rmsBGNoise=0;
-%         if ~isempty(data.signalIn)
-%             rmsBGNoise=calcAWeightedRMS(data.signalIn(1:round(0.2*data.params.sr)),data.params.sr);
-%         end
-% 	else
-% 		rmsTrans=sqrt(mean(data.signalIn(t1:t2).^2));
-% 		rmsBGNoise=sqrt(mean(data.signalIn(1:round(0.2*data.params.sr)).^2));
-% 		rmsTrans=calcAWeightedRMS(data.signalIn(t1:t2),data.params.sr);
-		rmsBGNoise=calcAWeightedRMS(data.signalIn(1:round(0.2*data.params.sr)),data.params.sr);
-% 	end
-
-% 	rmsval   = round(100/dBrange*max(0,min(dBrange,dBrange/2+10*log10(rmsTrans/rmsTransTarg))));   %SC-Mod(2007/12/29)
-% 	speedval = round(100/lenRange*max(0,min(lenRange,lenRange/2+(vocaLen-vocaLenNow)/2)));   
+    rmsBGNoise=calcAWeightedRMS(data.signalIn(1:round(0.2*data.params.sr)),data.params.sr);
 end
 
 % bRmsGood = NaN;
@@ -444,70 +420,27 @@ set(gca,'YLim',[-1,1]);
 xlabel('Time (sec)');
 ylabel('Wave Out');
 
-% [i1,i2,f1,f2,iv1,iv2]=getFmtPlotBounds(data.fmts(:,1),data.fmts(:,2));
-% [k1,k2]=detectVowel(data.fmts(:,1),data.fmts(:,2),iv1,iv2,'eh','rms',data.rms(:,1));
-% if (~isnan(i1) && ~isnan(i2) && ~isempty(i1) && ~isempty(i2) && k2 >= k1)
-% 	t1=k1*data.params.frameLen;
-% 	t2=k2*data.params.frameLen;
-% 	tv1=min(find(data.fmts(:,1)>0));
-% 	tv2=max(find(data.fmts(:,1)>0));
-
-% 	idx1=max([1,tv1-50]);
-% 	idx2=min([tv2+50,length(data.signalIn)]);
-
-%     wavInGain=0.13827;  % w/Pa
-% 	p0=20e-6;           % Pa
-% 	tRMSIn=sqrt(mean((data.signalIn(t1:t2)).^2));
-
-% 	set(gcf,'CurrentAxes',handles.figIdDat(2));
-% 	xs=get(gca,'XLim'); ys=get(gca,'YLim');
-	
-% 	if (~isnan(t1) && ~isnan(t2) && t1>0 && t2>0 && t2>t1)
-% 		plot([taxis(t1),taxis(t1)],[ys(1),ys(2)],'-','Color',[0.5,0.5,0.5],'LineWidth',0.5);  hold on;
-% 		plot([taxis(t2),taxis(t2)],[ys(1),ys(2)],'-','Color',[0.5,0.5,0.5],'LineWidth',0.5);  hold on;
-% 		tRMSOut=calcAWeightedRMS(data.signalOut(t1:t2),data.params.sr);
-% 	else 
-% 		tRMSOut=0;
-% 	end
-
-%         load calibMic;  % gets micGain: wav rms/ Pa rms (Pa^-1)
-% 	load('../../signals/leveltest/micRMS_100dBA.mat');  % Gives micRMS_100dBA: the rms the microphone should read when the sound is at 100 dBA SPL
-    load('micRMS_100dBA.mat');  % Gives micRMS_100dBA: the rms the microphone should read when the sound is at 100 dBA SPL
-%     text(xs(1)+0.05*range(xs),ys(2)-0.1*range(ys),['RMS(In)=',num2str(tRMSIn)]);
     xs=get(gca,'XLim'); ys=get(gca,'YLim');
 	text(xs(1)+0.05*range(xs),ys(2)-0.21*range(ys),...
-		['meanPeak soundLevel=',num2str(100+20*log10((meanPeakRMS/micRMS_100dBA))),' dBA SPL'],'FontSize',10);
+		['meanPeak soundLevel=',num2str(100+20*log10((meanPeakRMS/handles.micRMS_100dBA))),' dBA SPL'],'FontSize',10);
     text(xs(1)+0.05*range(xs),ys(1)+0.24*range(ys),...
         ['Sentence duration=',num2str(sentDur),' sec'],'FontSize',10);
     text(xs(1)+0.05*range(xs),ys(1)+0.18*range(ys),sprintf('nSyls=%d',handles.nSyls),'FontSize',10);
     text(xs(1)+0.05*range(xs),ys(1)+0.12*range(ys),sprintf('meanSylDur=%f sec',meanSylDur),'FontSize',10);
     
-    dataOut.meanPeakLevel=100+20*log10((meanPeakRMS/micRMS_100dBA));
+    dataOut.meanPeakLevel=100+20*log10((meanPeakRMS / handles.micRMS_100dBA));
 
 	text(xs(1)+0.05*range(xs),ys(2)-0.27*range(ys),...
-		['BGNoiseLevel=',num2str(100+20*log10((rmsBGNoise/micRMS_100dBA))),' dBA SPL'],'FontSize',10);
+		['BGNoiseLevel=',num2str(100+20*log10((rmsBGNoise/handles.micRMS_100dBA))),' dBA SPL'],'FontSize',10);
 
 	text(xs(1)+0.05*range(xs),ys(2)-0.33*range(ys),...
 		['SNR=',num2str(20*log10(meanPeakRMS/rmsBGNoise))],'FontSize',10);
 
-%         load calibOutput;   
-	% gives 'freq' and 'voltGains', measured at 'shanqing' M-audio configuration 
-	% and -1.65 Phone volume knob.
-%         mvg=mean(voltGains) * sqrt(2);    % mean voltage gain (V_rms / wavAmp_rms)
-	
-% 	soundLvOut=20*log10(tRMSOut*data.params.dScale/(dBSPL2WaveAmp(0,1000)/sqrt(2)));  % dBA SPL
-
 	set(gcf,'CurrentAxes',handles.figIdDat(3));
 	xs=get(gca,'XLim'); ys=get(gca,'YLim');
-% 	if (~isnan(t1) && ~isnan(t2) && t1>0 && t2>0 && t2>t1)	
-% 		plot([taxis(t1),taxis(t1)],[ys(1),ys(2)],'-','Color',[0.5,0.5,0.5],'LineWidth',0.5);  hold on;
-% 		plot([taxis(t2),taxis(t2)],[ys(1),ys(2)],'-','Color',[0.5,0.5,0.5],'LineWidth',0.5);  hold on;
-%     end
-	text(xs(1)+0.05*range(xs),ys(2)-0.15*range(ys),...
-		['dScale=',num2str(data.params.dScale)],'FontSize',10);    
-% 	text(xs(1)+0.05*range(xs),ys(2)-0.2*range(ys),...
-% 		['soundLevel=',num2str(soundLvOut),' dBA SPL'],'FontSize',10);
 
+	text(xs(1)+0.05*range(xs),ys(2)-0.15*range(ys),...
+		['dScale=',num2str(data.params.dScale)],'FontSize',10);
 
 	set(gcf,'CurrentAxes',handles.figIdDat(4));
 	cla;
@@ -1009,9 +942,7 @@ if (handles.debug==0)
                 t_cv_ivis = std(t_ivis) / mean(t_ivis);
                 
                 % --- Calculate mean vowel intensity (in dB SPL A) --- %
-%                 micRMS = load('../../signals/leveltest/micRMS_100dBA.mat');
-                micRMS = load('micRMS_100dBA.mat');
-                t_mean_vwl_lv = get_mean_vwl_level(dataOut, asrPAlign, vidx, micRMS.micRMS_100dBA);                
+                t_mean_vwl_lv = get_mean_vwl_level(dataOut, asrPAlign, vidx, handles.micRMS_100dBA);                
 
                 msglog(handles.logFN, sprintf('t_cv_ivis = %f', t_cv_ivis));
                 

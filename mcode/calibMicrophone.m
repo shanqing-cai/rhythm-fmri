@@ -60,6 +60,5 @@ micRMS_100dBA=10^((100-level_SLM)/20)*rms(sig_sel);
 fprintf('rms(sig_sel) = %.5f\n', rms(sig_sel));
 fprintf('micRMS_100dBA = %.5f\n', micRMS_100dBA);
 
-
-close(hf)
+close(hf);
 return
