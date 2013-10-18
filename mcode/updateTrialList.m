@@ -36,7 +36,7 @@ for i1 = 1 : numel(state.trialList.fn)
     t_phase = state.trialList.phase{i1};
     t_block = state.trialList.block(i1);
     t_trialN = state.trialList.trialN(i1);
-    t_word = state.trialList.word{i1};
+    t_word = state.trialList.word{i1};    
     
     t_pertType = ALL_PERT_TYPES{state.trialList.pertType(i1) + 1};
     if isequal(t_pertType, 'noPert')
