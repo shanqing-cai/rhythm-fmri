@@ -13,7 +13,7 @@ machineSettings = {"ba3": {"dataDir": "/users/cais/RHY/DATA",
                            "batchDataDir": "/users/cais/RHY/DATA_batch", 
                            "fsDataDir": "/users/cais/RHY/FSDATA", 
                            "batchCfg": "/users/cais/RHY/ANALYSIS/RHY_fmri_surf.cfg", 
-                           "boldVolWC": "{subjID}_bold_s???a???.nii.gz", 
+                           "boldVolWC": "{subjID}_bold_*s???a???.nii.gz", 
                            "modelName": "fmri"}}
 
 HEMIS = ["lh", "rh"]
@@ -85,8 +85,12 @@ if __name__ == "__main__":
     info_log("Raw BOLD image dir = %s" % boldDir)        
 
     boldWC = machineSettings[hostName]["boldVolWC"].replace("{subjID}", sID)
-    dfs = glob.glob(os.path.join(boldDir, boldWC))
+    boldWC = os.path.join(boldDir, boldWC)
+    dfs = glob.glob(boldWC)
     dfs.sort()
+
+    if len(dfs) == 0:
+        raise Exception, "Cannot find any BOLD volumes that match the path wild card: %s" % boldWC
 
     if len(dfs) == nRuns:
         info_log("The number of image files matches nRuns. Good")
@@ -127,7 +131,7 @@ if __name__ == "__main__":
                  bWarn=True)
 
     #=== Create func_runs.txt file ===#
-    scriptsDir = os.path.join(sBatchDataDir, "script")
+    scriptsDir = os.path.join(sBatchDataDir, "scripts")
     check_dir(scriptsDir, scriptsDir)
 
     funcRunsFN = os.path.join(scriptsDir, "func_runs.txt")
@@ -173,15 +177,17 @@ if __name__ == "__main__":
     L1Dir = os.path.join(sBatchDataDir, \
                          "firstlevel_%s" \
                          % machineSettings[hostName]["modelName"])
-    spmTViewCmd_vol = "tkmedit %s T1.mgz -surfs -overlay %s -overlay-reg %s -fthresh 6 -fmid 9" \
-                      % (sID, os.path.join(L1Dir, "spmT_0001.img"), \
-                         func2Struct_dat)
 
-    info_log("# Commands for viewing spmT for contast 1 in the volume: ")
-    info_log("\t%s" % spmTViewCmd_vol)
 
     for i0 in range(nContrasts):
-        info_log("# Command for viewing spmT for contast #%d on the surface: " \
+        spmTViewCmd_vol = "tkmedit %s T1.mgz -surfs -overlay %s -overlay-reg %s -fthresh 6 -fmid 9" \
+                          % (sID, os.path.join(L1Dir, "spmT_%.4d.img" % (i0 + 1)), \
+                             func2Struct_dat)
+
+        info_log("# Commands for viewing spmT for contrast #%d in the volume: " % (i0 + 1))
+        info_log("\t%s" % spmTViewCmd_vol)
+
+        info_log("# Command for viewing spmT for contrast #%d on the surface: " \
                  % (i0 + 1))
         
         for hemi in HEMIS:
