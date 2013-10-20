@@ -1,7 +1,8 @@
 function varargout = analyzeRHYSpeechData(subjID, varargin)
 %% 
 rhyConds = {'N', 'R'};
-pertTypes = {'noPert', 'F1Up', 'decel'};
+pertTypes = {'noPert', 'F1Up', 'decel', ...
+             'noPert_precNoPert', 'noPert_precF1Up', 'noPert_precDecel'};
 
 colors.N = [0, 0.5, 0];
 colors.R = [0, 0, 1];
@@ -9,6 +10,11 @@ colors.R = [0, 0, 1];
 colors.noPert = [0, 0, 0];
 colors.F1Up = [1, 0, 1];
 colors.decel = [1, 0.5, 0];
+
+colors.noPert_precNoPert = [0, 0, 0];
+colors.noPert_precF1Up = [1, 0, 1];
+colors.noPert_precDecel = [1, 0.5, 0];
+
 
 dacacheDir = '../dacache';
 
@@ -19,11 +25,35 @@ T_INT_P_THRESH = 0.05;
 
 prodRatingThresh = 0; % Most liberal: 0; More conservative: 1
 
+timeIntervals = {'s', 't1', 1, 3; ...
+                 't1', 'd', 3, 5; ...
+                 'd', 'b1', 5, 7; ...
+                 'b1', 'g', 7, 10; ...
+                 'g', 'b2', 10, 13; ...
+                 'b2', 't2', 13, 16; ...
+                 't2', 'p1', 16, 18};
+
 %% Additional input options
 bMan = ~isempty(fsic(varargin, '--man')); % Use manual time labels
 
+if ~isempty(fsic(varargin, '--prodRatingThresh'))
+    prodRatingThresh = varargin{fsic(varargin, '--prodRatingThresh') + 1};
+end
+
 %%
 load(pdataFN);  % gives pdata
+
+%% Process noPert trials according to preceding pertType
+exptFN = fullfile(pdata.subject.dataDir, pdata.subject.name, 'expt.mat');
+check_file(exptFN);
+
+assert(exist('expt') == 0);
+load(exptFN);
+assert(exist('expt') == 1);
+
+[pdata, idx_noPert_precNoPert, idx_noPert_precF1Up, idx_noPert_precDecel] = ...
+    proc_pdata_preceding(pdata, expt);
+clear('expt');
 
 %% Check whether the pert screening is complete
 for i0 = 2 : 3
@@ -61,35 +91,60 @@ end
 isRun = zeros(1, length(pdata.mainData.phases));
 idxRun(idxRuns) = 1;
 
-idx.N.noPert = find(idxRun == 1 & ...
-                    pdata.mainData.rating > prodRatingThresh & ...
-                    pdata.mainData.bRhythm == 0 & ...
-                    pdata.mainData.pertType == 0);
-idx.N.F1Up = find(idxRun == 1 & ...
-                  pdata.mainData.rating > prodRatingThresh & ...
-                  pdata.mainData.bRhythm == 0 & ...
-                  pdata.mainData.pertType == 1 & ...
-                  pdata.mainData.bPertOkay == 1);
-idx.N.decel = find(idxRun == 1 & ...
-                   pdata.mainData.rating > prodRatingThresh & ...
-                   pdata.mainData.bRhythm == 0 & ...
-                   pdata.mainData.pertType == 2 & ...
-                   pdata.mainData.bPertOkay == 1);
-                
-idx.R.noPert = find(idxRun == 1 & ...
-                    pdata.mainData.rating > prodRatingThresh & ...
-                    pdata.mainData.bRhythm == 1 & ...
-                    pdata.mainData.pertType == 0);
-idx.R.F1Up = find(idxRun == 1 & ...
-                  pdata.mainData.rating > prodRatingThresh & ...
-                  pdata.mainData.bRhythm == 1 & ...
-                  pdata.mainData.pertType == 1 & ...
-                  pdata.mainData.bPertOkay == 1);
-idx.R.decel = find(idxRun == 1 & ...
-                   pdata.mainData.rating > prodRatingThresh & ...
-                   pdata.mainData.bRhythm == 1 & ...
-                   pdata.mainData.pertType == 2 & ...
-                   pdata.mainData.bPertOkay == 1);
+for i1 = 1 : numel(rhyConds)
+    rc = rhyConds{i1};
+    if isequal(rc, 'N'), rci = 0;
+    else                 rci = 1;
+    end
+    
+    for i2 = 1 : 3
+        pt = pertTypes{i2};
+        assert(isempty(strfind(pt, '_prec')));
+        
+        if isequal(pt, 'noPert')
+            pti = 0;
+            po = ones(size(pdata.mainData.pertType));
+        elseif isequal(pt, 'F1Up')
+            pti = 1;
+            po = pdata.mainData.bPertOkay == 1;
+        elseif isequal(pt, 'decel')
+            pti = 2;
+            po = pdata.mainData.bPertOkay == 1;
+        else
+            error();
+        end
+       
+        idx.(rc).(pt) = find(idxRun == 1 & ...
+                            pdata.mainData.rating > prodRatingThresh & ...
+                            pdata.mainData.bRhythm == rci & ...
+                            pdata.mainData.pertType == pti & ...
+                            po);
+    end
+
+    %--- For between-trial effects ---%
+    for i2 = 4 : 6
+        pt = pertTypes{i2};
+        assert(length(strfind(pt, '_prec')) == 1);
+        
+        if isequal(pt, 'noPert_precNoPert')
+            ppti = 0;
+        elseif isequal(pt, 'noPert_precF1Up')
+            ppti = 1;
+        elseif isequal(pt, 'noPert_precDecel')
+            ppti = 2;
+        else
+            error();
+        end
+        
+        idx.(rc).(pt) = find(idxRun == 1 & ...
+                                    pdata.mainData.rating > prodRatingThresh & ...
+                                    pdata.mainData.bRhythm == rci & ...
+                                    pdata.mainData.pertType == 0 & ...
+                                    pdata.mainData.precPertType == ppti);
+    end
+
+                            
+end
 
 %% Comparing ASR results on input and output
 figure('Position', [50, 150, 1500, 600]);
@@ -116,127 +171,85 @@ for i1 = 1 : numel(rhyConds)
 end
 
 %% Manual labels
-int_s_t1 = struct;
-int_s_d = struct;
-int_s_b1 = struct;
-int_s_g = struct;
-int_s_b2 = struct;
-for i1 = 1 : numel(rhyConds)
-    rc = rhyConds{i1};
-    
-    for i2 = 1 : numel(pertTypes)
-        pt = pertTypes{i2};
-        
-        int_s_t1.(rc).(pt) = pdata.mainData.t1OnsetTime(idx.(rc).(pt)) - ...
-                            pdata.mainData.sOnsetTime(idx.(rc).(pt));
-        int_s_d.(rc).(pt) = pdata.mainData.dOnsetTime(idx.(rc).(pt)) - ...
-                            pdata.mainData.sOnsetTime(idx.(rc).(pt));
-        int_s_b1.(rc).(pt) = pdata.mainData.b1OnsetTime(idx.(rc).(pt)) - ...
-                            pdata.mainData.sOnsetTime(idx.(rc).(pt));
-        int_s_g.(rc).(pt) = pdata.mainData.gOnsetTime(idx.(rc).(pt)) - ...
-                            pdata.mainData.sOnsetTime(idx.(rc).(pt));
-        int_s_b2.(rc).(pt) = pdata.mainData.b2OnsetTime(idx.(rc).(pt)) - ...
-                            pdata.mainData.sOnsetTime(idx.(rc).(pt));
-    end
-end
+% int_s_t1 = struct;
+% int_s_d = struct;
+% int_s_b1 = struct;
+% int_s_g = struct;
+% int_s_b2 = struct;
+% for i1 = 1 : numel(rhyConds)
+%     rc = rhyConds{i1};
+%     
+%     for i2 = 1 : numel(pertTypes)
+%         pt = pertTypes{i2};
+%         
+%         int_s_t1.(rc).(pt) = pdata.mainData.t1OnsetTime(idx.(rc).(pt)) - ...
+%                             pdata.mainData.sOnsetTime(idx.(rc).(pt));
+%         int_s_d.(rc).(pt) = pdata.mainData.dOnsetTime(idx.(rc).(pt)) - ...
+%                             pdata.mainData.sOnsetTime(idx.(rc).(pt));
+%         int_s_b1.(rc).(pt) = pdata.mainData.b1OnsetTime(idx.(rc).(pt)) - ...
+%                             pdata.mainData.sOnsetTime(idx.(rc).(pt));
+%         int_s_g.(rc).(pt) = pdata.mainData.gOnsetTime(idx.(rc).(pt)) - ...
+%                             pdata.mainData.sOnsetTime(idx.(rc).(pt));
+%         int_s_b2.(rc).(pt) = pdata.mainData.b2OnsetTime(idx.(rc).(pt)) - ...
+%                             pdata.mainData.sOnsetTime(idx.(rc).(pt));
+%     end
+% end
 
 %% Manual time labels
-man_s_t1 = struct;
-man_t1_d = struct;
-man_d_b1 = struct;
-man_b1_g = struct;
-man_g_b2 = struct;
-man_b2_t2 = struct;
-man_t2_p1 = struct;
-
-for i1 = 1 : numel(rhyConds)
-    rc = rhyConds{i1};
-    
-    for i2 = 1 : numel(pertTypes)
-        pt = pertTypes{i2};
-        
-        man_s_t1.(rc).(pt) = pdata.mainData.t1OnsetTime(idx.(rc).(pt)) - ...
-                             pdata.mainData.sOnsetTime(idx.(rc).(pt));
-        man_s_t1.(rc).(pt) = man_s_t1.(rc).(pt)(~isnan(man_s_t1.(rc).(pt)));
-        
-        man_t1_d.(rc).(pt) = pdata.mainData.dOnsetTime(idx.(rc).(pt)) - ...
-                             pdata.mainData.t1OnsetTime(idx.(rc).(pt));
-        man_t1_d.(rc).(pt) = man_t1_d.(rc).(pt)(~isnan(man_t1_d.(rc).(pt)));
-        
-        man_d_b1.(rc).(pt) = pdata.mainData.b1OnsetTime(idx.(rc).(pt)) - ...
-                             pdata.mainData.dOnsetTime(idx.(rc).(pt));
-        man_d_b1.(rc).(pt) = man_d_b1.(rc).(pt)(~isnan(man_d_b1.(rc).(pt)));
-        
-        man_b1_g.(rc).(pt) = pdata.mainData.gOnsetTime(idx.(rc).(pt)) - ...
-                             pdata.mainData.b1OnsetTime(idx.(rc).(pt));
-        man_b1_g.(rc).(pt) = man_b1_g.(rc).(pt)(~isnan(man_b1_g.(rc).(pt)));
-        
-        man_g_b2.(rc).(pt) = pdata.mainData.b2OnsetTime(idx.(rc).(pt)) - ...
-                             pdata.mainData.gOnsetTime(idx.(rc).(pt));
-        man_g_b2.(rc).(pt) = man_g_b2.(rc).(pt)(~isnan(man_g_b2.(rc).(pt)));
-        
-        man_b2_t2.(rc).(pt) = pdata.mainData.t2OnsetTime(idx.(rc).(pt)) - ...
-                              pdata.mainData.b2OnsetTime(idx.(rc).(pt));
-        man_b2_t2.(rc).(pt) = man_b2_t2.(rc).(pt)(~isnan(man_b2_t2.(rc).(pt)));
-        
-        man_t2_p1.(rc).(pt) = pdata.mainData.p1OnsetTime(idx.(rc).(pt)) - ...
-                              pdata.mainData.t2OnsetTime(idx.(rc).(pt));
-        man_t2_p1.(rc).(pt) = man_t2_p1.(rc).(pt)(~isnan(man_t2_p1.(rc).(pt)));
-    end
+for i1 = 1 : size(timeIntervals, 1)
+    eval(sprintf('man_%s_%s = struct;', timeIntervals{i1, 1}, timeIntervals{i1, 2}));
 end
 
-%% ASR time labels
-asr_s_t1 = struct;
-asr_t1_d = struct;
-asr_d_b1 = struct;
-asr_b1_g = struct;
-asr_g_b2 = struct;
-asr_b2_t2 = struct;
-asr_t2_p1 = struct;
-
-for i1 = 1 : numel(rhyConds)
-    rc = rhyConds{i1};
+for i0 = 1 : size(timeIntervals, 1)
+    tp1 = timeIntervals{i0, 1};
+    tp2 = timeIntervals{i0, 2};
     
-    for i2 = 1 : numel(pertTypes)
-        pt = pertTypes{i2};
-        
-        asr_s_t1.(rc).(pt) = pdata.mainData.asrTBeg(3, idx.(rc).(pt)) - ...
-                            pdata.mainData.asrTBeg(1, idx.(rc).(pt));
-        asr_s_t1.(rc).(pt) = asr_s_t1.(rc).(pt)(~isnan(asr_s_t1.(rc).(pt)));                
-        
-        asr_t1_d.(rc).(pt) = pdata.mainData.asrTBeg(5, idx.(rc).(pt)) - ...
-                            pdata.mainData.asrTBeg(3, idx.(rc).(pt));
-        asr_t1_d.(rc).(pt) = asr_t1_d.(rc).(pt)(~isnan(asr_t1_d.(rc).(pt)));
-        
-        asr_d_b1.(rc).(pt) = pdata.mainData.asrTBeg(7, idx.(rc).(pt)) - ...
-                             pdata.mainData.asrTBeg(5, idx.(rc).(pt));
-        asr_d_b1.(rc).(pt) = asr_d_b1.(rc).(pt)(~isnan(asr_d_b1.(rc).(pt)));
-        
-        asr_b1_g.(rc).(pt) = pdata.mainData.asrTBeg(10, idx.(rc).(pt)) - ...
-                             pdata.mainData.asrTBeg(7, idx.(rc).(pt));
-        asr_b1_g.(rc).(pt) = asr_b1_g.(rc).(pt)(~isnan(asr_b1_g.(rc).(pt)));
-        
-        asr_g_b2.(rc).(pt) = pdata.mainData.asrTBeg(13, idx.(rc).(pt)) - ...
-                             pdata.mainData.asrTBeg(10, idx.(rc).(pt));
-        asr_g_b2.(rc).(pt) = asr_g_b2.(rc).(pt)(~isnan(asr_g_b2.(rc).(pt)));
-        
-        asr_b2_t2.(rc).(pt) = pdata.mainData.asrTBeg(16, idx.(rc).(pt)) - ...
-                              pdata.mainData.asrTBeg(13, idx.(rc).(pt));
-        asr_b2_t2.(rc).(pt) = asr_b2_t2.(rc).(pt)(~isnan(asr_b2_t2.(rc).(pt)));
-        
-        asr_t2_p1.(rc).(pt) = pdata.mainData.asrTBeg(18, idx.(rc).(pt)) - ...
-                              pdata.mainData.asrTBeg(16, idx.(rc).(pt));
-        asr_t2_p1.(rc).(pt) = asr_t2_p1.(rc).(pt)(~isnan(asr_t2_p1.(rc).(pt)));
-        
-        % --- Cumulative intervals --- %
-        asr_s_d.(rc).(pt) = pdata.mainData.asrTBeg(5, idx.(rc).(pt)) - ...
-                            pdata.mainData.asrTBeg(1, idx.(rc).(pt));
-        asr_s_d.(rc).(pt) = asr_s_d.(rc).(pt)(~isnan(asr_s_d.(rc).(pt)));
-        
-        asr_s_b1.(rc).(pt) = pdata.mainData.asrTBeg(7, idx.(rc).(pt)) - ...
-                            pdata.mainData.asrTBeg(1, idx.(rc).(pt));
-        asr_s_b1.(rc).(pt) = asr_s_b1.(rc).(pt)(~isnan(asr_s_b1.(rc).(pt)));
+    for i1 = 1 : numel(rhyConds)
+        rc = rhyConds{i1};
+
+        for i2 = 1 : numel(pertTypes)
+            pt = pertTypes{i2};
+
+            eval(sprintf('man_%s_%s.(rc).(pt) = pdata.mainData.%sOnsetTime(idx.(rc).(pt)) - pdata.mainData.%sOnsetTime(idx.(rc).(pt));', ...
+                         tp1, tp2, tp2, tp1));
+            eval(sprintf('man_%s_%s.(rc).(pt) = man_%s_%s.(rc).(pt)(~isnan(man_%s_%s.(rc).(pt)));', ...
+                         tp1, tp2, tp1, tp2, tp1, tp2));
+        end
     end
+end
+%% ASR time labels
+for i1 = 1 : size(timeIntervals, 1)
+    eval(sprintf('asr_%s_%s = struct;', timeIntervals{i1, 1}, timeIntervals{i1, 2}));
+end
+
+for i0 = 1 : size(timeIntervals, 1)
+    tp1 = timeIntervals{i0, 1};
+    tp2 = timeIntervals{i0, 2};
+    tidx1 = timeIntervals{i0, 3};
+    tidx2 = timeIntervals{i0, 4};
+    
+    for i1 = 1 : numel(rhyConds)
+        rc = rhyConds{i1};
+
+        for i2 = 1 : numel(pertTypes)
+            pt = pertTypes{i2};
+
+            eval(sprintf('asr_%s_%s.(rc).(pt) = pdata.mainData.asrTBeg(%d, idx.(rc).(pt)) - pdata.mainData.asrTBeg(%d, idx.(rc).(pt));', ...
+                         tp1, tp2, tidx2, tidx1));
+            eval(sprintf('asr_%s_%s.(rc).(pt) = asr_%s_%s.(rc).(pt)(~isnan(asr_%s_%s.(rc).(pt)));', ...
+                         tp1, tp2, tp1, tp2, tp1, tp2));
+
+            % --- Cumulative intervals --- %
+    %         asr_s_d.(rc).(pt) = pdata.mainData.asrTBeg(5, idx.(rc).(pt)) - ...
+    %                             pdata.mainData.asrTBeg(1, idx.(rc).(pt));
+    %         asr_s_d.(rc).(pt) = asr_s_d.(rc).(pt)(~isnan(asr_s_d.(rc).(pt)));
+    %         
+    %         asr_s_b1.(rc).(pt) = pdata.mainData.asrTBeg(7, idx.(rc).(pt)) - ...
+    %                             pdata.mainData.asrTBeg(1, idx.(rc).(pt));
+    %         asr_s_b1.(rc).(pt) = asr_s_b1.(rc).(pt)(~isnan(asr_s_b1.(rc).(pt)));
+        end
+    end
+    
 end
 
 %% 
@@ -246,102 +259,112 @@ assert(length(time_ints) == length(content_phones));
 
 fontSize = 14;
 
-figure('Position', [100, 100, 800, 600]);
-tBarW = 0.05;
-tBarSpace = 0.02;
-vis_pertTypes = pertTypes([2, 1, 3]);
-
-hsp = nan(1, numel(rhyConds));
-for i0 = 1 : numel(rhyConds)
-    rc = rhyConds{i0};
-    hsp(i0) = subplot(2, 1, i0);
-    set(gca, 'FontSize', fontSize);
-    hold on;
-    
-    if isequal(rc, 'N')
-        title('Non-rhythmic');
+for h0 = 1 : 2
+    if h0 == 1
+        vis_pertTypes = pertTypes([2, 1, 3]);
+        name = 'Timing change';
+        fs = fontSize;
     else
-        title('Rhythmic');
+        vis_pertTypes = pertTypes([5, 1, 6]);
+        name = 'Timing change: between-trial effects';
+        fs = fontSize * 0.6;
     end
     
-    cum_vals = cell(1, 3);
-    cum_mean = zeros(length(time_ints) + 1, 3);
-    
-    for i1 = 1 : numel(vis_pertTypes)
-        pt = vis_pertTypes{i1};
+    figure('Position', [100, 100, 800, 600], 'Name', name);
+    tBarW = 0.05;
+    tBarSpace = 0.02;
 
-        for i2 = 1 : numel(time_ints)
-            if ~bMan % - Use ASR time labels - %
-                eval(sprintf('tlens = 1e3 * asr_%s.(rc).(pt);', time_ints{i2}));
-            else % - Use manual time labels - %
-                eval(sprintf('tlens = 1e3 * man_%s.(rc).(pt);', time_ints{i2}));
+    hsp = nan(1, numel(rhyConds));
+    for i0 = 1 : numel(rhyConds)
+        rc = rhyConds{i0};
+        hsp(i0) = subplot(2, 1, i0);
+        set(gca, 'FontSize', fs);
+        hold on;
+
+        if isequal(rc, 'N')
+            title('Non-rhythmic');
+        else
+            title('Rhythmic');
+        end
+
+        cum_vals = cell(1, 3);
+        cum_mean = zeros(length(time_ints) + 1, 3);
+
+        for i1 = 1 : numel(vis_pertTypes)
+            pt = vis_pertTypes{i1};
+
+            for i2 = 1 : numel(time_ints)
+                if ~bMan % - Use ASR time labels - %
+                    eval(sprintf('tlens = 1e3 * asr_%s.(rc).(pt);', time_ints{i2}));
+                else % - Use manual time labels - %
+                    eval(sprintf('tlens = 1e3 * man_%s.(rc).(pt);', time_ints{i2}));
+                end
+
+                rectangle('Position', [cum_mean(i2, i1), (tBarW + tBarSpace) * (i1 - 1), mean(tlens), tBarW], ...
+                          'EdgeColor', colors.(pt));
+                cum_mean(i2 + 1, i1) = cum_mean(i2, i1) + mean(tlens);
+
+                if isequal(pt, 'noPert')
+                    text(cum_mean(i2, i1) + mean(tlens) * 0.2, ...
+                         (tBarW + tBarSpace) * (i1 - 0.6), content_phones{i2}, ...
+                         'Color', 'k', 'FontSize', fontSize - 2);
+                end
+
+                if isempty(cum_vals{i1})
+                    cum_vals{i1} = [cum_vals{i1}, tlens(:)];
+                else
+                    cum_vals{i1} = [cum_vals{i1}, cum_vals{i1}(:, end) + tlens(:)];
+                end
             end
 
-            rectangle('Position', [cum_mean(i2, i1), (tBarW + tBarSpace) * (i1 - 1), mean(tlens), tBarW], ...
-                      'EdgeColor', colors.(pt));
-            cum_mean(i2 + 1, i1) = cum_mean(i2, i1) + mean(tlens);
-            
-            if isequal(pt, 'noPert')
-                text(cum_mean(i2, i1) + mean(tlens) * 0.2, ...
-                     (tBarW + tBarSpace) * (i1 - 0.6), content_phones{i2}, ...
-                     'Color', 'k', 'FontSize', fontSize - 2);
-            end
-            
-            if isempty(cum_vals{i1})
-                cum_vals{i1} = [cum_vals{i1}, tlens(:)];
+        end
+
+        for i2 = 1 : numel(time_ints) + 1
+            if i2 > 1
+                [~, p] = ttest2(cum_vals{1}(:, i2 - 1), cum_vals{2}(:, i2 - 1));          
             else
-                cum_vals{i1} = [cum_vals{i1}, cum_vals{i1}(:, end) + tlens(:)];
+                p = 1;
             end
-        end
-        
-    end
-    
-    for i2 = 1 : numel(time_ints) + 1
-        if i2 > 1
-            [~, p] = ttest2(cum_vals{1}(:, i2 - 1), cum_vals{2}(:, i2 - 1));          
-        else
-            p = 1;
-        end
-        if p >= T_INT_P_THRESH
-            lc = [0.6, 0.6, 0.6];
-            lw = 0.5;
-        else
-            lc = [0.0, 0.0, 0.0];
-            lw = 2.5;
-        end
-        
-        plot([cum_mean(i2, 2), cum_mean(i2, 1)], (tBarW + tBarSpace) * 1 + [0, -tBarSpace], ...
-             'Color', lc, 'LineWidth', lw);        
-        
-        if i2 > 1
-            [~, p] = ttest2(cum_vals{3}(:, i2 - 1), cum_vals{2}(:, i2 - 1));
-        else
-            p = 1;
-        end
-        if p >= T_INT_P_THRESH
-            lc = [0.6, 0.6, 0.6];
-            lw = 0.5;
-        else
-            lc = [0.0, 0.0, 0.0];
-            lw = 2.5;
-        end
-        plot([cum_mean(i2, 2), cum_mean(i2, 3)], (tBarW + tBarSpace) * 2 + [-tBarSpace, 0], ...
-             'Color', lc, 'LineWidth', lw);
-    end
-    
-    xlabel('Time (ms)');
-    set(gca, ...
-        'YTick', tBarW / 2 + [0, 1, 2] * (tBarW + tBarSpace), ...
-        'YTickLabel', vis_pertTypes); 
-    
-    xlims{i0} = get(gca, 'XLim');   
-end
+            if p >= T_INT_P_THRESH
+                lc = [0.6, 0.6, 0.6];
+                lw = 0.5;
+            else
+                lc = [0.0, 0.0, 0.0];
+                lw = 2.5;
+            end
 
-for i1 = 1 : numel(hsp)
-    set(gcf, 'CurrentAxes', hsp(i1));
-    set(gca, 'XLim', [0, max(xlims{1}(2), xlims{2}(2))]);
-end
+            plot([cum_mean(i2, 2), cum_mean(i2, 1)], (tBarW + tBarSpace) * 1 + [0, -tBarSpace], ...
+                 'Color', lc, 'LineWidth', lw);        
 
+            if i2 > 1
+                [~, p] = ttest2(cum_vals{3}(:, i2 - 1), cum_vals{2}(:, i2 - 1));
+            else
+                p = 1;
+            end
+            if p >= T_INT_P_THRESH
+                lc = [0.6, 0.6, 0.6];
+                lw = 0.5;
+            else
+                lc = [0.0, 0.0, 0.0];
+                lw = 2.5;
+            end
+            plot([cum_mean(i2, 2), cum_mean(i2, 3)], (tBarW + tBarSpace) * 2 + [-tBarSpace, 0], ...
+                 'Color', lc, 'LineWidth', lw);
+        end
+
+        xlabel('Time (ms)');
+        set(gca, ...
+            'YTick', tBarW / 2 + [0, 1, 2] * (tBarW + tBarSpace), ...
+            'YTickLabel', vis_pertTypes); 
+
+        xlims{i0} = get(gca, 'XLim');   
+    end
+
+    for i1 = 1 : numel(hsp)
+        set(gcf, 'CurrentAxes', hsp(i1));
+        set(gca, 'XLim', [0, max(xlims{1}(2), xlims{2}(2))]);
+    end
+end
 
 %% Formant trajectory analysis
 analyze_fmts_vwls = {'eh', 'iy', 'ae'};
@@ -423,12 +446,13 @@ varargout = {};
 if nargout == 1
     res = struct;
     res.time_ints = struct('asr_s_t1', asr_s_t1, ...
-                          'asr_t1_d', asr_t1_d, ...
-                          'asr_d_b1', asr_d_b1, ...
-                          'asr_b1_g', asr_b1_g, ...
-                          'asr_g_b2', asr_g_b2, ...
-                          'asr_b2_t2', asr_b2_t2, ...
-                          'asr_t2_p1', asr_t2_p1);
+                           'asr_t1_d', asr_t1_d, ...
+                           'asr_d_b1', asr_d_b1, ...
+                           'asr_b1_g', asr_b1_g, ...
+                           'asr_g_b2', asr_g_b2, ...
+                           'asr_b2_t2', asr_b2_t2, ...
+                           'asr_t2_p1', asr_t2_p1);
+    res.aF1s = aF1s;
     varargout{1} = res;
 end
 

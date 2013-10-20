@@ -1,10 +1,11 @@
-function pdata1 = updateDataUI(uihdls, pdata, dataFld, idx_trial, state, i1, varargin)
+function pdata1 = updateDataUI(uihdls, pdata, dataFld, idx_trial, state, tridx, varargin)
 %% Input arguments:
-% i1 - position in the UI trial list
+% tridx - position in the UI trial list
 DEFAULT_NLPC = 13;
 
 colors.R = [0, 0, 1];
 colors.N = [0, 0.5, 0];
+colors.black = [0, 0, 0];
 
 %% CONFIG
 [marks, marksDesc] = get_preproc_marks();
@@ -13,6 +14,8 @@ lwMarks = 1.5;
 
 FmtShiftStat0 = 5;
 FmtShiftStat1 = 9;
+
+asrOutFNs = {'julian_stdout.txt', 'asrout'};
 
 %% Data analysis configurations
 mvaWinWidth = 21;     % 21 * 1.333 = 28 (ms)
@@ -31,17 +34,20 @@ if ~isempty(fsic(varargin, 'focus'))
 end
 
 %% -- Main screening process --
-if ~isempty(i1)
-    this_utter.phase = state.trialList.phase{i1};
-    if iscell(state.trialList.block(i1))
-        this_utter.blockNum=state.trialList.block{i1};
+bIsRHY = ~isfield(uihdls, 'exptType') || isequal(uihdls.exptType, 'behav') || isequal(uihdls.exptType, 'fMRI') || ...
+         isequal(uihdls.exptType, 'rand-twarp-fmt') || isequal(uihdls.exptType, 'rand-RHY-fmri');
+
+if ~isempty(tridx)
+    this_utter.phase = state.trialList.phase{tridx};
+    if iscell(state.trialList.block(tridx))
+        this_utter.blockNum=state.trialList.block{tridx};
     else
-        this_utter.blockNum=state.trialList.block(i1);
+        this_utter.blockNum=state.trialList.block(tridx);
     end
-    % this_utter.trialNum=state.trialList.trialN(i1);
+    % this_utter.trialNum=state.trialList.trialN(tridx);
 
     [ret, hostName]=system('hostname');
-    rawfn = getRawFN_(state.rawDataDir,state.trialList.fn{i1});
+    rawfn = getRawFN_(state.rawDataDir,state.trialList.fn{tridx});
     if ~isequal(lower(deblank(hostName)), 'smcg_w510')
         rawfn = strrep(rawfn, 'E:', 'D:');
     else
@@ -136,14 +142,26 @@ f2v=mva_nz(f2v, mvaWinWidth, 'Hamming');
 frameDur=data.params.frameLen/data.params.sr;
 taxis1=0:(frameDur):(frameDur*(length(f1v)-1));
 
-rawDataFN = state.trialList.fn{i1};
+rawDataFN = state.trialList.fn{tridx};
 [fpath, fname] = fileparts(rawDataFN);
 asrDir = fullfile(fpath, [fname, '_asr']);
 
 if isdir(asrDir)
-    julianOut = fullfile(asrDir, 'julian_stdout.txt');
     wavFN = fullfile(asrDir, 'speech.wav');
-    check_file(julianOut);
+    
+    bFoundASROut = 0;
+    for j1 = 1 : numel(asrOutFNs)
+        julianOut = fullfile(asrDir, asrOutFNs{j1});
+        if isfile(julianOut)
+            bFoundASROut = 1;
+            break;
+        end
+    end
+    
+    if ~bFoundASROut
+        error_log('Cannot find ASR output file in ASR directory: %s', asrDir);
+    end
+    
     check_file(wavFN);
     pa = parse_asr_out(julianOut, wavFN);
     
@@ -174,11 +192,6 @@ else
 end
             
 %%
-% [j1, j2, foo1, foo2, iv1, iv2] = getFmtPlotBounds(f1v, f2v);
-% if bPossibleMultiProd == 1
-%     fprintf('WARNING: there are possibly multiple productions in this trials\n\tThe way to check: play sigIn or change rmsThresh to a very high value (e.g., 0.1) temporarily.\n')
-% end
-
 if ~isempty(iv1)
     this_utter.iv1=iv1;
 else
@@ -207,26 +220,26 @@ h1 = uihdls.haxes1;
 h2 = uihdls.haxes2;
 
 
-% if isequal(state.trialList.phase{i1},'ramp') || isequal(state.trialList.phase{i1},'stay') || isequal(state.trialList.phase{i1},'stay2')
+% if isequal(state.trialList.phase{tridx},'ramp') || isequal(state.trialList.phase{tridx},'stay') || isequal(state.trialList.phase{tridx},'stay2')
 %     pertStr='pert';
 % else
 %     pertStr='none';
 % end
-if state.trialList.pertType(i1) == 0
+if state.trialList.pertType(tridx) == 0
     pertStr = 'noPert';
-elseif state.trialList.pertType(i1) == 1
+elseif state.trialList.pertType(tridx) == 1
     pertStr = 'F1Up';
-elseif state.trialList.pertType(i1) == 2
+elseif state.trialList.pertType(tridx) == 2
     pertStr = 'Decel';
 else
-    error('Unexpected pertType: %d', state.trialList.pertType(i1));
+    error('Unexpected pertType: %d', state.trialList.pertType(tridx));
 end
 
-%     pertStr=trialList.pert{i1};
+%     pertStr=trialList.pert{tridx};
 
 % if isempty(find(f1v>0))
 %     this_utter.pertStr=pertStr;
-%     this_utter.rawDataFN=state.trialList.fn{i1};
+%     this_utter.rawDataFN=state.trialList.fn{tridx};
 %     
 %     this_utter.bDiscard=1;    
 %     
@@ -295,7 +308,7 @@ xlim=[taxis1(iv1), taxis1(min([iv2, length(taxis1)]))];
 %     end
 
 this_utter.pertStr=pertStr;
-this_utter.rawDataFN=state.trialList.fn{i1};
+this_utter.rawDataFN=state.trialList.fn{tridx};
 this_utter.bDiscard=0;
 
 %     idx_v1=round(iv1+0.4*(iv2-iv1));
@@ -376,16 +389,34 @@ this_utter.f2Traj = [];
 this_utter.rating = pdata.(dataFld).rating(idx_trial);
 this_utter.comments = pdata.(dataFld).comments{idx_trial};
 
-if state.trialList.bRhythm(i1) == 1
-    rhythmLet = 'R';
-    titleClr = colors.R;
+if bIsRHY
+    if state.trialList.bRhythm(tridx) == 1
+        rhythmLet = 'R';
+        titleClr = colors.R;
+    else
+        rhythmLet = 'N';
+        titleClr = colors.N;
+    end
 else
     rhythmLet = 'N';
-    titleClr = colors.N;
+    titleClr = colors.black;
 end
 
-t_title = sprintf('Trial #%d / %d - [%s] %s  (solid: rms LB; dashed: rms-peak-window; dotted: Shira''s method) (randomized order)', ...
-                  i1, numel(state.trialList.fn), rhythmLet, state.trialList.word{i1});
+if ~isfield(state.trialList, 'noiseMasked')
+    maskStr = 'noMask';
+elseif state.trialList.noiseMasked(tridx) == 1
+    maskStr = 'masked';
+else
+    maskStr = 'noMask';
+end
+
+if bIsRHY
+    t_title = sprintf('Trial #%d / %d - [%s] %s  (solid: rms LB; dashed: rms-peak-window; dotted: Shira''s method) (randomized order)', ...
+                      tridx, numel(state.trialList.fn), rhythmLet, state.trialList.word{tridx});
+elseif isequal(uihdls.exptType, 'sust-fmt')
+    t_title = sprintf('Trial #%d / %d - [%s] %s  (solid: rms LB; dashed: rms-peak-window; dotted: Shira''s method) (randomized order)', ...
+                      tridx, numel(state.trialList.fn), maskStr, state.trialList.word{tridx});
+end
               
 %%
 
@@ -455,7 +486,7 @@ guidata(uihdls.haxes1, zdat);
 plot_phn_align(pa);
 
 % --- Plot OST stat --- %
-if isequal(state.trialList.phase{i1}(1 : 3), 'run')
+if isequal(state.trialList.phase{tridx}(1 : 3), 'run')
     plot(taxis1, dataOrig.ost_stat * 250, 'b-');
     
     ys = get(gca, 'YLim');
@@ -524,81 +555,81 @@ this_utter.idx_shira_v1 = idx_shira_v1;
 this_utter.idx_shira_v2 = idx_shira_v2;
 % -- ~Shira's method --
 
-% --- Manually set the key consonant land marks --- %
-bDoMarks = get(uihdls.rb_doMarks, 'Value');
+if bIsRHY
+    % --- Manually set the key consonant land marks --- %
+    bDoMarks = get(uihdls.rb_doMarks, 'Value');
 
-bMarksDone = 1;
-for n = 1 : numel(marks)
-    t_mark = marks{n};
-    
-    if isnan(pdata.(dataFld).(t_mark)(idx_trial))
-        bMarksDone = 0;
-        break;
-    end
-end
-
-ys = get(gca, 'YLim');
-if bMarksDone == 0 && bDoMarks == 1
-    if FOCUS_AND_RELABEL
-        set(gca, 'XLim', [taxis1(1), taxis1(end)]);
-        
-        bIntervalOkay = 0;
-        while ~bIntervalOkay
-            title('Click at the beginning of the focus interval...', ...
-                  'Color', [0, 0.5, 0]);
-            coord1 = ginput(1);
-            title('Click at the end of the focus interval...', ...
-                  'Color', [0, 0.5, 0]);
-            coord2 = ginput(1);
-            
-            int_t0 = coord1(1);
-            int_t1 = coord2(1);
-            
-            if (int_t0 < int_t1) && (int_t0 >= taxis1(1)) && (int_t1 <= taxis1(end))
-                bIntervalOkay = 1;
-            else
-                bIntervalOkay = 0;
-            end
-        end
-        
-        set(gca, 'XLim', [int_t0, int_t1]);
-    end
-          
-    lblOkay = 0;
-    while ~lblOkay
-        for n = 1 : numel(marks)
-            t_mark = marks{n};
-            
-            title(sprintf('Set %s (%s) ...', t_mark, marksDesc{n}));
-            bClickIn = 0;
-            while ~bClickIn
-                coord = ginput(1);
-
-                bClickIn = coord(2) > ys(1) & coord(2) < ys(2);
-            end                        
-
-            this_utter.vowelOnset = coord(1);
-
-            this_utter.(t_mark) = coord(1);            
-            
-            plot(repmat(coord(1), 1, 2), ys, 'k--', 'LineWidth', lwMarks);
-        end
-
-        lblOkay = check_marks(this_utter, marks);
-    end
-
-else
+    bMarksDone = 1;
     for n = 1 : numel(marks)
         t_mark = marks{n};
-        this_utter.(t_mark) = pdata.(dataFld).(t_mark)(idx_trial);
-        plot(repmat(this_utter.(t_mark), 1, 2), ys, 'k--', 'LineWidth', lwMarks);
+
+        if isnan(pdata.(dataFld).(t_mark)(idx_trial))
+            bMarksDone = 0;
+            break;
+        end
     end
-    
+
+    ys = get(gca, 'YLim');
+    if bMarksDone == 0 && bDoMarks == 1
+        if FOCUS_AND_RELABEL
+            set(gca, 'XLim', [taxis1(1), taxis1(end)]);
+
+            bIntervalOkay = 0;
+            while ~bIntervalOkay
+                title('Click at the beginning of the focus interval...', ...
+                      'Color', [0, 0.5, 0]);
+                coord1 = ginput(1);
+                title('Click at the end of the focus interval...', ...
+                      'Color', [0, 0.5, 0]);
+                coord2 = ginput(1);
+
+                int_t0 = coord1(1);
+                int_t1 = coord2(1);
+
+                if (int_t0 < int_t1) && (int_t0 >= taxis1(1)) && (int_t1 <= taxis1(end))
+                    bIntervalOkay = 1;
+                else
+                    bIntervalOkay = 0;
+                end
+            end
+
+            set(gca, 'XLim', [int_t0, int_t1]);
+        end
+
+        lblOkay = 0;
+        while ~lblOkay
+            for n = 1 : numel(marks)
+                t_mark = marks{n};
+
+                title(sprintf('Set %s (%s) ...', t_mark, marksDesc{n}));
+                bClickIn = 0;
+                while ~bClickIn
+                    coord = ginput(1);
+
+                    bClickIn = coord(2) > ys(1) & coord(2) < ys(2);
+                end                        
+
+                this_utter.vowelOnset = coord(1);
+
+                this_utter.(t_mark) = coord(1);            
+
+                plot(repmat(coord(1), 1, 2), ys, 'k--', 'LineWidth', lwMarks);
+            end
+
+            lblOkay = check_marks(this_utter, marks);
+        end
+
+    else
+        for n = 1 : numel(marks)
+            t_mark = marks{n};
+            this_utter.(t_mark) = pdata.(dataFld).(t_mark)(idx_trial);
+            plot(repmat(this_utter.(t_mark), 1, 2), ys, 'k--', 'LineWidth', lwMarks);
+        end
+
+    end
 end
 
-
 %% ------------ Re-compute the three F1/F2 averages ------------ %
-
 title(t_title, 'Color', titleClr);
 
 set(gcf,'CurrentAxes',h2);
@@ -673,7 +704,7 @@ end
 %%
 this_utter.timeStamp_analysis=clock;
 
-if ~isequal(state.trialList.fn{i1}, pdata.(dataFld).rawDataFNs{idx_trial})
+if ~isequal(state.trialList.fn{tridx}, pdata.(dataFld).rawDataFNs{idx_trial})
     fprintf('ERROR: raw data file name mismatch. \n');
     return
 end
@@ -708,8 +739,10 @@ pdata.(dataFld).f2Traj{idx_trial} = this_utter.f2Traj;
 % pdata.(dataFld).prodF1_mnlBound(idx_trial)=this_utter.prodF1_mnlBound;
 % pdata.(dataFld).prodF2_mnlBound(idx_trial)=this_utter.prodF2_mnlBound;
 
-for n = 1 : numel(marks)
-    pdata.(dataFld).(marks{n})(idx_trial) = this_utter.(marks{n});
+if bIsRHY
+    for n = 1 : numel(marks)
+        pdata.(dataFld).(marks{n})(idx_trial) = this_utter.(marks{n});
+    end
 end
 
 pdata.(dataFld).audF1(idx_trial)=this_utter.audF1;

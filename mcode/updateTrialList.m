@@ -1,9 +1,20 @@
 function updateTrialList(state, uihdls, varargin)
 %% CONSTANTS
-ALL_PERT_TYPES = {'noPert', 'F1Up', 'decel'};
+bIsRHY = ~isfield(uihdls, 'exptType') || isequal(uihdls.exptType, 'behav') || isequal(uihdls.exptType, 'fMRI') || ...
+         isequal(uihdls.exptType, 'rand-twarp-fmt') || isequal(uihdls.exptType, 'rand-RHY-fmri');
+
+if bIsRHY
+    ALL_PERT_TYPES = {'noPert', 'F1Up', 'decel'};
+    ALL_MASK_TYPES = {'noMask'};
+elseif isequal(uihdls.exptType, 'sust-fmt') 
+    ALL_PERT_TYPES = {'noPert', 'pert'};
+    ALL_MASK_TYPES = {'noMask', 'mask'};
+else
+    error_log(sprintf('%s: encountered unsupported exptType: %s', ...
+                      mfilename, uihdls.exptType));
+end
 
 %%
-
 listItems = cell(1, numel(state.trialList.fn));
 nFirstUnproc = Inf;
 
@@ -25,15 +36,25 @@ for i1 = 1 : numel(state.trialList.fn)
     t_phase = state.trialList.phase{i1};
     t_block = state.trialList.block(i1);
     t_trialN = state.trialList.trialN(i1);
-    t_word = state.trialList.word{i1};
+    t_word = state.trialList.word{i1};    
     
     t_pertType = ALL_PERT_TYPES{state.trialList.pertType(i1) + 1};
     if isequal(t_pertType, 'noPert')
         t_pertType = '';
     end
     
-    strDet = sprintf('{%s} %s, block %d, trial %d (%s)', ...
-                     t_pertType, t_phase, t_block, t_trialN, t_word);
+    if isfield(state.trialList, 'noiseMasked')
+        t_maskType = ALL_MASK_TYPES{state.trialList.noiseMasked(i1) + 1};
+    else
+        t_maskType = 'noMask';
+    end
+    if isequal(t_maskType, 'noMask')
+        t_maskType = '';
+    end
+    
+    
+    strDet = sprintf('{%s,%s} %s, block %d, trial %d (%s)', ...
+                     t_pertType, t_maskType, t_phase, t_block, t_trialN, t_word);
     
     if state.stats(i1) == 0
         if bReveal == 0
