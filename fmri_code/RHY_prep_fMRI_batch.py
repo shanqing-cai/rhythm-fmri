@@ -98,6 +98,8 @@ if __name__ == "__main__":
     elif len(dfs) == 2 * nRuns:
         info_log("The number of image files equals 2 x nRuns. Assuming that thefirst of each pair os the non-motion corected volume.")
         boldVols = dfs[0::2]
+    else:
+        raise Exception, "The number of .nii.gz serie in directory %s is neither equal to nRuns=%d or 2*nRuns=%d" % (boldDir, nRuns, 2 * nRuns)
 
     #=== Copy image files and convert them to .nii ===#
     niiDir = os.path.join(sBatchDataDir, "nii")

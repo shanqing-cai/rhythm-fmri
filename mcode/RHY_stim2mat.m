@@ -78,6 +78,8 @@ if ~isfield(pdata.mainData, 'fluencyCode')
 end
 
 %% Read the stim-schedule for the delivered runs
+dt = TR / 1e3 / 24 / 3600;
+
 isInvalid = 0;
 runinfo = {};
 stims = {};
@@ -87,12 +89,28 @@ for i1 = 1 : nRunsAct
     stims{i1} = nan(1, expt.script.(runStr).nTrials);
 %     spOnsets{i1} = nan(1, numel(runinfo{i1}.data.stim));
 
+    ts = [];
+
     trCnt = 1; % Trial count
     for i2 = 1 : expt.script.(runStr).nReps
         repStr = sprintf('rep%d', i2);
         
         for i3 = 1 : numel(expt.script.(runStr).(repStr).trialOrder)
+            %-- Load raw data file --%
+            dataFN = dir(fullfile(subjBehavDataDir, runStr, repStr, ...
+                                  sprintf('trial-%d-*.mat', i3)));
+            if length(dataFN) ~= 1
+                error('Cannot find exactly one .mat data file for trial: %s, %s, trial #%s', ...
+                      runStr, repStr, i3);
+            end
+            dataFN = fullfile(subjBehavDataDir, runStr, repStr, dataFN(1).name);
             
+            load(dataFN);
+            assert(exist('data') == 1);
+            
+            ts(end + 1) = datenum(data.timeStamp);
+            
+            %-- --%
             stims{i1}(trCnt) = min([3, expt.script.(runStr).(repStr).trialOrder(i3)]);
             
             if stims{i1}(trCnt) <= 2
@@ -120,6 +138,26 @@ for i1 = 1 : nRunsAct
         end
     end
     stims{i1} = [3, stims{i1}(1 : end - 1)];     % Padded one: the first volume doesn't capture any task-related neural responses
+    
+    %-- Adjust stims according to time stamps: in case trigger skips exist
+    %--%
+    tsteps = diff(ts);
+    len0 = length(stims{i1});
+    nSkips = 0;
+    for j1 = 2 : len0
+        if tsteps(j1 - 1) > dt * 1.5
+            stims{i1} = [stims{i1}(1 : j1 - 1), 3, ...
+                         stims{i1}(j1 : end)];
+            nSkips = nSkips + 1;
+        end
+    end
+    
+    assert(length(stims{i1}) == len0 + nSkips);
+    if nSkips > 0
+        fprintf(2, 'WARNING: found %d trigger skips in %s\n', ...
+                nSkips, runStr);
+        stims{i1} = stims{i1}(1 : len0);
+    end    
 end
 
 %% Generate the design matrices
