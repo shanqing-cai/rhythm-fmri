@@ -6,7 +6,7 @@ if ~isfile(calibWavFN)
 end
 
 %%
-p = getTSMDefaultParams('female');
+p = getTSMDefaultParams('female', 'micRMS_100dBA', 0.5);    % Dummy value: 0.5;
 TransShiftMex(0);
 
 MexIO('init', p);
