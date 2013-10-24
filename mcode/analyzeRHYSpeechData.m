@@ -22,6 +22,7 @@ pdataFN = fullfile(dacacheDir, [subjID, '.mat']);
 check_file(pdataFN);
 
 T_INT_P_THRESH = 0.05;
+CHI_P_THRESH = 0.05;
 
 prodRatingThresh = 0; % Most liberal: 0; More conservative: 1
 
@@ -146,6 +147,9 @@ for i1 = 1 : numel(rhyConds)
                             
 end
 
+%% Contingency table for dysfluencies
+analyze_dysf_fraction(pdata, rhyConds, pertTypes, CHI_P_THRESH, colors);
+
 %% Comparing ASR results on input and output
 figure('Position', [50, 150, 1500, 600]);
 spCnt = 1;
@@ -160,7 +164,7 @@ for i1 = 1 : numel(rhyConds)
         tbegs = pdata.mainData.asrTBeg(:, idx.(rc).(pt));
         tbegs_FB = pdata.mainData.asrTBeg_FB(:, idx.(rc).(pt));
         
-        plot(1e3 * (tbegs_FB - tbegs));
+        plot(1e3 * (tbegs_FB - tbegs));        
         
         set(gca, 'YLim', [-50, 150]);
         
