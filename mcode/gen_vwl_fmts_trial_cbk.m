@@ -76,7 +76,11 @@ for i1 = 1 : numel(vwls)
     end
     
     t0 = tbegs(iv);
-    t1 = tbegs(iv + 1);
+    if iv + 2 <= length(tbegs)
+        t1 = tbegs(iv + 2);
+    else
+        t1 = tbegs(iv + 1);
+    end
     
     load(rawfn);    % gives data
     
@@ -98,9 +102,9 @@ for i1 = 1 : numel(vwls)
     
     vwl_wf = data.signalIn(sidx_pad_0 : sidx_pad_1);
        
-    dataOut = reprocData(data, 'sig', vwl_wf, 'rmsThresh', 0.0);
+    dataOut = reprocData(data, 'sig', vwl_wf, 'rmsThresh', 0.0, 'rmsRatioThresh', 0.0);
     if i1 == 1
-        dataOut = reprocData(data, 'sig', vwl_wf, 'rmsThresh', 0.0);
+        dataOut = reprocData(data, 'sig', vwl_wf, 'rmsThresh', 0.0, 'rmsRatioThresh', 0.0);
     end
     
     pad_fmts = dataOut.fmts(:, 1 : N_FMTS);
