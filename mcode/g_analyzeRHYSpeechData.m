@@ -61,7 +61,7 @@ end
 grpCacheFN = sprintf('%s_%s_grpCache.mat', mfilename, ...
                            strrep(subjListFN, '.txt', ''));
 
-bReload = ~isempty(fsic(varargin, '-r'));
+bReload = ~isempty(fsic(varargin, '-r')) || ~isempty(fsic(varargin, 'reload'));
 if bReload
     sres = cell(1, ns);
     for i1 = 1 : numel(subjIDs)
@@ -110,17 +110,26 @@ for h1 = 1 : length(FMT_ANA_VWLS)
     t_vwl = FMT_ANA_VWLS{h1};
     
     avgVwlF1.(t_vwl) = struct;
-    chgAvgVwlF1s.(t_vwl) = struct;
-
+    chgAvgVwlF1s.(t_vwl) = struct; % Average across Ss, then calculate the pert-noPert difference
+        
     vwlF1s.(t_vwl) = struct;
+    chgVwlF1s.(t_vwl) = struct;
+    
+    avgChgVwlF1s.(t_vwl) = struct;  % Calculate the pert-noPert difference, then average across Ss (probably better)
+    steChgVwlF1s.(t_vwl) = struct;
+    
     for i1 = 1 : numel(rhyConds)
         rc = rhyConds{i1};
 
         avgVwlF1s.(t_vwl).(rc) = struct;
-        steVwlF1s.(t_vwl).(rc) = struct;
-        chgAvgVwlF1s.(t_vwl).(rc) = struct;
+        steVwlF1s.(t_vwl).(rc) = struct;        
 
         vwlF1s.(t_vwl).(rc) = struct;
+        chgAvgVwlF1s.(t_vwl).(rc) = struct;
+        
+        avgChgVwlF1s.(t_vwl).(rc) = struct;
+        steChgVwlF1s.(t_vwl).(rc) = struct;
+        
         for i2 = 1 : numel(pertTypes)
             pt = pertTypes{i2};
 
@@ -128,11 +137,19 @@ for h1 = 1 : length(FMT_ANA_VWLS)
             steVwlF1s.(t_vwl).(rc).(pt) = nan(MAX_FMT_LEN, length(sres));
 
             vwlF1s.(t_vwl).(rc).(pt) = nan(MAX_FMT_LEN, length(sres));
+            if i2 ~= 1
+                chgVwlF1s.(t_vwl).(rc).(pt) = nan(MAX_FMT_LEN, length(sres));
+            end
 
             %--- Collect formant data from subjects ---%
             for j1 = 1 : length(sres);
                 len = size(sres{j1}.aF1s.(t_vwl).(rc).(pt), 1);
                 vwlF1s.(t_vwl).(rc).(pt)(1 : len, j1) = sres{j1}.aF1s.(t_vwl).(rc).(pt)(:, 1);
+                
+                if i2 ~= 1
+                    len = min([length(sres{j1}.aF1s.(t_vwl).(rc).(pt)(:, 1)), length(sres{j1}.aF1s.(t_vwl).(rc).noPert(:, 1))]);
+                    chgVwlF1s.(t_vwl).(rc).(pt)(1 : len, j1) = sres{j1}.aF1s.(t_vwl).(rc).(pt)(1 : len, 1) - sres{j1}.aF1s.(t_vwl).(rc).noPert(1 : len, 1);                   
+                end
             end
 
             avgVwlF1s.(t_vwl).(rc).(pt) = mean(vwlF1s.(t_vwl).(rc).(pt), 2);
@@ -141,6 +158,17 @@ for h1 = 1 : length(FMT_ANA_VWLS)
             glen = find(~isnan(avgVwlF1s.(t_vwl).(rc).(pt)), 1, 'last');    % Group-level length
             avgVwlF1s.(t_vwl).(rc).(pt) = avgVwlF1s.(t_vwl).(rc).(pt)(1 : glen);
             steVwlF1s.(t_vwl).(rc).(pt) = steVwlF1s.(t_vwl).(rc).(pt)(1 : glen);
+            
+            if i2 ~= 1
+                %-- Calculate the pert-noPert difference, then average across Ss--%
+                avgChgVwlF1s.(t_vwl).(rc).(pt) = mean(chgVwlF1s.(t_vwl).(rc).(pt), 2);
+                steChgVwlF1s.(t_vwl).(rc).(pt) = std(chgVwlF1s.(t_vwl).(rc).(pt), [], 2) / ...
+                                                 sqrt(size(chgVwlF1s.(t_vwl).(rc).(pt), 2));
+                                             
+                glen = find(~isnan(avgChgVwlF1s.(t_vwl).(rc).(pt)), 1, 'last');
+                avgChgVwlF1s.(t_vwl).(rc).(pt) = avgChgVwlF1s.(t_vwl).(rc).(pt)(1 : glen);
+                steChgVwlF1s.(t_vwl).(rc).(pt) = steChgVwlF1s.(t_vwl).(rc).(pt)(1 : glen);
+            end
         end
         
         assert(isequal(pertTypes{1}, baseType));
@@ -152,6 +180,8 @@ for h1 = 1 : length(FMT_ANA_VWLS)
             chgAvgVwlF1s.(t_vwl).(rc).(pt) = avgVwlF1s.(t_vwl).(rc).(pt)(1 : clen) - ...
                                              avgVwlF1s.(t_vwl).(rc).(pertTypes{1})(1 : clen);
         end
+        
+        
     end
 
 end
@@ -256,7 +286,7 @@ for i2 = 1 : numel(pertTypes(2 : end))
     title(strrep(pt, '_', '\_'));
 end
 
-%% Mark significant changes
+%% Time-intevral changes: Mark significant changes
 for i1 = 1 : length(rhyConds)
     rc = rhyConds{i1};
     
@@ -294,9 +324,14 @@ for h1 = 1 : numel(rhyConds)
         assert(isequal(pertTypes{1}, baseType));
         for i2 = 2 : length(pertTypes)
             pt = pertTypes{i2};
-            tAxis = 0 : T_STEP : T_STEP * (length(chgAvgVwlF1s.(t_vwl).(rc).(pt)) - 1);
-            plot(tAxis * 1e3, chgAvgVwlF1s.(t_vwl).(rc).(pt), ...
+            tAxis = 0 : T_STEP : T_STEP * (length(avgChgVwlF1s.(t_vwl).(rc).(pt)) - 1);
+            plot(tAxis * 1e3, avgChgVwlF1s.(t_vwl).(rc).(pt), ...
                  '-', 'Color', colors.(pt));
+             
+            plot(tAxis * 1e3, avgChgVwlF1s.(t_vwl).(rc).(pt) + steChgVwlF1s.(t_vwl).(rc).(pt), ...
+                 '--', 'Color', colors.(pt));
+            plot(tAxis * 1e3, avgChgVwlF1s.(t_vwl).(rc).(pt) - steChgVwlF1s.(t_vwl).(rc).(pt), ...
+                 '--', 'Color', colors.(pt));
         end
         xs = get(gca, 'XLim');
         plot(xs, [0, 0], '-', 'Color', gray);
