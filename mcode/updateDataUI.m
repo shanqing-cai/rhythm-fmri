@@ -139,7 +139,7 @@ f2v=mva_nz(f2v, mvaWinWidth, 'Hamming');
 
 %% --- Load ASR data --- %%
 %% 
-frameDur=data.params.frameLen/data.params.sr;
+frameDur = data.params.frameLen / data.params.sr;
 taxis1=0:(frameDur):(frameDur*(length(f1v)-1));
 
 rawDataFN = state.trialList.fn{tridx};
@@ -235,75 +235,6 @@ else
     error('Unexpected pertType: %d', state.trialList.pertType(tridx));
 end
 
-%     pertStr=trialList.pert{tridx};
-
-% if isempty(find(f1v>0))
-%     this_utter.pertStr=pertStr;
-%     this_utter.rawDataFN=state.trialList.fn{tridx};
-%     
-%     this_utter.bDiscard=1;    
-%     
-%     this_utter.rating=0;
-%     if ~isnan(pdata.(dataFld).rating(idx_trial))
-%         this_utter.rating = pdata.(dataFld).rating(idx_trial);
-%     end
-%     
-% %     this_utter.comments=''; % SCai (01/13/2013)
-%     if ~isempty(pdata.(dataFld).comments{idx_trial})
-%         this_utter.comments = pdata.(dataFld).comments{idx_trial};
-%     else
-%         this_utter.comments = '';
-%     end
-%     
-%     this_utter.prodF1=NaN;
-%     this_utter.prodF2=NaN;
-%     this_utter.audF1=NaN;
-%     this_utter.audF2=NaN;
-%     
-%     if ~isequal(data.params.name,pdata.(dataFld).words{idx_trial})
-%         fprintf('WARNING: word mismatch!\n');
-%     end
-%     pdata.(dataFld).rmsThresh(idx_trial)=this_utter.rmsThresh;
-%     pdata.(dataFld).fn1(idx_trial)=this_utter.fn1;
-%     pdata.(dataFld).fn2(idx_trial)=this_utter.fn2;
-%     pdata.(dataFld).aFact(idx_trial)=this_utter.aFact;
-%     pdata.(dataFld).bFact(idx_trial)=this_utter.bFact;
-%     pdata.(dataFld).gFact(idx_trial)=this_utter.gFact;
-%     pdata.(dataFld).bCepsLift(idx_trial)=this_utter.bCepsLift;
-%     pdata.(dataFld).cepsWinWidth(idx_trial)=this_utter.cepsWinWidth;
-%     pdata.(dataFld).nLPC(idx_trial)=this_utter.nLPC;
-% 
-%     pdata.(dataFld).prodF1(idx_trial)=this_utter.prodF1;
-%     pdata.(dataFld).prodF2(idx_trial)=this_utter.prodF2;
-%     pdata.(dataFld).audF1(idx_trial)=this_utter.audF1;
-%     pdata.(dataFld).audF2(idx_trial)=this_utter.audF2;
-%     pdata.(dataFld).traj_F1{idx_trial}=[];
-%     pdata.(dataFld).traj_F2{idx_trial}=[];
-%     pdata.(dataFld).sigRMS{idx_trial}=[];
-%     pdata.(dataFld).iv1(idx_trial)=NaN;
-%     pdata.(dataFld).iv2(idx_trial)=NaN;
-%     pdata.(dataFld).bDiscard(idx_trial) = this_utter.bDiscard;
-%     pdata.(dataFld).rating(idx_trial) = this_utter.rating;
-%     pdata.(dataFld).comments{idx_trial} = this_utter.comments;
-% 
-%     set(gcf, 'CurrentAxes', h1);    
-% %     title(sprintf('%s - Rep #%d - Trial #%d: %s: parsing failed --> discarded',strrep(this_utter.rawDataFN,'\','/'),...
-% %         this_utter.blockNum,this_utter.trialNum,this_utter.pertStr),...
-% %         'FontWeight','Bold');
-%     
-%     title(sprintf('%s: parsing failed --> discarded', strrep(strrep(this_utter.rawDataFN,'\','/'), '_', '\_')), ...
-%         'FontWeight','Bold');
-% %     coord=ginput(1);
-% 
-%     pdata1 = pdata;
-% 
-%     
-%     return;
-% end
-
-%     if ~isempty(find(data.sentStat==6))
-%         xlim=[taxis1(min(find(data.sentStat==1)))-0.2,taxis1(min(find(data.sentStat==6)))+0.8];
-%     else
 xlim=[taxis1(iv1), taxis1(min([iv2, length(taxis1)]))];
 %     end
 
@@ -485,7 +416,7 @@ guidata(uihdls.haxes1, zdat);
 
 plot_phn_align(pa);
 
-% --- Plot OST stat --- %
+%% --- Plot OST stat --- %%
 if isequal(state.trialList.phase{tridx}(1 : 3), 'run')
     plot(taxis1, dataOrig.ost_stat * 250, 'b-');
     
@@ -505,6 +436,14 @@ end
 %         xlabel('Time (s)');
 ylabel('Frequency (Hz)');
 
+%% --- Plot formants from pdata vwlFmts, if available --- %
+if isfield(pdata.(dataFld), 'vwlFmts') && ~isempty(pdata.(dataFld).vwlFmts{idx_trial}) ...
+        && isstruct(pdata.(dataFld).vwlFmts{idx_trial})
+    plot_vowel_formants(pa, pdata.(dataFld).vwlFmts{idx_trial}, frameDur, ...
+                        '--skipVowels', {'ah'});
+end
+
+%%
 %         idx_v1=round(iv1+0.4*(iv2-iv1));
 %         idx_v2=round(iv1+0.6*(iv2-iv1));
 t_rms=data.rms(iv1:iv2);
