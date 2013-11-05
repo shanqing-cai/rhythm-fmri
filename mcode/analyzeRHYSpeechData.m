@@ -3,6 +3,11 @@ function varargout = analyzeRHYSpeechData(subjID, varargin)
 rhyConds = {'N', 'R'};
 pertTypes = {'noPert', 'F1Up', 'decel', ...
              'noPert_precNoPert', 'noPert_precF1Up', 'noPert_precDecel'};
+pertTypes_main = pertTypes(1 : 3);
+
+FRAME_DUR = 2e-3;   % Unit: s (WARNING: ad hoc)
+
+AVG_FALLOFF = 0.75;     % The trace counter ratio threshold for trace averaging
 
 colors.N = [0, 0.5, 0];
 colors.R = [0, 0, 1];
@@ -33,6 +38,7 @@ timeIntervals = {'s', 't1', 1, 3; ...
                  'g', 'b2', 10, 13; ...
                  'b2', 't2', 13, 16; ...
                  't2', 'p1', 16, 18};
+             
 
 %% Additional input options
 bMan = ~isempty(fsic(varargin, '--man')); % Use manual time labels
@@ -43,6 +49,18 @@ end
 
 %%
 load(pdataFN);  % gives pdata
+
+%% Determine FRAME_DUR
+if isfile(pdata.mainData.rawDataFNs{1})
+    load(pdata.mainData.rawDataFNs{1});
+    FRAME_DUR = data.params.frameLen / data.params.sr;
+    
+    clear data;
+    
+    info_log(sprintf('WARNING: Cannot find raw data files. Assuming FRAME_DUR = %f s.', FRAME_DUR));
+else
+    info_log(sprintf('WARNING: Cannot find raw data files. Assuming FRAME_DUR = %f s.', FRAME_DUR), '-warn');
+end
 
 %% Process noPert trials according to preceding pertType
 exptFN = fullfile(pdata.subject.dataDir, pdata.subject.name, 'expt.mat');
@@ -389,7 +407,7 @@ for i0 = 1 : numel(analyze_fmts_vwls)
         subplot(1, numel(rhyConds), i1);
         title(rc);
         
-        for i2 = 1 : numel(pertTypes)
+        for i2 = 1 : numel(pertTypes_main)
             pt = pertTypes{i2};
 
             F1s.(vwl).(rc).(pt) = {};
@@ -406,14 +424,21 @@ for i0 = 1 : numel(analyze_fmts_vwls)
 
                 F1s.(vwl).(rc).(pt){end + 1} = pdata.mainData.vwlFmts{t_idx}.(vwl)(:, 1);
             end
-
+ 
             aF1s.(vwl).(rc).(pt) = avgTrace1(F1s.(vwl).(rc).(pt));
-            mnF1s.(vwl).(rc).(pt) = aF1s.(vwl).(rc).(pt)(:, 1);
-            seF1s.(vwl).(rc).(pt) = aF1s.(vwl).(rc).(pt)(:, 2);
+            
+            nFallOff = find(aF1s.(vwl).(rc).(pt)(:, 3) > aF1s.(vwl).(rc).(pt)(1, 3) * AVG_FALLOFF, 1, 'last');
+            mnF1s.(vwl).(rc).(pt) = aF1s.(vwl).(rc).(pt)(1 : nFallOff, 1);
+            seF1s.(vwl).(rc).(pt) = aF1s.(vwl).(rc).(pt)(1 : nFallOff, 2);
 
             hold on;
-            plot(mnF1s.(vwl).(rc).(pt), 'Color', colors.(pt));
+            
+            t_axis = 1e3 * (0 : FRAME_DUR : FRAME_DUR * (nFallOff - 1));
+            plot(t_axis, mnF1s.(vwl).(rc).(pt), 'Color', colors.(pt));
         end
+        
+        xlabel('Time (ms)');
+        legend(pertTypes_main);
 
 
     end
