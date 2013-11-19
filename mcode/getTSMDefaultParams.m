@@ -34,7 +34,15 @@ else
     mouthMicDist = DEFAULT_MOUTH_MIC_DIST;
 end
 
-p.dScale        = 10 ^ ((p.closedLoopGain - calcClosedLoopGain) / 20) ...
+% load('../../signals/leveltest/micRMS_100dBA.mat');
+if ~isempty(fsic(varargin, 'micRMS_100dBA'))
+    micRMS_100dBA = varargin{fsic(varargin, 'micRMS_100dBA') + 1};
+else
+%     load('micRMS_100dBA.mat');
+    error('Missing required input: micRMS_100dBA');
+end
+
+p.dScale        = 10 ^ ((p.closedLoopGain - calcClosedLoopGain(micRMS_100dBA)) / 20) ...
                   / (DEFAULT_MOUTH_MIC_DIST / mouthMicDist);
 p.preempFact    = 0.98;% preemp factor
 
@@ -104,13 +112,7 @@ p.rampLen=0.25; %SC(2008/06/22)
 p.bRMSClip=1;
 % p.rmsClipThresh=1.0;
 
-% load('../../signals/leveltest/micRMS_100dBA.mat');
-if ~isempty(fsic(varargin, 'micRMS_100dBA'))
-    micRMS_100dBA = varargin{fsic(varargin, 'micRMS_100dBA') + 1};
-else
-%     load('micRMS_100dBA.mat');
-    error('Missing required input: micRMS_100dBA');
-end
+
 p.rmsClipThresh = micRMS_100dBA / (10 ^ ((100 - 100) / 20));	% 100 dB maximum input level
 
 %% Perturbation-related variables: these are for the mel (bMelShift=1) or Hz (bMelShift=0) frequency space
