@@ -1,4 +1,10 @@
 function g_analyzeRHYSpeechData(subjListFN, varargin)
+%%
+% Optional input arguments:
+%    -r | --reload:     reload data from individual subjects
+%    --between-trial:   perform between-trial (adaptation) analysis  
+%    --tnorm:           use time-normalized formants
+%
 %% Config
 rhyConds = {'N', 'R'};
 pertTypes_within = {'noPert', 'F1Up', 'decel'};
@@ -19,7 +25,7 @@ gray = [0.5, 0.5, 0.5];
 
 P_THRESH_UNC = 0.05;
 
-FMT_ANA_VWLS = {'eh', 'iy', 'ae'};
+FMT_ANA_VWLS = {'eh', 'iy', 'ae', 'ey'};
 MAX_FMT_LEN = 256;
 
 T_STEP = 0.002;     % Unit: s
@@ -38,6 +44,8 @@ else
     baseType = 'noPert';
     pertTypes = pertTypes_within;
 end
+
+bFmtTNorm = ~isempty(fsic(varargin, '--tnorm'));
 
 %%
 npt = numel(pertTypes);
@@ -61,7 +69,7 @@ end
 grpCacheFN = sprintf('%s_%s_grpCache.mat', mfilename, ...
                            strrep(subjListFN, '.txt', ''));
 
-bReload = ~isempty(fsic(varargin, '-r')) || ~isempty(fsic(varargin, 'reload'));
+bReload = ~isempty(fsic(varargin, '-r')) || ~isempty(fsic(varargin, '--reload'));
 if bReload
     sres = cell(1, ns);
     for i1 = 1 : numel(subjIDs)
@@ -106,6 +114,12 @@ end
 avgVwlF1 = struct;
 steVwlF1 = struct;
 
+if bFmtTNorm
+    aF1_fld = 'aF1s_tnorm';
+else
+    aF1_fld = 'aF1s';
+end
+
 for h1 = 1 : length(FMT_ANA_VWLS)
     t_vwl = FMT_ANA_VWLS{h1};
     
@@ -117,6 +131,7 @@ for h1 = 1 : length(FMT_ANA_VWLS)
     
     avgChgVwlF1s.(t_vwl) = struct;  % Calculate the pert-noPert difference, then average across Ss (probably better)
     steChgVwlF1s.(t_vwl) = struct;
+    ptChgVwlF1s.(t_vwl) = struct; % P-values from t-test of the F1 changes
     
     for i1 = 1 : numel(rhyConds)
         rc = rhyConds{i1};
@@ -129,6 +144,7 @@ for h1 = 1 : length(FMT_ANA_VWLS)
         
         avgChgVwlF1s.(t_vwl).(rc) = struct;
         steChgVwlF1s.(t_vwl).(rc) = struct;
+        ptChgVwlF1s.(t_vwl).(rc) = struct;
         
         for i2 = 1 : numel(pertTypes)
             pt = pertTypes{i2};
@@ -143,12 +159,12 @@ for h1 = 1 : length(FMT_ANA_VWLS)
 
             %--- Collect formant data from subjects ---%
             for j1 = 1 : length(sres);
-                len = size(sres{j1}.aF1s.(t_vwl).(rc).(pt), 1);
-                vwlF1s.(t_vwl).(rc).(pt)(1 : len, j1) = sres{j1}.aF1s.(t_vwl).(rc).(pt)(:, 1);
+                len = size(sres{j1}.(aF1_fld).(t_vwl).(rc).(pt), 1);
+                vwlF1s.(t_vwl).(rc).(pt)(1 : len, j1) = sres{j1}.(aF1_fld).(t_vwl).(rc).(pt)(:, 1);
                 
                 if i2 ~= 1
-                    len = min([length(sres{j1}.aF1s.(t_vwl).(rc).(pt)(:, 1)), length(sres{j1}.aF1s.(t_vwl).(rc).noPert(:, 1))]);
-                    chgVwlF1s.(t_vwl).(rc).(pt)(1 : len, j1) = sres{j1}.aF1s.(t_vwl).(rc).(pt)(1 : len, 1) - sres{j1}.aF1s.(t_vwl).(rc).noPert(1 : len, 1);                   
+                    len = min([length(sres{j1}.(aF1_fld).(t_vwl).(rc).(pt)(:, 1)), length(sres{j1}.(aF1_fld).(t_vwl).(rc).noPert(:, 1))]);
+                    chgVwlF1s.(t_vwl).(rc).(pt)(1 : len, j1) = sres{j1}.(aF1_fld).(t_vwl).(rc).(pt)(1 : len, 1) - sres{j1}.(aF1_fld).(t_vwl).(rc).noPert(1 : len, 1);                   
                 end
             end
 
@@ -164,10 +180,17 @@ for h1 = 1 : length(FMT_ANA_VWLS)
                 avgChgVwlF1s.(t_vwl).(rc).(pt) = mean(chgVwlF1s.(t_vwl).(rc).(pt), 2);
                 steChgVwlF1s.(t_vwl).(rc).(pt) = std(chgVwlF1s.(t_vwl).(rc).(pt), [], 2) / ...
                                                  sqrt(size(chgVwlF1s.(t_vwl).(rc).(pt), 2));
-                                             
+                                   
                 glen = find(~isnan(avgChgVwlF1s.(t_vwl).(rc).(pt)), 1, 'last');
                 avgChgVwlF1s.(t_vwl).(rc).(pt) = avgChgVwlF1s.(t_vwl).(rc).(pt)(1 : glen);
                 steChgVwlF1s.(t_vwl).(rc).(pt) = steChgVwlF1s.(t_vwl).(rc).(pt)(1 : glen);
+                
+                %-- Calculation of p-values (t-test) --%
+                ptChgVwlF1s.(t_vwl).(rc).(pt) = nan(glen, 1);
+                for i3 = 1 : glen
+                    [~, t_p] = ttest(chgVwlF1s.(t_vwl).(rc).(pt)(i3, :));
+                    ptChgVwlF1s.(t_vwl).(rc).(pt)(i3) = t_p;
+                end
             end
         end
         
@@ -311,6 +334,13 @@ end
 
 
 %% Visualization: formant changes
+spWspc = 0.06;
+spW = 0.4;
+
+spHspc = 0.1;
+spH1 = 0.275;
+spH2 = 0.1;
+
 for h1 = 1 : numel(rhyConds)
     rc = rhyConds{h1};
     
@@ -318,26 +348,85 @@ for h1 = 1 : numel(rhyConds)
            'Position', [100, 100, 900, 600]);
     for i1 = 1 : numel(FMT_ANA_VWLS)
         t_vwl = FMT_ANA_VWLS{i1};
-        subplot(2, 2, i1);
+        
+        if i1 == 1
+            rowN = 2; colN = 1;
+        elseif i1 == 2
+            rowN = 2; colN = 2;
+        elseif i1 == 3
+            rowN = 1; colN = 1;
+        elseif i1 == 4
+            rowN = 1; colN = 2;
+        else
+            rowN = NaN; colN = NaN; % TODO
+        end
+        
+%         subplot(2, 2, i1);
+        hsps = [];
+        hsps(end + 1) = subplot('Position', [spWspc + (colN - 1) * (spW + spWspc), spHspc + (rowN - 1) * (spH1 + spH2 + spHspc) + spH2, spW, spH1]);
         hold on;
 
         assert(isequal(pertTypes{1}, baseType));
-        for i2 = 2 : length(pertTypes)
+%         for i2 = 2 : length(pertTypes)
+        for i2 = 2 : 2
             pt = pertTypes{i2};
             tAxis = 0 : T_STEP : T_STEP * (length(avgChgVwlF1s.(t_vwl).(rc).(pt)) - 1);
             plot(tAxis * 1e3, avgChgVwlF1s.(t_vwl).(rc).(pt), ...
                  '-', 'Color', colors.(pt));
              
+            
+        end
+        xs = get(gca, 'XLim');
+        plot(xs, [0, 0], '-', 'Color', gray);
+
+%         legend(pertTypes(2 : end), 'Location', 'Northwest');
+        legend(pertTypes(2 : 2), 'Location', 'Northwest');
+        title(strrep(sprintf('%s: %s', rc, t_vwl), '_', '\_'));
+        
+%         for i2 = 3 : length(pertTypes)
+        for i2 = 2 : 2
+            pt = pertTypes{i2};
+            tAxis = 0 : T_STEP : T_STEP * (length(avgChgVwlF1s.(t_vwl).(rc).(pt)) - 1);
             plot(tAxis * 1e3, avgChgVwlF1s.(t_vwl).(rc).(pt) + steChgVwlF1s.(t_vwl).(rc).(pt), ...
                  '--', 'Color', colors.(pt));
             plot(tAxis * 1e3, avgChgVwlF1s.(t_vwl).(rc).(pt) - steChgVwlF1s.(t_vwl).(rc).(pt), ...
                  '--', 'Color', colors.(pt));
         end
+        
+        set(gca, 'XTickLabel', []);
         xs = get(gca, 'XLim');
-        plot(xs, [0, 0], '-', 'Color', gray);
-
-        legend(pertTypes(2 : end), 'Location', 'Northeast');
-        title(strrep(sprintf('%s: %s', rc, t_vwl), '_', '\_'));
+        ylabel('F1 change (Hz)');
+        draw_xy_axes;
+        
+        
+        %--- p-value / sig-value plot ---%
+        hsps(end + 1) = subplot('Position', [spWspc + (colN - 1) * (spW + spWspc), spHspc + (rowN - 1) * (spH1 + spH2 + spHspc), spW, spH2]);
+        hold on;
+%         for i2 = 3 : length(pertTypes)
+        for i2 = 2 : 2
+            pt = pertTypes{i2};
+            tAxis = 0 : T_STEP : T_STEP * (length(ptChgVwlF1s.(t_vwl).(rc).(pt)) - 1);
+            
+            plot(tAxis * 1e3, -log10(ptChgVwlF1s.(t_vwl).(rc).(pt)));
+            
+            if bFmtTNorm                
+                for i3 = 1 : numel(hsps)
+                    set(gcf, 'CurrentAxes', hsps(i3));
+                    ys = get(gca, 'YLim');
+                    plot(repmat(100, 1, 2), ys, '-', 'Color', [0.5, 0.5, 0.5]);
+                    set(gca, 'YLim', ys);
+                end
+                
+                xlabel('Time (normalized)');
+            else
+                xlabel('Time (ms)');
+            end
+            ylabel('Sig. val');
+            
+            plot(xs, repmat(-log10(0.05), 1, 2), '-', 'Color', [0.5, 0.5, 0.5]);
+            set(gca, 'XLim', xs);
+        end
+        
     end
 end
 
