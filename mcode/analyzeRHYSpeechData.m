@@ -7,6 +7,8 @@ pertTypes_main = pertTypes(1 : 3);
 
 FRAME_DUR = 2e-3;   % Unit: s (WARNING: ad hoc)
 
+FMT_INTERP_N = 50;
+
 AVG_FALLOFF = 0.75;     % The trace counter ratio threshold for trace averaging
 
 colors.N = [0, 0.5, 0];
@@ -315,15 +317,27 @@ for h0 = 1 : 2
         for i1 = 1 : numel(vis_pertTypes)
             pt = vis_pertTypes{i1};
 
+            cum_ts = [];
             for i2 = 1 : numel(time_ints)
                 if ~bMan % - Use ASR time labels - %
                     eval(sprintf('tlens = 1e3 * asr_%s.(rc).(pt);', time_ints{i2}));
                 else % - Use manual time labels - %
                     eval(sprintf('tlens = 1e3 * man_%s.(rc).(pt);', time_ints{i2}));
                 end
+                
+                if isempty(cum_ts) 
+                    cum_ts = tlens;
+                else
+                    cum_ts = cum_ts + tlens;
+                end
 
+                %-- Show the mean --%
                 rectangle('Position', [cum_mean(i2, i1), (tBarW + tBarSpace) * (i1 - 1), mean(tlens), tBarW], ...
                           'EdgeColor', colors.(pt));
+                      
+                      
+                
+                
                 cum_mean(i2 + 1, i1) = cum_mean(i2, i1) + mean(tlens);
 
                 if isequal(pt, 'noPert')
@@ -337,6 +351,23 @@ for h0 = 1 : 2
                 else
                     cum_vals{i1} = [cum_vals{i1}, cum_vals{i1}(:, end) + tlens(:)];
                 end
+                
+                %-- Show the standard error --%
+                t_mn = mean(cum_vals{i1}(:, end));
+                t_se = std(cum_vals{i1}(:, end)) / sqrt(length(cum_vals{i1}(:, end)));
+                plot(t_mn + [-1; 1] * t_se, ...
+                     repmat((tBarW + tBarSpace) * (i1 - 1) + 0.5 * tBarW, 1, 2), ...
+                     '-', 'Color', colors.(pt));
+                plot(repmat(t_mn - 1 * t_se, 1, 2), ...
+                     (tBarW + tBarSpace) * (i1 - 1) + [0.25, 0.75] * tBarW, ...
+                     '-', 'Color', colors.(pt));
+                plot(repmat(t_mn + 1 * t_se, 1, 2), ...
+                     (tBarW + tBarSpace) * (i1 - 1) + [0.25, 0.75] * tBarW, ...
+                     '-', 'Color', colors.(pt));
+%                 plot(cum_mean(i2, i1) + mean(tlens) + [-1; 1] * std(cum_ts) / sqrt(length(cum_ts)), ...
+%                      repmat((tBarW + tBarSpace) * (i1 - 1) + 0.5 * tBarW, 1, 2), ...
+%                      '-', 'Color', colors.(pt));
+                
             end
 
         end
@@ -389,15 +420,21 @@ for h0 = 1 : 2
 end
 
 %% Formant trajectory analysis
-analyze_fmts_vwls = {'eh', 'iy', 'ae'};
+analyze_fmts_vwls = {'eh', 'iy', 'ae', 'ey'};
+
+idxphns = nan(1, length(analyze_fmts_vwls));
 
 F1s = struct;
+tnormF1s = struct;  % Time normalize F1s: 
 spect = struct;
 
 for i0 = 1 : numel(analyze_fmts_vwls)
     vwl = analyze_fmts_vwls{i0};
+    idxphns(i0) = strmatch(vwl, pdata.mainData.asrPhns, 'exact');
+    assert(~isnan(idxphns(i0)));
       
     F1s.(vwl) = struct;
+    tnormF1s = struct;
     spec.(vwl) = struct;
 
     figure('Name', sprintf('Vowel formants under: %s', vwl));
@@ -411,6 +448,7 @@ for i0 = 1 : numel(analyze_fmts_vwls)
             pt = pertTypes{i2};
 
             F1s.(vwl).(rc).(pt) = {};
+            tnormF1s.(vwl).(rc).(pt) = {};
 
             for i3 = 1 : numel(idx.(rc).(pt))
                 t_idx = idx.(rc).(pt)(i3);
@@ -423,14 +461,36 @@ for i0 = 1 : numel(analyze_fmts_vwls)
                 end
 
                 F1s.(vwl).(rc).(pt){end + 1} = pdata.mainData.vwlFmts{t_idx}.(vwl)(:, 1);
+                
+                %--- Determine the ASR-determined begin and end time of
+                %the vowel ---%
+                t0 = pdata.mainData.asrTBeg(idxphns(i0), t_idx);     % Vowel begin
+                t1 = pdata.mainData.asrTBeg(idxphns(i0) + 1, t_idx); % Vowel end
+                t2 = pdata.mainData.asrTBeg(idxphns(i0) + 2, t_idx);
+                
+                idxm = round((t1 - t0) / FRAME_DUR);
+                tnf = interp1(1 : idxm, pdata.mainData.vwlFmts{t_idx}.(vwl)(1 : idxm, 1), ...
+                              linspace(1, idxm, FMT_INTERP_N));
+                L = length(pdata.mainData.vwlFmts{t_idx}.(vwl)(:, 1));
+                tnf = [tnf, interp1(idxm + 1 : L, pdata.mainData.vwlFmts{t_idx}.(vwl)(idxm + 1 : end, 1), ...
+                                    linspace(idxm + 1, L, FMT_INTERP_N))];
+                                
+                tnormF1s.(vwl).(rc).(pt){end + 1} = tnf;
             end
- 
+            
+            %--- Not time-normalized ---%
             aF1s.(vwl).(rc).(pt) = avgTrace1(F1s.(vwl).(rc).(pt));
             
             nFallOff = find(aF1s.(vwl).(rc).(pt)(:, 3) > aF1s.(vwl).(rc).(pt)(1, 3) * AVG_FALLOFF, 1, 'last');
             mnF1s.(vwl).(rc).(pt) = aF1s.(vwl).(rc).(pt)(1 : nFallOff, 1);
             seF1s.(vwl).(rc).(pt) = aF1s.(vwl).(rc).(pt)(1 : nFallOff, 2);
-
+                        
+            %--- Time-normalized ---%
+            aF1s_tnorm.(vwl).(rc).(pt) = avgTrace1(tnormF1s.(vwl).(rc).(pt));
+            
+            mnF1s_tnorm.(vwl).(rc).(pt) = aF1s.(vwl).(rc).(pt)(1 : nFallOff, 1);
+            seF1s_tnorm.(vwl).(rc).(pt) = aF1s.(vwl).(rc).(pt)(1 : nFallOff, 2);
+            
             hold on;
             
             t_axis = 1e3 * (0 : FRAME_DUR : FRAME_DUR * (nFallOff - 1));
@@ -482,6 +542,7 @@ if nargout == 1
                            'asr_b2_t2', asr_b2_t2, ...
                            'asr_t2_p1', asr_t2_p1);
     res.aF1s = aF1s;
+    res.aF1s_tnorm = aF1s_tnorm;
     varargout{1} = res;
 end
 
