@@ -3,6 +3,13 @@ function view_rhy_behav_trial(dataFN, bReproc, varargin)
 % dataFN = 'G:\DATA\RHYTHM-FMRI\TestExpt_behav_9\run1\rep1\trial-2-1.mat';
 % dataFN = 'G:\DATA\RHYTHM-FMRI\PILOT_ANS_F01\run1\rep1\trial-6-2.mat';
 
+%% Config
+fontSize = 14;
+
+%% Input options
+bClean = ~isempty(fsic(varargin, '--clean'));
+bShiftLeft = ~isempty(fsic(varargin, '--shift-left'));
+
 %% Process optional wild card
 if ~isempty(strfind(dataFN, '*'))
     d = dir(dataFN);
@@ -52,7 +59,7 @@ end
 if bReproc
     if length(d_ost) == 1
         ost_fn = fullfile(phaseDir, d_ost(1).name);
-        
+    
         fprintf(1, 'INFO: using native ost file: %s\n', ost_fn);
         TransShiftMex(8, ost_fn, 1);
     else
@@ -85,26 +92,33 @@ end
 %%
 figure('Position', [50, 100, 1400, 600]);
 subplot('Position', [0.05, 0.5, 0.9, 0.4]);
+set(gca, 'FontSize', fontSize);
+
 show_spectrogram(data.signalIn, data.params.sr, 'noFig');
-title(data.params.name);
+title(data.params.name, 'FontSize', fontSize * 1.2);
 
 frameDur = data.params.frameLen / data.params.sr;
 tAxis = 0 : frameDur : frameDur * (size(data.fmts, 1) - 1);
-plot(tAxis, data.fmts(:, 1 : 2), 'w-');
 
-plot(tAxis, data.ost_stat * 250, 'b-');
+if ~bClean
+    plot(tAxis, data.fmts(:, 1 : 2), 'w-');
+    plot(tAxis, data.ost_stat * 250, 'b-');
+end
 
 % if isfield(handles, 'FmtShiftStat0') && isfield(handles, 'FmtShiftStat1')
 FmtShiftStat0 = 5;
 FmtShiftStat1 = 9;
     
 ys = get(gca, 'YLim');
-if ~isempty(find(data.ost_stat == FmtShiftStat0, 1))
-    plot(repmat(tAxis(find(data.ost_stat == FmtShiftStat0, 1)), 1, 2), ys, 'b--');
-end
 
-if ~isempty(find(data.ost_stat == FmtShiftStat1 + 1, 1))
-    plot(repmat(tAxis(find(data.ost_stat == FmtShiftStat1 + 1, 1)), 1, 2), ys, 'b-');
+if ~bClean
+    if ~isempty(find(data.ost_stat == FmtShiftStat0, 1))
+        plot(repmat(tAxis(find(data.ost_stat == FmtShiftStat0, 1)), 1, 2), ys, 'b--');
+    end
+
+    if ~isempty(find(data.ost_stat == FmtShiftStat1 + 1, 1))
+        plot(repmat(tAxis(find(data.ost_stat == FmtShiftStat1 + 1, 1)), 1, 2), ys, 'b-');
+    end
 end
 % end
 
@@ -112,10 +126,18 @@ ylabel('Frequency (Hz)');
 
 %%
 subplot('Position', [0.05, 0.1, 0.9, 0.4]);
+set(gca, 'FontSize', fontSize);
+
+if bShiftLeft
+    data.signalOut = data.signalOut(data.params.pvocFrameLen + 1 : end);
+end
+
 show_spectrogram(data.signalOut, data.params.sr, 'noFig');
 
-plot(tAxis, data.fmts(:, 1 : 2), 'w-');
-plot(tAxis, data.sfmts(:, 1 : 2), 'c-');
+if ~bClean
+    plot(tAxis, data.fmts(:, 1 : 2), 'w-');
+    plot(tAxis, data.sfmts(:, 1 : 2), 'c-');
+end
 
 xlabel('Time (s)');
 ylabel('Frequency (Hz)');
