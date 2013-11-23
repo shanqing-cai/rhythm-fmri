@@ -5,10 +5,13 @@ function view_rhy_behav_trial(dataFN, bReproc, varargin)
 
 %% Config
 fontSize = 14;
+lw = 1.5;
+purple = [223, 0, 255] / 255;
 
 %% Input options
 bClean = ~isempty(fsic(varargin, '--clean'));
 bShiftLeft = ~isempty(fsic(varargin, '--shift-left'));
+bShowFmts = ~isempty(fsic(varargin, '--show-fmts'));
 
 %% Process optional wild card
 if ~isempty(strfind(dataFN, '*'))
@@ -101,8 +104,10 @@ frameDur = data.params.frameLen / data.params.sr;
 tAxis = 0 : frameDur : frameDur * (size(data.fmts, 1) - 1);
 
 if ~bClean
-    plot(tAxis, data.fmts(:, 1 : 2), 'w-');
     plot(tAxis, data.ost_stat * 250, 'b-');
+end
+if ~bClean || bShowFmts
+    plot(tAxis, data.fmts(:, 1 : 2), 'w--', 'LineWidth', lw); 
 end
 
 % if isfield(handles, 'FmtShiftStat0') && isfield(handles, 'FmtShiftStat1')
@@ -134,9 +139,9 @@ end
 
 show_spectrogram(data.signalOut, data.params.sr, 'noFig');
 
-if ~bClean
-    plot(tAxis, data.fmts(:, 1 : 2), 'w-');
-    plot(tAxis, data.sfmts(:, 1 : 2), 'c-');
+if ~bClean || bShowFmts
+    plot(tAxis, data.fmts(:, 1 : 2), 'w--', 'LineWidth', lw);
+    plot(tAxis, data.sfmts(:, 1 : 2), 'k--', 'LineWidth', lw);
 end
 
 xlabel('Time (s)');
