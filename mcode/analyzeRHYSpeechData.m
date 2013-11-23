@@ -1,6 +1,8 @@
 function varargout = analyzeRHYSpeechData(subjID, varargin)
 %% 
 rhyConds = {'N', 'R'};
+rhyConds_long = {'Non-rhythmic', 'Rhythmic'};
+
 pertTypes = {'noPert', 'F1Up', 'decel', ...
              'noPert_precNoPert', 'noPert_precF1Up', 'noPert_precDecel'};
 pertTypes_main = pertTypes(1 : 3);
@@ -41,6 +43,9 @@ timeIntervals = {'s', 't1', 1, 3; ...
                  'b2', 't2', 13, 16; ...
                  't2', 'p1', 16, 18};
              
+             
+%% Visualization options
+fontSize = 14;
 
 %% Additional input options
 bMan = ~isempty(fsic(varargin, '--man')); % Use manual time labels
@@ -167,6 +172,65 @@ for i1 = 1 : numel(rhyConds)
                             
 end
 
+%% Get CV if IVI stats and other vowel acoustic measures
+vidx = get_vowel_indices(strrep(pdata.subject.pertSent, '_', ' '));
+vidx = vidx(2 : end) - 2;
+
+cvIVI = struct;
+meanIVI = struct;
+mn_cvIVI = struct;
+sd_cvIVI = struct;
+mn_meanIVI = struct;
+sd_meanIVI = struct;
+
+for i1 = 1 : numel(rhyConds)    
+    rc = rhyConds{i1};
+
+    for i2 = 1 : numel(pertTypes_main)
+        pt = pertTypes{i2};
+
+        cvIVIs.(rc).(pt) = nan(size(idx.(rc).(pt)));
+        meanIVI.(rc).(pt) = nan(size(idx.(rc).(pt)));
+
+        for i3 = 1 : numel(idx.(rc).(pt))
+            t_idx = idx.(rc).(pt)(i3);
+            
+            asrTBeg = pdata.mainData.asrTBeg(:, t_idx);
+            ts_onset = asrTBeg(vidx);
+            ts_offset = asrTBeg(vidx + 1);
+            ts_mid = (ts_onset + ts_offset) / 2;
+            ivis = diff(ts_mid);
+            
+            meanIVI.(rc).(pt)(i3) = mean(ivis);
+            cvIVI.(rc).(pt)(i3) = std(ivis) / mean(ivis);
+        end
+        
+        mn_meanIVI.(rc).(pt) = nanmean(meanIVI.(rc).(pt));
+        sd_meanIVI.(rc).(pt) = nanstd(meanIVI.(rc).(pt));
+        
+        mn_cvIVI.(rc).(pt) = nanmean(cvIVI.(rc).(pt));
+        sd_cvIVI.(rc).(pt) = nanstd(cvIVI.(rc).(pt));
+        
+    end
+    
+end
+
+%--- Visualization ---%
+figure;
+set(gca, 'FontSize', fontSize);
+hold on;
+for i1 = 1 : numel(rhyConds)   
+    rc = rhyConds{i1};
+
+    bar(i1, mn_cvIVI.(rc).noPert, ...
+        'EdgeColor', 'k', 'FaceColor', colors.(rc));
+    plot([i1, i1], mn_cvIVI.(rc).noPert + [-1, 1] * sd_cvIVI.(rc).noPert, 'k-');
+end
+xlabel('Rhythm condition');
+ylabel('CV of inter-vowel intervals (mean\pm1 SD)');
+set(gca, 'XTick', 1 : numel(rhyConds), 'XTickLabel', rhyConds_long);
+
+
 %% Contingency table for dysfluencies
 analyze_dysf_fraction(pdata, rhyConds, pertTypes, CHI_P_THRESH, colors);
 
@@ -191,7 +255,17 @@ for i1 = 1 : numel(rhyConds)
         set(gca, 'XTick', 1 : size(tbegs_FB - tbegs, 1));
         set(gca, 'XTickLabel', pdata.mainData.asrPhns);
         title(sprintf('%s - %s', rc, pt));
+        
+        %--- The average amount of tShift in t1 (t in the word "steady") ---%
+        if isequal(pt, 'decel')
+            idx_t1 = fsic(pdata.mainData.asrPhns, 't1');
+            assert(length(idx_t1) == 1);
+            mn_decelPert_tShift_t1.(rc) = nanmean(tbegs_FB(idx_t1, :) - tbegs(idx_t1, :));
+            sd_decelPert_tShift_t1.(rc) = nanstd(tbegs_FB(idx_t1, :) - tbegs(idx_t1, :));
+        end
     end
+    
+
 end
 
 %% Manual labels
@@ -280,8 +354,6 @@ end
 time_ints = {'s_t1', 't1_d', 'd_b1', 'b1_g', 'g_b2', 'b2_t2', 't2_p1'};
 content_phones = {'s', 't eh', 'd iy', 'b ae t', 'g ey v', 'b er th', 't uw'};
 assert(length(time_ints) == length(content_phones));
-
-fontSize = 14;
 
 for h0 = 1 : 2
     if h0 == 1
@@ -504,6 +576,9 @@ for i0 = 1 : numel(analyze_fmts_vwls)
     end
 end
 
+
+
+
 %% Visualization
 % meas = asr_s_t1;
 % measName = 'asr_s_t1';
@@ -534,6 +609,13 @@ varargout = {};
 
 if nargout == 1
     res = struct;
+    
+    res.mn_cvIVI = mn_cvIVI;
+    res.sd_cvIVI = sd_cvIVI;
+    
+    res.mn_decelPert_tShift_t1 = mn_decelPert_tShift_t1;
+    res.sd_decelPert_tShift_t1 = sd_decelPert_tShift_t1;
+    
     res.time_ints = struct('asr_s_t1', asr_s_t1, ...
                            'asr_t1_d', asr_t1_d, ...
                            'asr_d_b1', asr_d_b1, ...
@@ -543,6 +625,7 @@ if nargout == 1
                            'asr_t2_p1', asr_t2_p1);
     res.aF1s = aF1s;
     res.aF1s_tnorm = aF1s_tnorm;
+        
     varargout{1} = res;
 end
 
