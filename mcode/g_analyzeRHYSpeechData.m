@@ -4,9 +4,13 @@ function g_analyzeRHYSpeechData(subjListFN, varargin)
 %    -r | --reload:     reload data from individual subjects
 %    --between-trial:   perform between-trial (adaptation) analysis  
 %    --tnorm:           use time-normalized formants
+%    --perm-tint nPerm: perform random permutation test on time
+%                       interval changes
+%    --perm-fmt nPerm uncorrP tail:  perform random permutation test on formant changes
 %
 %% Config
 rhyConds = {'N', 'R'};
+rhyConds_long = {'Non-rhythmic', 'Rhythmic'};
 pertTypes_within = {'noPert', 'F1Up', 'decel'};
 pertTypes_between = {'noPert_precNoPert', 'noPert_precF1Up', 'noPert_precDecel'};
 
@@ -21,14 +25,28 @@ colors.noPert_precNoPert = [0, 0, 0];
 colors.noPert_precF1Up = [1, 0, 1];
 colors.noPert_precDecel = [1, 0.5, 0];
 
+lineTypes.N = 'o--';
+lineTypes.R = 'o-';
+
 gray = [0.5, 0.5, 0.5];
 
 P_THRESH_UNC = 0.05;
+P_THRESH_CORR = 0.05;
 
 FMT_ANA_VWLS = {'eh', 'iy', 'ae', 'ey'};
 MAX_FMT_LEN = 256;
 
 T_STEP = 0.002;     % Unit: s
+
+ANALYSIS_DIR = 'E:/speechres/rhythm-fmri/mcode';
+
+%% Visualization options
+fontSize = 12;
+
+pltLW = 1;
+corrSigSquareClr = [0, 0, 0];
+corrSigSquareLW = 1;
+corrSigSquareMarkerSize = 10;
 
 %% Read subject list
 check_file(subjListFN);
@@ -78,7 +96,7 @@ if bReload
         
         close all hidden;
         drawnow;
-    end
+    end       
     
     save(grpCacheFN, 'sres');
     check_file(grpCacheFN);
@@ -110,7 +128,22 @@ for i0 = 1 : numel(tIntItems)
     end
 end
 
-%% Formant frequenciesavg
+%--- The amount of timing change caused by Decel perturbation ---%
+mn_decelPert_tShifts_t1 = struct;
+mn_cvIVI_noPert = struct;
+for i1 = 1 : numel(rhyConds)
+    rc = rhyConds{i1};
+    
+    mn_declPert_tShifts_t1.(rc) = nan(numel(subjIDs), 1);
+    cvIVI_noPert.(rc) = nan(numel(subjIDs), 1);
+    
+    for i2 = 1 : numel(subjIDs)
+        mn_decelPert_tShifts_t1.(rc)(i2) = sres{i2}.mn_decelPert_tShift_t1.(rc);
+        mn_cvIVI_noPert.(rc)(i2) = sres{i2}.mn_cvIVI.(rc).noPert;
+    end
+end
+
+%% Formant frequencies
 avgVwlF1 = struct;
 steVwlF1 = struct;
 
@@ -209,7 +242,43 @@ for h1 = 1 : length(FMT_ANA_VWLS)
 
 end
 
-%% 
+%% Permutation test on the signficance of formant changes
+if ~isempty(fsic(varargin, '--perm-fmt'))
+    nPermFmt = varargin{fsic(varargin, '--perm-fmt') + 1};
+    uncorrPPermFmt = varargin{fsic(varargin, '--perm-fmt') + 2};
+    tailPermFmt = varargin{fsic(varargin, '--perm-fmt') + 3};
+    
+    assert(length(fsic({'two', 'left', 'right'}, tailPermFmt)) == 1);
+    assert(nPermFmt > 1);
+    
+    anaPerts = {'F1Up'};
+    bReuse = 0;
+    %--- Look for previous perturbation results---%
+    fmtPermResMat = fullfile(ANALYSIS_DIR, ...
+                             sprintf('fmtPermRes_n%d_%s_%.3f.mat', ...
+                                     nPermFmt, tailPermFmt, uncorrPPermFmt));
+    if isfile(fmtPermResMat)
+        clear('fmtPermRes');
+        load(fmtPermResMat);
+        assert(exist('fmtPermRes', 'var') == 1);
+        for i1 = 1 : numel(anaPerts)
+            assert(isfield(fmtPermRes, anaPerts{i1}));
+        end
+        info_log(sprintf('Loaded previously stored permutation results from mat file: %s', fmtPermResMat));
+    else
+        fmtPermRes = perm_test_fmtChgs(chgVwlF1s, nPermFmt, uncorrPPermFmt, ...
+                                   anaPerts, '--tail', tailPermFmt);
+                               
+       %--- Save permutation results for re-use ---%
+        save(fmtPermResMat, 'anaPerts', 'fmtPermRes');
+        check_file(fmtPermResMat);
+        info_log(sprintf('Formant change permutation test results saved to mat file: %s', ...
+                         fmtPermResMat));
+    end
+    
+end
+
+%% Time interval changes
 tIntChgs = struct;
 
 for i0 = 1 : numel(tIntItems)
@@ -225,7 +294,7 @@ end
 
 %% Visualization: time intervals changes
 figure('Name', sprintf('Changes in time intervals from %s: condition', baseType), ...
-       'Position', [100, 100, 1200, 600]);
+       'Position', [100, 100, 1320, 600]);
 
 for i0 = 1 : numel(tIntItems)
     ti = tIntItems{i0};
@@ -238,7 +307,7 @@ for i0 = 1 : numel(tIntItems)
         rc = rhyConds{i1};
 
         errorbar(1 : npt - 1, 1e3 * mean(tIntChgs.(ti).(rc)), 1e3 * ste(tIntChgs.(ti).(rc)), ...
-                 'o-', 'Color', colors.(rc));
+                 'o-', 'Color', colors.(rc), 'LineWidth', pltLW);
     end
     legend(rhyConds, 'Location', 'Northwest');
     set(gca, 'XLim', [0, npt]);
@@ -249,13 +318,48 @@ for i0 = 1 : numel(tIntItems)
                    baseType, strrep(ti, '_', '\_')));
 	title(strrep(sprintf('Changes in %s', ti), '_', '\_'));
 end
+drawnow;
+
+%% Compare CV of IVIs
+metaPlot_2grp(mn_cvIVI_noPert, rhyConds{1}, rhyConds{2}, ...
+              'CV of IVIs', 'CV of inter-vowel intervals', colors, ...
+              '--fld-labels', rhyConds_long{1}, rhyConds_long{2}, ...
+              '--paired', ...
+              '--font-size', fontSize);
+
+%% Relation between speaking rate and the amount of timing perturbation in decel
+%  and the ratio of compensation
+analyze_timing_response_ratio(rhyConds, rhyConds_long, mn_decelPert_tShifts_t1, tIntChgs, ...
+                              colors, pltLW, fontSize);
+
+%% Relation between speaking rate and time interval changes;
+figure;
+set(gca, 'FontSize', fontSize);
+hold on; box on;
+idxDecel = fsic(pertTypes_within, 'decel');
+for i1 = 1 : numel(rhyConds)
+    rc = rhyConds{i1};
+    plot(1e3 * (tInts.s_t1.(rc)(:, idxDecel) + tInts.t1_d.(rc)(:, idxDecel)), ...
+         1e3 * (tIntChgs.t1_d.(rc)(:, 2) + tIntChgs.d_b1.(rc)(:, 2)), 'o', 'Color', colors.(rc));
+
+end
+xlabel('Mean duration of the syllable s+t+eh (ms)');
+ylabel('Mean duration response under decel (ms)');
+
+%% Random pertmutation test of time-change significance
+if ~isempty(fsic(varargin, '--perm-tint'))
+    nPerm = varargin{fsic(varargin, '--perm-tint') + 1};
+    corrps_tIntChg = perm_test_tIntChgs(tIntChgs, nPerm);
+end
 
 %% Visualization: time intervals changes 2
-figure('Position', [50, 150, 800, 400], 'Name', 'Summary of time-interval changes');
+figure('Position', [50, 150, 800, 600], 'Name', 'Summary of time-interval changes');
 hsp = nan(1, numel(pertTypes(2 : end)));
 for i1 = 1 : numel(pertTypes(2 : end))
-    hsp(i1) = subplot(1, 2, i1);
+    hsp(i1) = subplot(2, 1, i1);
+    set(gca, 'FontSize', fontSize);
     hold on;
+    box on;
 end
 
 p_vals_tIntChg = struct;
@@ -286,7 +390,8 @@ for i1 = 1 : length(rhyConds)
         errorbar(1 : size(mn_TIntChgs.(rc), 1), ...
                  1e3 * mn_TIntChgs.(rc)(:, i2), ...
                  1e3 * se_TIntChgs.(rc)(:, i2), ...
-                 'o-', 'Color', colors.(rc));
+                 lineTypes.(rc), 'Color', colors.(rc), ...
+                 'LineWidth', pltLW);
              
     end
     
@@ -297,16 +402,21 @@ for i2 = 1 : numel(pertTypes(2 : end))
     set(gcf, 'CurrentAxes', hsp(i2));
     
     set(gca, 'XTick', 1 : 7 , ...
-        'XTickLabel', {'s', 't-eh', 'd-iy', 'b-ae-t', 'g-ey-v', 'b-er-th', 't-uw'});
+        'XTickLabel', {'s', 't+eh', 'd+iy', 'b+ae+t', 'g+ey+v', 'b+er+th', 't+uw'});
     xs = get(gca, 'XLim');
     plot(xs, [0, 0], '-', 'Color', [0.5, 0.5, 0.5]);
     
     set(gca, 'YLim', [-20, 40]);
-    xlabel('Phones');
-    ylabel(sprintf('Time inteval change from %s (ms) (mean\\pm1 SEM)', baseType));
-    legend(rhyConds);
+    xlabel('Segments and Syllables');
+%     ylabel(sprintf('Time inteval change from %s (ms) (mean\\pm1 SEM)', baseType));
+    ylabel(sprintf('Duration change (ms, mean\\pm1 SEM)'), ...
+           'FontSize', fontSize);
+    
+    if i2 == numel(pertTypes(2 : end))
+        legend(rhyConds_long);
+    end
    
-    title(strrep(pt, '_', '\_'));
+    title(['Perturbation type: ', strrep(pt, '_', '\_')]);
 end
 
 %% Time-intevral changes: Mark significant changes
@@ -319,19 +429,39 @@ for i1 = 1 : length(rhyConds)
         for i3 = 1 : size(p_vals_tIntChg.(rc), 1)
             if p_vals_tIntChg.(rc)(i3, i2) < P_THRESH_UNC
                 plot(i3, 1e3 * mn_TIntChgs.(rc)(i3, i2), 'o', ...
-                     'MarkerFaceColor', colors.(rc));
+                     'MarkerFaceColor', colors.(rc), ...
+                     'MarkerEdgeColor', colors.(rc));
             end
             
-            if p_vals_tIntChg.(rc)(i3, i2) < P_THRESH_UNC / numel(p_vals_tIntChg.(rc))
+            
+            if ~isempty(fsic(varargin, '--perm-tint')) %--- Show permutation test results ---%
+                if corrps_tIntChg(i3, i1, i2) < P_THRESH_CORR
                     plot(i3, 1e3 * mn_TIntChgs.(rc)(i3, i2), 's', ...
-                         'MarkerEdgeColor',  colors.(rc), 'MarkerFaceColor', 'none');
+                         'MarkerEdgeColor',  corrSigSquareClr, 'MarkerFaceColor', 'none', ...
+                         'LineWidth', corrSigSquareLW, ...
+                         'MarkerSize', corrSigSquareMarkerSize);
+                end
+            else  %--- Bonferroni correction ---%
+                if p_vals_tIntChg.(rc)(i3, i2) < P_THRESH_UNC / numel(p_vals_tIntChg.(rc))
+                    plot(i3, 1e3 * mn_TIntChgs.(rc)(i3, i2), 's', ...
+                         'MarkerEdgeColor',  corrSigSquareClr, 'MarkerFaceColor', 'none', ...
+                         'LineWidth', corrSigSquareLW, ...
+                         'MarkerSize', corrSigSquareMarkerSize);
+                end
             end
-            
         end
     end
 end
 
+%% Show legend for significance symbols
+xs = get(gca, 'XLim'); ys = get(gca, 'YLim');
+x = xs(1) + 0.725 * range(xs);
+y = ys(1) + 0.510 * range(ys);
+w = 0.266 * range(xs);
+h = 0.210 * range(ys);
 
+show_legend_sig(x, y, w, h, rhyConds, pltLW, colors, corrSigSquareClr, corrSigSquareLW, corrSigSquareMarkerSize, ...
+                P_THRESH_UNC, P_THRESH_CORR);
 
 %% Visualization: formant changes
 spWspc = 0.06;
@@ -388,9 +518,9 @@ for h1 = 1 : numel(rhyConds)
             pt = pertTypes{i2};
             tAxis = 0 : T_STEP : T_STEP * (length(avgChgVwlF1s.(t_vwl).(rc).(pt)) - 1);
             plot(tAxis * 1e3, avgChgVwlF1s.(t_vwl).(rc).(pt) + steChgVwlF1s.(t_vwl).(rc).(pt), ...
-                 '--', 'Color', colors.(pt));
+                 '--', 'Color', colors.(pt), 'LineWidth', pltLW);
             plot(tAxis * 1e3, avgChgVwlF1s.(t_vwl).(rc).(pt) - steChgVwlF1s.(t_vwl).(rc).(pt), ...
-                 '--', 'Color', colors.(pt));
+                 '--', 'Color', colors.(pt), 'LineWidth', pltLW);
         end
         
         set(gca, 'XTickLabel', []);
