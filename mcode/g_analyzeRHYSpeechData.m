@@ -275,6 +275,8 @@ if ~isempty(fsic(varargin, '--perm-fmt'))
         info_log(sprintf('Formant change permutation test results saved to mat file: %s', ...
                          fmtPermResMat));
     end
+else
+    nPermFmt = 0;
     
 end
 
@@ -470,9 +472,11 @@ spW = 0.4;
 spHspc = 0.1;
 spH1 = 0.275;
 spH2 = 0.1;
+spH_barRatio = 0.5;
 
 for h1 = 1 : numel(rhyConds)
     rc = rhyConds{h1};
+    rcl = rhyConds_long{h1};
     
     figure('Name', sprintf('Changes in F1 from %s under rhythm condition: %s', baseType, rc), ...
            'Position', [100, 100, 900, 600]);
@@ -511,7 +515,7 @@ for h1 = 1 : numel(rhyConds)
 
 %         legend(pertTypes(2 : end), 'Location', 'Northwest');
         legend(pertTypes(2 : 2), 'Location', 'Northwest');
-        title(strrep(sprintf('%s: %s', rc, t_vwl), '_', '\_'));
+        title(strrep(sprintf('%s: %s', rcl, t_vwl), '_', '\_'));
         
 %         for i2 = 3 : length(pertTypes)
         for i2 = 2 : 2
@@ -528,35 +532,61 @@ for h1 = 1 : numel(rhyConds)
         ylabel('F1 change (Hz)');
         draw_xy_axes;
         
-        
-        %--- p-value / sig-value plot ---%
-        hsps(end + 1) = subplot('Position', [spWspc + (colN - 1) * (spW + spWspc), spHspc + (rowN - 1) * (spH1 + spH2 + spHspc), spW, spH2]);
-        hold on;
-%         for i2 = 3 : length(pertTypes)
-        for i2 = 2 : 2
-            pt = pertTypes{i2};
-            tAxis = 0 : T_STEP : T_STEP * (length(ptChgVwlF1s.(t_vwl).(rc).(pt)) - 1);
-            
-            plot(tAxis * 1e3, -log10(ptChgVwlF1s.(t_vwl).(rc).(pt)));
-            
-            if bFmtTNorm                
-                for i3 = 1 : numel(hsps)
-                    set(gcf, 'CurrentAxes', hsps(i3));
-                    ys = get(gca, 'YLim');
-                    plot(repmat(100, 1, 2), ys, '-', 'Color', [0.5, 0.5, 0.5]);
-                    set(gca, 'YLim', ys);
+        if nPermFmt == 0
+            %--- p-value / sig-value plot ---%
+            hsps(end + 1) = subplot('Position', [spWspc + (colN - 1) * (spW + spWspc), spHspc + (rowN - 1) * (spH1 + spH2 + spHspc), spW, spH2]);
+            hold on;
+    %         for i2 = 3 : length(pertTypes)
+            for i2 = 2 : 2
+                pt = pertTypes{i2};
+                tAxis = 0 : T_STEP : T_STEP * (length(ptChgVwlF1s.(t_vwl).(rc).(pt)) - 1);
+
+                plot(tAxis * 1e3, -log10(ptChgVwlF1s.(t_vwl).(rc).(pt)));
+
+                if bFmtTNorm                
+                    for i3 = 1 : numel(hsps)
+                        set(gcf, 'CurrentAxes', hsps(i3));
+                        ys = get(gca, 'YLim');
+                        plot(repmat(100, 1, 2), ys, '-', 'Color', [0.5, 0.5, 0.5]);
+                        set(gca, 'YLim', ys);
+                    end
+
+                    xlabel('Time (normalized)');
+                else
+                    xlabel('Time (ms)');
                 end
-                
-                xlabel('Time (normalized)');
-            else
-                xlabel('Time (ms)');
+                ylabel('Sig. val');
+
+                plot(xs, repmat(-log10(0.05), 1, 2), '-', 'Color', [0.5, 0.5, 0.5]);
+                set(gca, 'XLim', xs);
             end
-            ylabel('Sig. val');
-            
-            plot(xs, repmat(-log10(0.05), 1, 2), '-', 'Color', [0.5, 0.5, 0.5]);
+        else
+            %--- Visualize results of permutation test ---%
+            set(gcf, 'CurrentAxes', hsps(end));
+            xs = get(gca, 'XLim'); ys = get(gca, 'YLim');
+            hsps(end + 1) = subplot('Position', [spWspc + (colN - 1) * (spW + spWspc), ...
+                                                 spHspc + (rowN - 1) * (spH1 + spH2 + spHspc) + spH2 * spH_barRatio, ...
+                                                 spW, spH2 * spH_barRatio]);
             set(gca, 'XLim', xs);
+            
+            for i2 = 1 : numel(fmtPermRes.(pt).(t_vwl).(rc).ions)
+                if fmtPermRes.(pt).(t_vwl).(rc).corrps(i2) < P_THRESH_CORR
+                    set(gcf, 'CurrentAxes', hsps(end - 1));
+                    plot(repmat(1e3 * T_STEP * fmtPermRes.(pt).(t_vwl).(rc).ions(i2), 1, 2), ...
+                         ys, 'k--');
+                    plot(repmat(1e3 * T_STEP * (fmtPermRes.(pt).(t_vwl).(rc).ioffs(i2) + 1), 1, 2), ...
+                         ys, 'k--');
+                    
+                    set(gcf, 'CurrentAxes', hsps(end));
+                    rectangle('Position', 1e3 * [T_STEP * fmtPermRes.(pt).(t_vwl).(rc).ions(i2), 0, T_STEP *fmtPermRes.(pt).(t_vwl).(rc).lens(i2), 1], ...
+                              'FaceColor', 'g', 'EdgeColor', 'k');
+                          
+                end
+            end
+            
+            set(gca, 'YTick', []);
+            xlabel('Time (ms)');
         end
-        
     end
 end
 
