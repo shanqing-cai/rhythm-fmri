@@ -129,6 +129,11 @@ end
 
 ylabel('Frequency (Hz)');
 
+if ~isempty(fsic(varargin, '--zoom'))
+    xZoom = varargin{fsic(varargin, '--zoom') + 1};
+    set(gca, 'XLim', xZoom);
+end
+
 %%
 subplot('Position', [0.05, 0.1, 0.9, 0.4]);
 set(gca, 'FontSize', fontSize);
@@ -146,6 +151,10 @@ end
 
 xlabel('Time (s)');
 ylabel('Frequency (Hz)');
+
+if ~isempty(fsic(varargin, '--zoom'))
+    set(gca, 'XLim', xZoom);
+end
 
 %%
 if ~isempty(fsic(varargin, '-p'))
