@@ -18,7 +18,8 @@ colors.R = [0, 0, 1];
 
 colors.noPert = [0, 0, 0];
 colors.F1Up = [1, 0, 1];
-colors.decel = [1, 0.5, 0];
+% colors.decel = [1, 0.5, 0];
+colors.decel = [0.75, 0.25, 0];
 
 colors.noPert_precNoPert = [0, 0, 0];
 colors.noPert_precF1Up = [1, 0, 1];
@@ -53,6 +54,8 @@ bMan = ~isempty(fsic(varargin, '--man')); % Use manual time labels
 if ~isempty(fsic(varargin, '--prodRatingThresh'))
     prodRatingThresh = varargin{fsic(varargin, '--prodRatingThresh') + 1};
 end
+
+bTotSentDur = ~isempty(fsic(varargin, '--tot-sent-dur'));
 
 %%
 load(pdataFN);  % gives pdata
@@ -183,6 +186,12 @@ sd_cvIVI = struct;
 mn_meanIVI = struct;
 sd_meanIVI = struct;
 
+if bTotSentDur
+    totSentDur = struct; % Total sentence duration
+    mn_totSentDur = struct;
+    sd_totSentDur = struct;
+end
+
 for i1 = 1 : numel(rhyConds)    
     rc = rhyConds{i1};
 
@@ -191,6 +200,7 @@ for i1 = 1 : numel(rhyConds)
 
         cvIVIs.(rc).(pt) = nan(size(idx.(rc).(pt)));
         meanIVI.(rc).(pt) = nan(size(idx.(rc).(pt)));
+        totSentDur.(rc).(pt) = nan(size(idx.(rc).(pt)));
 
         for i3 = 1 : numel(idx.(rc).(pt))
             t_idx = idx.(rc).(pt)(i3);
@@ -203,13 +213,37 @@ for i1 = 1 : numel(rhyConds)
             
             meanIVI.(rc).(pt)(i3) = mean(ivis);
             cvIVI.(rc).(pt)(i3) = std(ivis) / mean(ivis);
+            
+            if bTotSentDur
+                %-- Total sentence duration --%
+                trial_asrDir = strrep(pdata.mainData.rawDataFNs{t_idx}, '.mat', '_asr');
+                check_dir(trial_asrDir);
+                asrOutTxt = fullfile(trial_asrDir, 'julian_stdout.txt');
+                check_file(asrOutTxt);
+                wavFN = fullfile(trial_asrDir, 'speech.wav');
+                check_file(wavFN);
+            
+                pa = parse_asr_out(asrOutTxt, wavFN);
+    
+                if pa.nphns == 24 && isequal(pa.phones{1}, 'sil') && isequal(pa.phones{2}, 'dh') ...
+                   && isequal(pa.phones{end - 1}, 's') && isequal(pa.phones{end}, 'sil')
+                    totSentDur.(rc).(pt)(i3) = pa.tend(end - 1) - pa.tbeg(2);
+                end
+            end
         end
+        
         
         mn_meanIVI.(rc).(pt) = nanmean(meanIVI.(rc).(pt));
         sd_meanIVI.(rc).(pt) = nanstd(meanIVI.(rc).(pt));
-        
+
         mn_cvIVI.(rc).(pt) = nanmean(cvIVI.(rc).(pt));
         sd_cvIVI.(rc).(pt) = nanstd(cvIVI.(rc).(pt));
+        
+        if bTotSentDur
+            %-- Total sentence duration --%
+            mn_totSentDur.(rc).(pt) = nanmean(totSentDur.(rc).(pt)(i3));
+            sd_totSentDur.(rc).(pt) = nanstd(totSentDur.(rc).(pt)(i3));
+        end
         
     end
     
@@ -414,7 +448,8 @@ for h0 = 1 : 2
 
                 if isequal(pt, 'noPert')
                     text(cum_mean(i2, i1) + mean(tlens) * 0.2, ...
-                         (tBarW + tBarSpace) * (i1 - 0.6), content_phones{i2}, ...
+                         (tBarW + tBarSpace) * (i1 - 0.6), ...
+                         strrep(content_phones{i2}, ' ', '+'), ...
                          'Color', 'k', 'FontSize', fontSize - 2);
                 end
 
@@ -625,6 +660,11 @@ if nargout == 1
                            'asr_t2_p1', asr_t2_p1);
     res.aF1s = aF1s;
     res.aF1s_tnorm = aF1s_tnorm;
+    
+    if bTotSentDur
+        res.mn_totSentDur = mn_totSentDur;
+        res.sd_totSentDur = sd_totSentDur;
+    end
         
     varargout{1} = res;
 end
