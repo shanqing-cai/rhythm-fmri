@@ -1,6 +1,12 @@
-function RHY_fmri_contrasts(subjID)
+function RHY_fmri_contrasts(subjID, varargin)
 % this script has to be executed inside the subject's directory.
-if isequal(getHostName, 'ba3')
+if ~isempty(fsic(varargin, '--host'))
+    hostName = varargin{fsic(varargin, '--host') + 1};
+else
+    hostName = getHostName;
+end
+
+if isequal(hostName, 'ba3')
     dataDir = '/users/cais/RHY/DATA';
 else
     dataDir = '/speechlab/5/scai/RHY/DATA';
