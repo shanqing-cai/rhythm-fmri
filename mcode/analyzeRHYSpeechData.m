@@ -1,8 +1,17 @@
 function varargout = analyzeRHYSpeechData(subjID, varargin)
 %% 
 rhyConds = {'N', 'R'};
+rhyConds_long = {'Non-rhythmic', 'Rhythmic'};
+
 pertTypes = {'noPert', 'F1Up', 'decel', ...
              'noPert_precNoPert', 'noPert_precF1Up', 'noPert_precDecel'};
+pertTypes_main = pertTypes(1 : 3);
+
+FRAME_DUR = 2e-3;   % Unit: s (WARNING: ad hoc)
+
+FMT_INTERP_N = 50;
+
+AVG_FALLOFF = 0.75;     % The trace counter ratio threshold for trace averaging
 
 colors.N = [0, 0.5, 0];
 colors.R = [0, 0, 1];
@@ -33,6 +42,10 @@ timeIntervals = {'s', 't1', 1, 3; ...
                  'g', 'b2', 10, 13; ...
                  'b2', 't2', 13, 16; ...
                  't2', 'p1', 16, 18};
+             
+             
+%% Visualization options
+fontSize = 14;
 
 %% Additional input options
 bMan = ~isempty(fsic(varargin, '--man')); % Use manual time labels
@@ -43,6 +56,18 @@ end
 
 %%
 load(pdataFN);  % gives pdata
+
+%% Determine FRAME_DUR
+if isfile(pdata.mainData.rawDataFNs{1})
+    load(pdata.mainData.rawDataFNs{1});
+    FRAME_DUR = data.params.frameLen / data.params.sr;
+    
+    clear data;
+    
+    info_log(sprintf('WARNING: Cannot find raw data files. Assuming FRAME_DUR = %f s.', FRAME_DUR));
+else
+    info_log(sprintf('WARNING: Cannot find raw data files. Assuming FRAME_DUR = %f s.', FRAME_DUR), '-warn');
+end
 
 %% Process noPert trials according to preceding pertType
 exptFN = fullfile(pdata.subject.dataDir, pdata.subject.name, 'expt.mat');
@@ -147,6 +172,65 @@ for i1 = 1 : numel(rhyConds)
                             
 end
 
+%% Get CV if IVI stats and other vowel acoustic measures
+vidx = get_vowel_indices(strrep(pdata.subject.pertSent, '_', ' '));
+vidx = vidx(2 : end) - 2;
+
+cvIVI = struct;
+meanIVI = struct;
+mn_cvIVI = struct;
+sd_cvIVI = struct;
+mn_meanIVI = struct;
+sd_meanIVI = struct;
+
+for i1 = 1 : numel(rhyConds)    
+    rc = rhyConds{i1};
+
+    for i2 = 1 : numel(pertTypes_main)
+        pt = pertTypes{i2};
+
+        cvIVIs.(rc).(pt) = nan(size(idx.(rc).(pt)));
+        meanIVI.(rc).(pt) = nan(size(idx.(rc).(pt)));
+
+        for i3 = 1 : numel(idx.(rc).(pt))
+            t_idx = idx.(rc).(pt)(i3);
+            
+            asrTBeg = pdata.mainData.asrTBeg(:, t_idx);
+            ts_onset = asrTBeg(vidx);
+            ts_offset = asrTBeg(vidx + 1);
+            ts_mid = (ts_onset + ts_offset) / 2;
+            ivis = diff(ts_mid);
+            
+            meanIVI.(rc).(pt)(i3) = mean(ivis);
+            cvIVI.(rc).(pt)(i3) = std(ivis) / mean(ivis);
+        end
+        
+        mn_meanIVI.(rc).(pt) = nanmean(meanIVI.(rc).(pt));
+        sd_meanIVI.(rc).(pt) = nanstd(meanIVI.(rc).(pt));
+        
+        mn_cvIVI.(rc).(pt) = nanmean(cvIVI.(rc).(pt));
+        sd_cvIVI.(rc).(pt) = nanstd(cvIVI.(rc).(pt));
+        
+    end
+    
+end
+
+%--- Visualization ---%
+figure;
+set(gca, 'FontSize', fontSize);
+hold on;
+for i1 = 1 : numel(rhyConds)   
+    rc = rhyConds{i1};
+
+    bar(i1, mn_cvIVI.(rc).noPert, ...
+        'EdgeColor', 'k', 'FaceColor', colors.(rc));
+    plot([i1, i1], mn_cvIVI.(rc).noPert + [-1, 1] * sd_cvIVI.(rc).noPert, 'k-');
+end
+xlabel('Rhythm condition');
+ylabel('CV of inter-vowel intervals (mean\pm1 SD)');
+set(gca, 'XTick', 1 : numel(rhyConds), 'XTickLabel', rhyConds_long);
+
+
 %% Contingency table for dysfluencies
 analyze_dysf_fraction(pdata, rhyConds, pertTypes, CHI_P_THRESH, colors);
 
@@ -171,7 +255,17 @@ for i1 = 1 : numel(rhyConds)
         set(gca, 'XTick', 1 : size(tbegs_FB - tbegs, 1));
         set(gca, 'XTickLabel', pdata.mainData.asrPhns);
         title(sprintf('%s - %s', rc, pt));
+        
+        %--- The average amount of tShift in t1 (t in the word "steady") ---%
+        if isequal(pt, 'decel')
+            idx_t1 = fsic(pdata.mainData.asrPhns, 't1');
+            assert(length(idx_t1) == 1);
+            mn_decelPert_tShift_t1.(rc) = nanmean(tbegs_FB(idx_t1, :) - tbegs(idx_t1, :));
+            sd_decelPert_tShift_t1.(rc) = nanstd(tbegs_FB(idx_t1, :) - tbegs(idx_t1, :));
+        end
     end
+    
+
 end
 
 %% Manual labels
@@ -261,8 +355,6 @@ time_ints = {'s_t1', 't1_d', 'd_b1', 'b1_g', 'g_b2', 'b2_t2', 't2_p1'};
 content_phones = {'s', 't eh', 'd iy', 'b ae t', 'g ey v', 'b er th', 't uw'};
 assert(length(time_ints) == length(content_phones));
 
-fontSize = 14;
-
 for h0 = 1 : 2
     if h0 == 1
         vis_pertTypes = pertTypes([2, 1, 3]);
@@ -297,15 +389,27 @@ for h0 = 1 : 2
         for i1 = 1 : numel(vis_pertTypes)
             pt = vis_pertTypes{i1};
 
+            cum_ts = [];
             for i2 = 1 : numel(time_ints)
                 if ~bMan % - Use ASR time labels - %
                     eval(sprintf('tlens = 1e3 * asr_%s.(rc).(pt);', time_ints{i2}));
                 else % - Use manual time labels - %
                     eval(sprintf('tlens = 1e3 * man_%s.(rc).(pt);', time_ints{i2}));
                 end
+                
+                if isempty(cum_ts) 
+                    cum_ts = tlens;
+                else
+                    cum_ts = cum_ts + tlens;
+                end
 
+                %-- Show the mean --%
                 rectangle('Position', [cum_mean(i2, i1), (tBarW + tBarSpace) * (i1 - 1), mean(tlens), tBarW], ...
                           'EdgeColor', colors.(pt));
+                      
+                      
+                
+                
                 cum_mean(i2 + 1, i1) = cum_mean(i2, i1) + mean(tlens);
 
                 if isequal(pt, 'noPert')
@@ -319,6 +423,23 @@ for h0 = 1 : 2
                 else
                     cum_vals{i1} = [cum_vals{i1}, cum_vals{i1}(:, end) + tlens(:)];
                 end
+                
+                %-- Show the standard error --%
+                t_mn = mean(cum_vals{i1}(:, end));
+                t_se = std(cum_vals{i1}(:, end)) / sqrt(length(cum_vals{i1}(:, end)));
+                plot(t_mn + [-1; 1] * t_se, ...
+                     repmat((tBarW + tBarSpace) * (i1 - 1) + 0.5 * tBarW, 1, 2), ...
+                     '-', 'Color', colors.(pt));
+                plot(repmat(t_mn - 1 * t_se, 1, 2), ...
+                     (tBarW + tBarSpace) * (i1 - 1) + [0.25, 0.75] * tBarW, ...
+                     '-', 'Color', colors.(pt));
+                plot(repmat(t_mn + 1 * t_se, 1, 2), ...
+                     (tBarW + tBarSpace) * (i1 - 1) + [0.25, 0.75] * tBarW, ...
+                     '-', 'Color', colors.(pt));
+%                 plot(cum_mean(i2, i1) + mean(tlens) + [-1; 1] * std(cum_ts) / sqrt(length(cum_ts)), ...
+%                      repmat((tBarW + tBarSpace) * (i1 - 1) + 0.5 * tBarW, 1, 2), ...
+%                      '-', 'Color', colors.(pt));
+                
             end
 
         end
@@ -371,15 +492,21 @@ for h0 = 1 : 2
 end
 
 %% Formant trajectory analysis
-analyze_fmts_vwls = {'eh', 'iy', 'ae'};
+analyze_fmts_vwls = {'eh', 'iy', 'ae', 'ey'};
+
+idxphns = nan(1, length(analyze_fmts_vwls));
 
 F1s = struct;
+tnormF1s = struct;  % Time normalize F1s: 
 spect = struct;
 
 for i0 = 1 : numel(analyze_fmts_vwls)
     vwl = analyze_fmts_vwls{i0};
+    idxphns(i0) = strmatch(vwl, pdata.mainData.asrPhns, 'exact');
+    assert(~isnan(idxphns(i0)));
       
     F1s.(vwl) = struct;
+    tnormF1s = struct;
     spec.(vwl) = struct;
 
     figure('Name', sprintf('Vowel formants under: %s', vwl));
@@ -389,10 +516,11 @@ for i0 = 1 : numel(analyze_fmts_vwls)
         subplot(1, numel(rhyConds), i1);
         title(rc);
         
-        for i2 = 1 : numel(pertTypes)
+        for i2 = 1 : numel(pertTypes_main)
             pt = pertTypes{i2};
 
             F1s.(vwl).(rc).(pt) = {};
+            tnormF1s.(vwl).(rc).(pt) = {};
 
             for i3 = 1 : numel(idx.(rc).(pt))
                 t_idx = idx.(rc).(pt)(i3);
@@ -405,19 +533,51 @@ for i0 = 1 : numel(analyze_fmts_vwls)
                 end
 
                 F1s.(vwl).(rc).(pt){end + 1} = pdata.mainData.vwlFmts{t_idx}.(vwl)(:, 1);
+                
+                %--- Determine the ASR-determined begin and end time of
+                %the vowel ---%
+                t0 = pdata.mainData.asrTBeg(idxphns(i0), t_idx);     % Vowel begin
+                t1 = pdata.mainData.asrTBeg(idxphns(i0) + 1, t_idx); % Vowel end
+                t2 = pdata.mainData.asrTBeg(idxphns(i0) + 2, t_idx);
+                
+                idxm = round((t1 - t0) / FRAME_DUR);
+                tnf = interp1(1 : idxm, pdata.mainData.vwlFmts{t_idx}.(vwl)(1 : idxm, 1), ...
+                              linspace(1, idxm, FMT_INTERP_N));
+                L = length(pdata.mainData.vwlFmts{t_idx}.(vwl)(:, 1));
+                tnf = [tnf, interp1(idxm + 1 : L, pdata.mainData.vwlFmts{t_idx}.(vwl)(idxm + 1 : end, 1), ...
+                                    linspace(idxm + 1, L, FMT_INTERP_N))];
+                                
+                tnormF1s.(vwl).(rc).(pt){end + 1} = tnf;
             end
-
+            
+            %--- Not time-normalized ---%
             aF1s.(vwl).(rc).(pt) = avgTrace1(F1s.(vwl).(rc).(pt));
-            mnF1s.(vwl).(rc).(pt) = aF1s.(vwl).(rc).(pt)(:, 1);
-            seF1s.(vwl).(rc).(pt) = aF1s.(vwl).(rc).(pt)(:, 2);
-
+            
+            nFallOff = find(aF1s.(vwl).(rc).(pt)(:, 3) > aF1s.(vwl).(rc).(pt)(1, 3) * AVG_FALLOFF, 1, 'last');
+            mnF1s.(vwl).(rc).(pt) = aF1s.(vwl).(rc).(pt)(1 : nFallOff, 1);
+            seF1s.(vwl).(rc).(pt) = aF1s.(vwl).(rc).(pt)(1 : nFallOff, 2);
+                        
+            %--- Time-normalized ---%
+            aF1s_tnorm.(vwl).(rc).(pt) = avgTrace1(tnormF1s.(vwl).(rc).(pt));
+            
+            mnF1s_tnorm.(vwl).(rc).(pt) = aF1s.(vwl).(rc).(pt)(1 : nFallOff, 1);
+            seF1s_tnorm.(vwl).(rc).(pt) = aF1s.(vwl).(rc).(pt)(1 : nFallOff, 2);
+            
             hold on;
-            plot(mnF1s.(vwl).(rc).(pt), 'Color', colors.(pt));
+            
+            t_axis = 1e3 * (0 : FRAME_DUR : FRAME_DUR * (nFallOff - 1));
+            plot(t_axis, mnF1s.(vwl).(rc).(pt), 'Color', colors.(pt));
         end
+        
+        xlabel('Time (ms)');
+        legend(pertTypes_main);
 
 
     end
 end
+
+
+
 
 %% Visualization
 % meas = asr_s_t1;
@@ -449,6 +609,13 @@ varargout = {};
 
 if nargout == 1
     res = struct;
+    
+    res.mn_cvIVI = mn_cvIVI;
+    res.sd_cvIVI = sd_cvIVI;
+    
+    res.mn_decelPert_tShift_t1 = mn_decelPert_tShift_t1;
+    res.sd_decelPert_tShift_t1 = sd_decelPert_tShift_t1;
+    
     res.time_ints = struct('asr_s_t1', asr_s_t1, ...
                            'asr_t1_d', asr_t1_d, ...
                            'asr_d_b1', asr_d_b1, ...
@@ -457,6 +624,8 @@ if nargout == 1
                            'asr_b2_t2', asr_b2_t2, ...
                            'asr_t2_p1', asr_t2_p1);
     res.aF1s = aF1s;
+    res.aF1s_tnorm = aF1s_tnorm;
+        
     varargout{1} = res;
 end
 
