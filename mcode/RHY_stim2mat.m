@@ -1,4 +1,4 @@
-function RHY_stim2mat(subjID, TR, TA)
+function RHY_stim2mat(subjID, TR, TA, varargin)
 % this script has to be executed inside the subject's directory.
 % read subjid from directory name
 % Inputs:
@@ -6,15 +6,21 @@ function RHY_stim2mat(subjID, TR, TA)
 %       TA - unit: ms
 %
 %% Paths
-if isequal(getHostName, 'ba3')
+if ~isempty(fsic(varargin, '--host'))
+    hostName = varargin{fsic(varargin, '--host') + 1};
+else
+    hostName = getHostName;
+end
+
+if isequal(hostName, 'ba3')
     behavDataDir = '/users/cais/RHY/BEHAV_DATA';
     dacacheDir = '/users/cais/RHY/BEHAV_DATA/_dacache';
     dataDir = '/users/cais/RHY/DATA';
     genDesMatPath = '/users/cais/RHY/scripts';
 else
-    behavDataDir = '/speechlab/5/scai/RHY/BEHAV_DATA';
-    dacacheDir = '/usersc/cais/RHY/BEHAV_DATA/_dacache';
-    dataDir = '/uses/cais/RHY/DATA';
+    behavDataDir = '/speechlab/5/scai/RHY_BEHAV_DATA';
+    dacacheDir = '/speechlab/5/scai/RHY_BEHAV_DATA/_dacache';
+    dataDir = '/speechlab/5/scai/RHY/DATA';
     genDesMatPath = '/speechlab/5/scai/RHY/scripts';
 end
 
