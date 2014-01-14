@@ -34,6 +34,7 @@ P_THRESH_UNC = 0.05;
 P_THRESH_CORR = 0.05;
 
 FMT_ANA_VWLS = {'eh', 'iy', 'ae', 'ey'};
+FMT_ANA_VWL_WORDS = {'steady', 'steady', 'bat', 'gave'};
 MAX_FMT_LEN = 256;
 
 T_STEP = 0.002;     % Unit: s
@@ -92,7 +93,7 @@ if bReload
     sres = cell(1, ns);
     for i1 = 1 : numel(subjIDs)
         sID = subjIDs{i1};
-        sres{i1} = analyzeRHYSpeechData(sID);
+        sres{i1} = analyzeRHYSpeechData(sID, '--tot-sent-dur');
         
         close all hidden;
         drawnow;
@@ -141,6 +142,70 @@ for i1 = 1 : numel(rhyConds)
         mn_decelPert_tShifts_t1.(rc)(i2) = sres{i2}.mn_decelPert_tShift_t1.(rc);
         mn_cvIVI_noPert.(rc)(i2) = sres{i2}.mn_cvIVI.(rc).noPert;
     end
+end
+
+%%
+%--- Total sentence duration ---%
+a_totSentDur = struct;
+mn_mn_totSentDur = struct;
+se_mn_totSentDur = struct;
+for i1 = 1 : numel(rhyConds)
+    rc = rhyConds{i1};
+   
+    for i2 = 1 : numel(pertTypes)
+        pt = pertTypes{i2};
+        
+        a_totSentDur.(rc).(pt) = nan(1, numel(subjIDs));
+        
+        
+        for i3 = 1 : numel(subjIDs)
+            a_totSentDur.(rc).(pt)(i3) = sres{i3}.mn_totSentDur.(rc).(pt);
+        end
+        
+        mn_mn_totSentDur.(rc).(pt) = mean(a_totSentDur.(rc).(pt));
+        se_mn_totSentDur.(rc).(pt) = ste(a_totSentDur.(rc).(pt));
+    end
+end
+
+%--- Visualize total sentence duration ---%
+barW = 0.25;
+figure;
+set(gca, 'FontSize', fontSize);
+hold on;
+xTicks = [];
+xTickLabels = {};
+for i1 = 1 : numel(rhyConds)
+    rc = rhyConds{i1};
+    
+    for i2 = 1 : numel(pertTypes)
+         pt = pertTypes{i2};
+         
+         cntX = i1 + (i2 - 2) * barW;
+         bar(cntX, 1e3 * mn_mn_totSentDur.(rc).(pt), barW, ...
+             'FaceColor', colors.(rc), 'EdgeColor', 'k', 'LineWidth', pltLW);
+         plot(repmat(cntX, 1, 2), 1e3 * mn_mn_totSentDur.(rc).(pt) + 1e3 * [-1; 1] * se_mn_totSentDur.(rc).(pt), ...
+              'k-', 'LineWidth', pltLW);
+          
+          
+         xTicks(end + 1) = cntX;
+         xTickLabels{end + 1} = pt;
+    end
+end
+
+ylabel('Total sentence duration (ms)');
+set(gca, 'XTick', xTicks, 'XTickLabel', xTickLabels);
+
+
+%--- Statistical comparisons ---%
+xs = get(gca, 'XLim'); 
+ys = get(gca, 'YLim');
+
+for i1 = 1 : numel(rhyConds)
+    rc = rhyConds{i1};
+    
+    [~, t_p] = ttest(a_totSentDur.(rc).noPert, a_totSentDur.(rc).F1Up);
+    [~, t_p] = ttest(a_totSentDur.(rc).noPert, a_totSentDur.(rc).decel);
+    % TODO
 end
 
 %% Formant frequencies
@@ -482,6 +547,7 @@ for h1 = 1 : numel(rhyConds)
            'Position', [100, 100, 900, 600]);
     for i1 = 1 : numel(FMT_ANA_VWLS)
         t_vwl = FMT_ANA_VWLS{i1};
+        t_vwl_word = FMT_ANA_VWL_WORDS{i1};
         
         if i1 == 1
             rowN = 2; colN = 1;
@@ -498,6 +564,7 @@ for h1 = 1 : numel(rhyConds)
 %         subplot(2, 2, i1);
         hsps = [];
         hsps(end + 1) = subplot('Position', [spWspc + (colN - 1) * (spW + spWspc), spHspc + (rowN - 1) * (spH1 + spH2 + spHspc) + spH2, spW, spH1]);
+        set(gca, 'FontSize', fontSize')
         hold on;
 
         assert(isequal(pertTypes{1}, baseType));
@@ -515,7 +582,7 @@ for h1 = 1 : numel(rhyConds)
 
 %         legend(pertTypes(2 : end), 'Location', 'Northwest');
         legend(pertTypes(2 : 2), 'Location', 'Northwest');
-        title(strrep(sprintf('%s: %s', rcl, t_vwl), '_', '\_'));
+        title(strrep(sprintf('%s: %s in "%s"', rcl, t_vwl, t_vwl_word), '_', '\_'));
         
 %         for i2 = 3 : length(pertTypes)
         for i2 = 2 : 2
@@ -529,12 +596,13 @@ for h1 = 1 : numel(rhyConds)
         
         set(gca, 'XTickLabel', []);
         xs = get(gca, 'XLim');
-        ylabel('F1 change (Hz)');
+        ylabel('F1 change (Hz, mean\pm1 SEM)');
         draw_xy_axes;
         
         if nPermFmt == 0
             %--- p-value / sig-value plot ---%
             hsps(end + 1) = subplot('Position', [spWspc + (colN - 1) * (spW + spWspc), spHspc + (rowN - 1) * (spH1 + spH2 + spHspc), spW, spH2]);
+            set(gca, 'FontSize', fontSize);
             hold on;
     %         for i2 = 3 : length(pertTypes)
             for i2 = 2 : 2
