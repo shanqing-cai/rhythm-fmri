@@ -27,6 +27,8 @@ HEMIS = ["lh", "rh"]
 if __name__ == "__main__":
     ap = argparse.ArgumentParser("Prepare for batch analysis of RHY fMRI data")
     ap.add_argument("subjID", help="Subject ID, with the prefix MRI_ included (e.g., MRI_AWS_M01)")
+    ap.add_argument("--run-batch", dest="bRunBatch", action="store_true",
+                    help="Run the batch commands automatically (default: false)")
     
     if len(sys.argv) == 1:
         ap.print_help()
@@ -208,3 +210,8 @@ if __name__ == "__main__":
             info_log("\t%s" % spmTViewCmd_surf)
 
         info_log(" ")
+
+    #=== (Optional): Automatically run the batch commands ===%
+    if args.bRunBatch:
+        for (i0, cmd) in enumerate(batchCmds):
+            saydo(cmd)

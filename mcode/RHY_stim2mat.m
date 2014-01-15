@@ -182,6 +182,12 @@ tPath = which('gen_design_matrix');
 assert(~isempty(tPath));
 
 for i1 = 1 : numel(stims)
+    %--- The following lines are necessary because gen_design_matrix
+    %    expects continuous trial type numbers with no skips ---%
+    if ~isempty(find(stims{i1} == 5)) && isempty(find(stims{i1} == 4))
+        stims{i1}(stims{i1} == 5) = 4;
+    end
+    
     [R1, R2] = gen_design_matrix(stims{i1}, TA, TR);
 %     sess(1).R = R1(:,1:end/2);
     sess(i1).R = R1(:, 1 : end / 2);
