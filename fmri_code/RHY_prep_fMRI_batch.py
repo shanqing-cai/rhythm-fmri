@@ -14,13 +14,21 @@ machineSettings = {"ba3": {"dataDir": "/users/cais/RHY/DATA",
                            "fsDataDir": "/users/cais/RHY/FSDATA", 
                            "batchCfg": "/users/cais/RHY/ANALYSIS/RHY_fmri_surf.cfg", 
                            "boldVolWC": "{subjID}_bold_*s???a???.nii.gz", 
-                           "modelName": "fmri"}}
+                           "modelName": "fmri"}, \
+                   "_default_": {"dataDir": "/speechlab/5/scai/RHY/DATA", 
+                                 "batchDataDir": "/speechlab/5/scai/RHY/DATA_batch", 
+                                 "fsDataDir": "/speechlab/5/scai/RHY/FSDATA", 
+                                 "batchCfg": "/speechlab/5/scai/RHY/ANALYSIS/RHY_fmri_surf_BU.cfg", 
+                                 "boldVolWC": "{subjID}_bold_*s???a???.nii.gz", 
+                                 "modelName": "fmri"}}
 
 HEMIS = ["lh", "rh"]
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser("Prepare for batch analysis of RHY fMRI data")
     ap.add_argument("subjID", help="Subject ID, with the prefix MRI_ included (e.g., MRI_AWS_M01)")
+    ap.add_argument("--run-batch", dest="bRunBatch", action="store_true",
+                    help="Run the batch commands automatically (default: false)")
     
     if len(sys.argv) == 1:
         ap.print_help()
@@ -41,7 +49,8 @@ if __name__ == "__main__":
     sID = args.subjID.replace("MRI_", "")
 
     if machineSettings.keys().count(hostName) == 0:
-        error_log("Cannot find host name %s in machineSettings" % hostName)
+        info_log("Cannot find host name %s in machineSettings. _default_ settings will be used" % hostName)
+        hostName = "_default_"
         
     #=== Set up some paths ===#
     dataDir = machineSettings[hostName]["dataDir"]
@@ -201,3 +210,8 @@ if __name__ == "__main__":
             info_log("\t%s" % spmTViewCmd_surf)
 
         info_log(" ")
+
+    #=== (Optional): Automatically run the batch commands ===%
+    if args.bRunBatch:
+        for (i0, cmd) in enumerate(batchCmds):
+            saydo(cmd)
