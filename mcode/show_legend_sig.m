@@ -1,7 +1,7 @@
 function show_legend_sig(x, y, w, h, ...
                          rhyConds, pltLW, colors, ...
                          corrSigSquareClr, corrSigSquareLW, corrSigSquareMarkerSize, ...
-                         P_THRESH_UNC, P_THRESH_CORR)
+                         P_THRESH_UNC, P_THRESH_CORR, varargin)
 %% 
 rh2 = 0.82;
 rh1 = 0.44;
@@ -29,7 +29,12 @@ text(x + 0.1 * w + numel(rhyConds) * 0.1 * w, y + rh2 * h, ...
      sprintf('Uncorrected p<%.2f', P_THRESH_UNC));
 text(x + 0.1 * w + numel(rhyConds) * 0.1 * w, y + rh1 * h, ...
      sprintf('Corrected p<%.2f', P_THRESH_CORR)); 
+ 
+corrMeth = 'Permutation test';
+if ~isempty(fsic(varargin, '--bonferroni'))
+    corrMeth = 'Bonferroni corr.';
+end
 text(x + 0.1 * w + numel(rhyConds) * 0.1 * w, y + rh0 * h, ...
-     sprintf('(Permutation test)'));
+     sprintf('%s', corrMeth));
 
 return

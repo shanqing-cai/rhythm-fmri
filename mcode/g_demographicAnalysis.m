@@ -53,8 +53,13 @@ a_DoB_nums = nan(1, length(a_DoB));
 a_DoBS_nums = nan(1, length(a_DoB));
 a_DoMS_nums = nan(1, length(a_DoB));
 for i1 = 1 : numel(a_DoB)
-    a_DoB_nums(i1) = datenum(a_DoB{i1});
-    a_DoBS_nums(i1) = datenum(a_DoBS{i1});
+    if ~isempty(a_DoB{i1})
+        a_DoB_nums(i1) = datenum(a_DoB{i1});
+    end
+       
+    if ~isempty(a_DoBS{i1})
+        a_DoBS_nums(i1) = datenum(a_DoBS{i1});
+    end
     
     if ~isempty(a_DoMS{i1})
         a_DoMS_nums(i1) = datenum(a_DoMS{i1});
