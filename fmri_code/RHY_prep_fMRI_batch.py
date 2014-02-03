@@ -189,11 +189,19 @@ if __name__ == "__main__":
                          "firstlevel_%s" \
                          % machineSettings[hostName]["modelName"])
 
+    info_log("")
+    info_log("=== Viewing commands ===")
+    info_log("export SUBJECTS_DIR=%s" % fsDataDir)
+    info_log("RHYBASE=%s" % batchDataDir)
+    info_log("S=%s" % sID)
 
     for i0 in range(nContrasts):
-        spmTViewCmd_vol = "tkmedit %s T1.mgz -surfs -overlay %s -overlay-reg %s -fthresh 6 -fmid 9" \
-                          % (sID, os.path.join(L1Dir, "spmT_%.4d.img" % (i0 + 1)), \
-                             func2Struct_dat)
+        strContr = "%.4d" % (i0 + 1)
+
+        r_L1Dir = os.path.join(sID, "firstlevel_%s" % machineSettings[hostName]["modelName"])
+        r_func2Struct_dat = os.path.join(sID, "nii", "func2struct.bbr.dat")
+        spmTViewCmd_vol = "CONTR=%s; tkmedit ${S} T1.mgz -surfs -overlay ${RHYBASE}/%s/spmT_%s.img -overlay-reg ${RHYBASE}/%s -fthresh 6 -fmid 9" \
+                          % (strContr, r_L1Dir, strContr, r_func2Struct_dat)
 
         info_log("# Commands for viewing spmT for contrast #%d in the volume: " % (i0 + 1))
         info_log("\t%s" % spmTViewCmd_vol)
@@ -202,11 +210,8 @@ if __name__ == "__main__":
                  % (i0 + 1))
         
         for hemi in HEMIS:
-            spmTViewCmd_surf = "tksurfer %s %s inflated -gray -overlay %s -ovelay-reg %s -fthresh 6 -fmid 9" \
-                               % (sID, hemi,\
-                                  os.path.join(L1Dir, \
-                                               "spmT_%.4d.img" % (i0 + 1)),\
-                                  func2Struct_dat)
+            spmTViewCmd_surf = "CONTR=%s; HEMI=%s; tksurfer ${S} ${HEMI} inflated -gray -overlay ${RHYBASE}/%s/spmT_%s.img -ovelay-reg ${RHYBASE}/%s -fthresh 6 -fmid 9" \
+                               % (strContr, hemi, r_L1Dir, strContr, r_func2Struct_dat)
             info_log("\t%s" % spmTViewCmd_surf)
 
         info_log(" ")
