@@ -25,6 +25,14 @@ colors.noPert_precNoPert = [0, 0, 0];
 colors.noPert_precF1Up = [1, 0, 1];
 colors.noPert_precDecel = [1, 0.5, 0];
 
+lineTypes.N = 'o--';
+lineTypes.R = 'o-';
+
+pltLW = 1;
+
+corrSigSquareClr = [0, 0, 0];
+corrSigSquareLW = 1;
+corrSigSquareMarkerSize = 10;
 
 dacacheDir = '../dacache';
 
@@ -43,6 +51,9 @@ timeIntervals = {'s', 't1', 1, 3; ...
                  'g', 'b2', 10, 13; ...
                  'b2', 't2', 13, 16; ...
                  't2', 'p1', 16, 18};
+
+P_THRESH_UNC = 0.05;
+P_THRESH_CORR = 0.05;
              
              
 %% Visualization options
@@ -266,7 +277,8 @@ set(gca, 'XTick', 1 : numel(rhyConds), 'XTickLabel', rhyConds_long);
 
 
 %% Contingency table for dysfluencies
-analyze_dysf_fraction(pdata, rhyConds, pertTypes, CHI_P_THRESH, colors);
+analyze_dysf_fraction(pdata, rhyConds, rhyConds_long, ...
+                      pertTypes, CHI_P_THRESH, colors);
 
 %% Comparing ASR results on input and output
 figure('Position', [50, 150, 1500, 600]);
@@ -389,6 +401,10 @@ time_ints = {'s_t1', 't1_d', 'd_b1', 'b1_g', 'g_b2', 'b2_t2', 't2_p1'};
 content_phones = {'s', 't eh', 'd iy', 'b ae t', 'g ey v', 'b er th', 't uw'};
 assert(length(time_ints) == length(content_phones));
 
+tIntChgs_mn = struct;
+tIntChgs_pse = struct;  % Pooled standard errors
+tIntChgs_tp = struct;   % P-values from unpaired t-tests
+
 for h0 = 1 : 2
     if h0 == 1
         vis_pertTypes = pertTypes([2, 1, 3]);
@@ -410,6 +426,12 @@ for h0 = 1 : 2
         hsp(i0) = subplot(2, 1, i0);
         set(gca, 'FontSize', fs);
         hold on;
+        
+        if h0 == 1
+            tIntChgs_mn.(rc) = struct;
+            tIntChgs_pse.(rc) = struct;
+            tIntChgs_tp.(rc) = struct;
+        end
 
         if isequal(rc, 'N')
             title('Non-rhythmic');
@@ -422,6 +444,12 @@ for h0 = 1 : 2
 
         for i1 = 1 : numel(vis_pertTypes)
             pt = vis_pertTypes{i1};
+            
+            if (h0 == 1) && ~isequal(pt, pertTypes_main{1})
+                tIntChgs_mn.(rc).(pt) = nan(1, numel(time_ints));
+                tIntChgs_pse.(rc).(pt) = nan(1, numel(time_ints));
+                tIntChgs_tp.(rc).(pt) = nan(1, numel(time_ints));
+            end
 
             cum_ts = [];
             for i2 = 1 : numel(time_ints)
@@ -429,6 +457,22 @@ for h0 = 1 : 2
                     eval(sprintf('tlens = 1e3 * asr_%s.(rc).(pt);', time_ints{i2}));
                 else % - Use manual time labels - %
                     eval(sprintf('tlens = 1e3 * man_%s.(rc).(pt);', time_ints{i2}));
+                end
+                
+                if (h0 == 1) && ~isequal(pt, pertTypes_main{1})
+                    eval(sprintf('tIntChgs_mn.(rc).(pt)(i2) = 1e3 * (mean(asr_%s.(rc).(pt)) - mean(asr_%s.(rc).noPert));', ...
+                                 time_ints{i2}, time_ints{i2}));
+                    eval(sprintf('sd_p = 1e3 * std(asr_%s.(rc).(pt));', time_ints{i2}));
+                    eval(sprintf('sd_np = 1e3 * std(asr_%s.(rc).noPert);', time_ints{i2}));
+                    eval(sprintf('n_p = length(asr_%s.(rc).(pt));', time_ints{i2}));
+                    eval(sprintf('n_np = length(asr_%s.(rc).noPert);', time_ints{i2}));
+                    pooled_sd = sqrt(((n_p - 1) * sd_p * sd_p + (n_np - 1) * sd_np * sd_np) / ...
+                                     (n_p + n_np -2));
+                    tIntChgs_pse.(rc).(pt)(i2) = pooled_sd * sqrt(1 / n_p + 1 / n_np);
+                    
+                    eval(sprintf('[~, t_p] = ttest2(asr_%s.(rc).(pt), asr_%s.(rc).noPert);', ...
+                                 time_ints{i2}, time_ints{i2}));
+                    tIntChgs_tp.(rc).(pt)(i2) = t_p;
                 end
                 
                 if isempty(cum_ts) 
@@ -526,8 +570,117 @@ for h0 = 1 : 2
     end
 end
 
+%% Visualize the duration changes
+figure('Position', [50, 150, 800, 600], 'Name', 'Summary of time-interval changes');
+set(gca, 'FontSize', fontSize);
+
+hsp = nan(1, numel(pertTypes_main(2 : end)));
+for i1 = 1 : numel(pertTypes_main(2 : end))
+    hsp(i1) = subplot(2, 1, i1);
+    set(gca, 'FontSize', fontSize);
+    hold on;
+    box on;
+end
+
+for i1 = 1 : length(rhyConds)
+    rc = rhyConds{i1};
+
+    for i2 = 1 : numel(pertTypes_main(2 : end))
+        pts = pertTypes_main(2 : end);
+        pt = pts{i2};
+        
+        set(gcf, 'CurrentAxes', hsp(i2));
+        errorbar(1 : length(tIntChgs_mn.(rc).(pt)), ...
+                 tIntChgs_mn.(rc).(pt), ...
+                 tIntChgs_pse.(rc).(pt), ...
+                 lineTypes.(rc), 'Color', colors.(rc), ...
+                 'LineWidth', pltLW);
+             
+    end
+    
+end
+
+%--- Determine the YLim ---%
+yss = nan(numel(hsp), 2);
+for i1 = 1 : numel(hsp)
+    set(gcf, 'CurrentAxes', hsp(i1));
+    yss(i1, :) = get(gca, 'YLim');
+end
+YLim(1) = min(yss(:, 1));
+YLim(2) = max(yss(:, 2));
+
+for i2 = 1 : numel(pertTypes_main(2 : end))
+    pt = pertTypes_main{i2 + 1};
+    set(gcf, 'CurrentAxes', hsp(i2));
+    
+    set(gca, 'XTick', 1 : 7 , ...
+        'XTickLabel', {'s', 't+eh', 'd+iy', 'b+ae+t', 'g+ey+v', 'b+er+th', 't+uw'});
+    xs = get(gca, 'XLim');
+    plot(xs, [0, 0], '-', 'Color', [0.5, 0.5, 0.5]);
+    
+    set(gca, 'YLim', YLim);
+    xlabel('Segments and Syllables');
+%     ylabel(sprintf('Time inteval change from %s (ms) (mean\\pm1 SEM)', baseType));
+    ylabel(sprintf('Duration change (ms, mean\\pm1 SE)'), ...
+           'FontSize', fontSize);
+    
+    if i2 == 1
+        legend(rhyConds_long);
+    end
+   
+    title(['Perturbation type: ', strrep(pt, '_', '\_')]);
+end
+
+%% Time-intevral changes: Mark significant changes
+for i1 = 1 : length(rhyConds)
+    rc = rhyConds{i1};
+    
+    for i2 = 1 : numel(pertTypes_main(2 : end))
+        pts = pertTypes_main(2 : end);
+        pt = pts{i2};
+        
+        set(gcf, 'CurrentAxes', hsp(i2));
+        
+        for i3 = 1 : length(tIntChgs_tp.(rc).(pt))
+            if tIntChgs_tp.(rc).(pt)(i3) < P_THRESH_UNC
+                plot(i3, tIntChgs_mn.(rc).(pt)(i3), 'o', ...
+                     'MarkerFaceColor', colors.(rc), ...
+                     'MarkerEdgeColor', colors.(rc));
+            end
+            
+            
+            if ~isempty(fsic(varargin, '--perm-tint')) %--- Show permutation test results ---%
+                if corrps_tIntChg(i3, i1, i2) < P_THRESH_CORR
+                    plot(i3, tIntChgs_mn.(rc).(pt)(i3), 's', ...
+                         'MarkerEdgeColor',  corrSigSquareClr, 'MarkerFaceColor', 'none', ...
+                         'LineWidth', corrSigSquareLW, ...
+                         'MarkerSize', corrSigSquareMarkerSize);
+                end
+            else  %--- Bonferroni correction ---%
+                if tIntChgs_tp.(rc).(pt)(i3) < P_THRESH_UNC / numel(tIntChgs_tp.(rc).(pt))
+                    plot(i3, tIntChgs_mn.(rc).(pt)(i3), 's', ...
+                         'MarkerEdgeColor',  corrSigSquareClr, 'MarkerFaceColor', 'none', ...
+                         'LineWidth', corrSigSquareLW, ...
+                         'MarkerSize', corrSigSquareMarkerSize);
+                end
+            end
+        end
+    end
+end
+
+%% Show legend for significance symbols
+xs = get(gca, 'XLim'); ys = get(gca, 'YLim');
+x = xs(1) + 0.725 * range(xs);
+y = ys(1) + 0.750 * range(ys);
+w = 0.266 * range(xs);
+h = 0.210 * range(ys);
+
+show_legend_sig(x, y, w, h, rhyConds, pltLW, colors, corrSigSquareClr, corrSigSquareLW, corrSigSquareMarkerSize, ...
+                P_THRESH_UNC, P_THRESH_CORR, '--bonferroni');
+
+
 %% Formant trajectory analysis
-analyze_fmts_vwls = {'eh', 'iy', 'ae', 'ey'};
+analyze_fmts_vwls = {'eh', 'iy', 'ae', 'ey', 'er', 'uw', 'ah'};
 
 idxphns = nan(1, length(analyze_fmts_vwls));
 
@@ -537,6 +690,7 @@ spect = struct;
 
 for i0 = 1 : numel(analyze_fmts_vwls)
     vwl = analyze_fmts_vwls{i0};
+    assert(length(strmatch(vwl, pdata.mainData.asrPhns, 'exact')) == 1);
     idxphns(i0) = strmatch(vwl, pdata.mainData.asrPhns, 'exact');
     assert(~isnan(idxphns(i0)));
       

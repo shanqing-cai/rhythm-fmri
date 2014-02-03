@@ -27,8 +27,8 @@ HEMIS = ["lh", "rh"]
 if __name__ == "__main__":
     ap = argparse.ArgumentParser("Prepare for batch analysis of RHY fMRI data")
     ap.add_argument("subjID", help="Subject ID, with the prefix MRI_ included (e.g., MRI_AWS_M01)")
-    ap.add_argument("--run-batch", dest="bRunBatch", action="store_true",
-                    help="Run the batch commands automatically (default: false)")
+    ap.add_argument("--run-batch", dest="runBatch", type=str, 
+                    help="Run the batch commands automatically (any of the steps or all)")
     
     if len(sys.argv) == 1:
         ap.print_help()
@@ -165,7 +165,8 @@ if __name__ == "__main__":
     batchCmds = []
 
     info_log("# To run the batch analysis, first do: ")
-    info_log("\tcd %s" % (sBatchDataDir))
+    cdCmd = "cd %s" % sBatchDataDir
+    info_log("\t%s" % cdCmd)
 
     for (i0, step) in enumerate(batchSteps):
         tCmd = "run_subject.sh -c %s -s %s -S %s -m %s %s" \
@@ -189,11 +190,19 @@ if __name__ == "__main__":
                          "firstlevel_%s" \
                          % machineSettings[hostName]["modelName"])
 
+    info_log("")
+    info_log("=== Viewing commands ===")
+    info_log("export SUBJECTS_DIR=%s" % fsDataDir)
+    info_log("RHYBASE=%s" % batchDataDir)
+    info_log("S=%s" % sID)
 
     for i0 in range(nContrasts):
-        spmTViewCmd_vol = "tkmedit %s T1.mgz -surfs -overlay %s -overlay-reg %s -fthresh 6 -fmid 9" \
-                          % (sID, os.path.join(L1Dir, "spmT_%.4d.img" % (i0 + 1)), \
-                             func2Struct_dat)
+        strContr = "%.4d" % (i0 + 1)
+
+        r_L1Dir = os.path.join(sID, "firstlevel_%s" % machineSettings[hostName]["modelName"])
+        r_func2Struct_dat = os.path.join(sID, "nii", "func2struct.bbr.dat")
+        spmTViewCmd_vol = "CONTR=%s; tkmedit ${S} T1.mgz -surfs -overlay ${RHYBASE}/%s/spmT_%s.img -overlay-reg ${RHYBASE}/%s -fthresh 6 -fmid 9" \
+                          % (strContr, r_L1Dir, strContr, r_func2Struct_dat)
 
         info_log("# Commands for viewing spmT for contrast #%d in the volume: " % (i0 + 1))
         info_log("\t%s" % spmTViewCmd_vol)
@@ -202,16 +211,21 @@ if __name__ == "__main__":
                  % (i0 + 1))
         
         for hemi in HEMIS:
-            spmTViewCmd_surf = "tksurfer %s %s inflated -gray -overlay %s -ovelay-reg %s -fthresh 6 -fmid 9" \
-                               % (sID, hemi,\
-                                  os.path.join(L1Dir, \
-                                               "spmT_%.4d.img" % (i0 + 1)),\
-                                  func2Struct_dat)
+            spmTViewCmd_surf = "CONTR=%s; HEMI=%s; tksurfer ${S} ${HEMI} inflated -gray -overlay ${RHYBASE}/%s/spmT_%s.img -ovelay-reg ${RHYBASE}/%s -fthresh 6 -fmid 9" \
+                               % (strContr, hemi, r_L1Dir, strContr, r_func2Struct_dat)
             info_log("\t%s" % spmTViewCmd_surf)
 
         info_log(" ")
 
     #=== (Optional): Automatically run the batch commands ===%
-    if args.bRunBatch:
-        for (i0, cmd) in enumerate(batchCmds):
-            saydo(cmd)
+    if args.runBatch != None and args.runBatch != "":
+        if args.runBatch.lower() == "all":
+            
+            for (i0, cmd) in enumerate(batchCmds):
+                saydo("%s; %s" % (cdCmd, cmd))
+        else:
+            if batchSteps.count(args.runBatch) == 0:
+                error_log("Unrecognized step: %s" % args.runBatch)
+            else:
+                saydo("%s; %s" % (cdCmd, batchCmds[batchSteps.index(args.runBatch)]))
+                

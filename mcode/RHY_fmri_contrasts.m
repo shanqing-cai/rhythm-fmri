@@ -61,6 +61,26 @@ for i1 = 1 : nRuns
    RegNameTContrasts{2}{end + 1} = 1;
 end
 
+%--- N vs Baseline ---%
+RegNameTContrasts{3} = {'NvBL'};
+for i1 = 1 : nRuns
+   RegNameTContrasts{3}{end + 1} = sprintf('Sn(%d) R1', i1);
+   RegNameTContrasts{3}{end + 1} = 1;
+   
+   RegNameTContrasts{3}{end + 1} = sprintf('Sn(%d) R3', i1);
+   RegNameTContrasts{3}{end + 1} = -1;
+end
+
+%--- R vs Baseline ---%
+RegNameTContrasts{4} = {'RvBL'};
+for i1 = 1 : nRuns
+   RegNameTContrasts{4}{end + 1} = sprintf('Sn(%d) R2', i1);
+   RegNameTContrasts{4}{end + 1} = 1;
+   
+   RegNameTContrasts{4}{end + 1} = sprintf('Sn(%d) R3', i1);
+   RegNameTContrasts{4}{end + 1} = -1;
+end
+
 
 
 contrastFN = fullfile(subjDataDir, 'fmri_contrasts.mat');

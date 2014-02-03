@@ -266,6 +266,11 @@ if nargout >= 2
 end
 
 
+%% Clean up
+if isfile(wavFN)
+    delete(wavFN);
+end
+
 %% Optional visualization
 if ~isempty(fsic(varargin, '-s'))
     hfig = figure('Position', [50, 100, 1350, 450]);

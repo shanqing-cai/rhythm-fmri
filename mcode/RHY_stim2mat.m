@@ -24,6 +24,13 @@ else
     genDesMatPath = '/speechlab/5/scai/RHY/scripts';
 end
 
+%% Additional optional input arguments
+if ~isempty(fsic(varargin, '--pad-head'))
+    padHead = varargin{fsic(varargin, '--pad-head') + 1};
+else
+    padHead = [];    
+end
+
 %% Parameters
 % TR = 11500;    % ms
 % TA = 2470;    % ms
@@ -81,6 +88,13 @@ end
 
 if ~isfield(pdata.mainData, 'fluencyCode')
     error('Cannot find fluencyCode in pdata.mainData');
+end
+
+%% Check the length of padHead
+if ~isempty(fsic(varargin, padHead))
+    if length(padHead) ~= nRunsAct
+        error('padHead has a length that does not match the number of runs (%d)', nRuns);
+    end
 end
 
 %% Read the stim-schedule for the delivered runs
@@ -144,6 +158,11 @@ for i1 = 1 : nRunsAct
         end
     end
     stims{i1} = [3, stims{i1}(1 : end - 1)];     % Padded one: the first volume doesn't capture any task-related neural responses
+    
+    if ~isempty(padHead) && padHead(i1) > 0
+        stims{i1} = [3 * ones(1, padHead(i1)), stims{i1}];
+        stims{i1} = stims{i1}(1 : end - padHead(i1));
+    end
     
     %-- Adjust stims according to time stamps: in case trigger skips exist
     %--%

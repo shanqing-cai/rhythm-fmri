@@ -35,6 +35,8 @@ P_THRESH_CORR = 0.05;
 
 FMT_ANA_VWLS = {'eh', 'iy', 'ae', 'ey'};
 FMT_ANA_VWL_WORDS = {'steady', 'steady', 'bat', 'gave'};
+% FMT_ANA_VWLS = {'ae', 'ey', 'er', 'uw'};
+% FMT_ANA_VWL_WORDS = {'bat', 'gave', 'birth', 'to'};
 MAX_FMT_LEN = 256;
 
 T_STEP = 0.002;     % Unit: s
@@ -556,7 +558,7 @@ for h1 = 1 : numel(rhyConds)
         elseif i1 == 3
             rowN = 1; colN = 1;
         elseif i1 == 4
-            rowN = 1; colN = 2;
+            rowN = 1; colN = 2;       
         else
             rowN = NaN; colN = NaN; % TODO
         end
