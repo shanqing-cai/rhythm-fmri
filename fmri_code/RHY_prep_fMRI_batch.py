@@ -27,8 +27,8 @@ HEMIS = ["lh", "rh"]
 if __name__ == "__main__":
     ap = argparse.ArgumentParser("Prepare for batch analysis of RHY fMRI data")
     ap.add_argument("subjID", help="Subject ID, with the prefix MRI_ included (e.g., MRI_AWS_M01)")
-    ap.add_argument("--run-batch", dest="bRunBatch", action="store_true",
-                    help="Run the batch commands automatically (default: false)")
+    ap.add_argument("--run-batch", dest="runBatch", type=str, 
+                    help="Run the batch commands automatically (any of the steps or all)")
     
     if len(sys.argv) == 1:
         ap.print_help()
@@ -165,7 +165,8 @@ if __name__ == "__main__":
     batchCmds = []
 
     info_log("# To run the batch analysis, first do: ")
-    info_log("\tcd %s" % (sBatchDataDir))
+    cdCmd = "cd %s" % sBatchDataDir
+    info_log("\t%s" % cdCmd)
 
     for (i0, step) in enumerate(batchSteps):
         tCmd = "run_subject.sh -c %s -s %s -S %s -m %s %s" \
@@ -217,6 +218,14 @@ if __name__ == "__main__":
         info_log(" ")
 
     #=== (Optional): Automatically run the batch commands ===%
-    if args.bRunBatch:
-        for (i0, cmd) in enumerate(batchCmds):
-            saydo(cmd)
+    if args.runBatch != None and args.runBatch != "":
+        if args.runBatch.lower() == "all":
+            
+            for (i0, cmd) in enumerate(batchCmds):
+                saydo("%s; %s" % (cdCmd, cmd))
+        else:
+            if batchSteps.count(args.runBatch) == 0:
+                error_log("Unrecognized step: %s" % args.runBatch)
+            else:
+                saydo("%s; %s" % (cdCmd, batchCmds[batchSteps.index(args.runBatch)]))
+                
