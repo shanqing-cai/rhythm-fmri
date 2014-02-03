@@ -80,6 +80,10 @@ for i1 = 1 : numel(state.trialList.fn)
                 pfld = 'otherData';
             elseif isequal(t_phase, 'rand')
                 pfld = 'randData';
+            elseif (length(t_phase) >= 4 && isequal(t_phase(1 : 3), 'run') && ~isnan(str2double(t_phase(4 : end)))) ...
+                || (length(t_phase) >= 6 && isequal(t_phase(1 : 5), 'pract') && ~isnan(str2double(t_phase(6 : end)))) ...
+                || isequal(t_phase, 'pre')
+                pfld = 'mainData';
             else
                 pfld = 'sustData';
             end

@@ -1,4 +1,4 @@
-function hFig = analyze_dysf_fraction(pdata, rhyConds, pertTypes, CHI_P_THRESH, colors)
+function hFig = analyze_dysf_fraction(pdata, rhyConds, rhyConds_long, pertTypes, CHI_P_THRESH, colors)
 %% Constants
 markerVPad = 0.125;
 
@@ -35,9 +35,11 @@ for i1 = 1 : 3
     
     if i1 < 3
         rcond = rhyConds{i1};
+        rcond_long = rhyConds_long{i1};
         clr = colors.(rcond);
     else
         rcond = 'Total';
+        rcond_long = rcond;
         clr = [0.5, 0.5, 1.0];
     end
     
@@ -51,7 +53,7 @@ for i1 = 1 : 3
     
     set(gca, 'YLim', [0, 1]);
     set(gca, 'XTickLabel', pertTypes(1 : 3));
-    title(rcond);
+    title(rcond_long);
     ylabel('Fraction of dysfluent trials');
     
     ys = get(gca, 'YLim');
