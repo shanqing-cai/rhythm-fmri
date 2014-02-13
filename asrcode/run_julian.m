@@ -165,7 +165,14 @@ if bPrep
     stdOutFN = fullfile(outDir, 'julian_stdout.txt');
     jcmd1 = [jcmd1, ' > ', stdOutFN];
     varargout{1} = jcmd1;
-    return
+    
+    
+    %% Clean up
+%     if isfile(wavFN)
+%         delete(wavFN);
+%     end
+    
+    return;
 end
 
 
