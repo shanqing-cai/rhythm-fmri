@@ -1,20 +1,42 @@
 function varargout = run_julian(dataFN, varargin)
 %% CONFIG
-BASE_JCONF = '../julius-3.5.2-quickstart-windows/julian.jconf';
-HMMDEF = '../julius-3.5.2-quickstart-windows/acoustic_model_files_build726/hmmdefs';
-TIEDLIST = '../julius-3.5.2-quickstart-windows/acoustic_model_files_build726/tiedlist';
-MKDFA_BIN = '../julius-3.5.2-quickstart-windows/bin/mkdfa.pl';
-JULIAN_BIN = '../julius-3.5.2-quickstart-windows/bin/julian.exe';
-ASR_DATA_DIR = '../asr';
+BASE_JCONF = 'julius-3.5.2-quickstart-windows/julian.jconf';
+HMMDEF = 'julius-3.5.2-quickstart-windows/acoustic_model_files_build726/hmmdefs';
+TIEDLIST = 'julius-3.5.2-quickstart-windows/acoustic_model_files_build726/tiedlist';
+MKDFA_BIN = 'julius-3.5.2-quickstart-windows/bin/mkdfa.pl';
+JULIAN_BIN = 'julius-3.5.2-quickstart-windows/bin/julian.exe';
+ASR_DATA_DIR = 'asr';
 % MKDFA_BIN = 'E:/speechres/rhythm-fmri/asrcode/mkdfa.pl';
 
-GRAM_VOCA = '../asr/gram.voca';
-GRAM_GRAMMAR = '../asr/gram.grammar';
+GRAM_VOCA = 'asr/gram.voca';
+GRAM_GRAMMAR = 'asr/gram.grammar';
 
 DOS2UNIX_BIN = 'C:\Programs\dos2unix\bin\dos2unix.exe';
 UNIX2DOS_BIN = 'C:\Programs\dos2unix\bin\unix2dos.exe';
 
 wfs = 16e3;
+
+%% Set all absolute paths 
+cwd = pwd;
+while ~(length(cwd) > 11 && isequal(cwd(end - 10 : end), 'rhythm-fmri'));
+    cwd = fileparts(cwd);
+end
+
+if ~(length(cwd) > 11 && isequal(cwd(end - 10 : end), 'rhythm-fmri'))
+    error('Unrecognized current working directory: %s', pwd);
+end
+
+BASE_JCONF = fullfile(cwd, BASE_JCONF);
+HMMDEF = fullfile(cwd, HMMDEF);
+TIEDLIST = fullfile(cwd, TIEDLIST);
+MKDFA_BIN = fullfile(cwd, MKDFA_BIN);
+JULIAN_BIN = fullfile(cwd, JULIAN_BIN);
+ASR_DATA_DIR = fullfile(cwd, ASR_DATA_DIR);
+
+GRAM_VOCA = fullfile(cwd, GRAM_VOCA);
+GRAM_GRAMMAR = fullfile(cwd, GRAM_GRAMMAR);
+
+check_file(JULIAN_BIN);
 
 %% Optional input arguments
 bPrep = ~isempty(fsic(varargin, 'prep'));
