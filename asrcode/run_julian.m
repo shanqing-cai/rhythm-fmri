@@ -1,15 +1,15 @@
 function varargout = run_julian(dataFN, varargin)
 %% CONFIG
-BASE_JCONF = 'E:/speechres/rhythm-fmri/julius-3.5.2-quickstart-windows/julian.jconf';
-HMMDEF = 'E:/speechres/rhythm-fmri/julius-3.5.2-quickstart-windows/acoustic_model_files_build726/hmmdefs';
-TIEDLIST = 'E:/speechres/rhythm-fmri/julius-3.5.2-quickstart-windows/acoustic_model_files_build726/tiedlist';
-MKDFA_BIN = 'E:/speechres/rhythm-fmri/julius-3.5.2-quickstart-windows/bin/mkdfa.pl';
-JULIAN_BIN = 'E:/speechres/rhythm-fmri/julius-3.5.2-quickstart-windows/bin/julian.exe';
-ASR_DATA_DIR = 'E:/speechres/rhythm-fmri/asr';
+BASE_JCONF = '../julius-3.5.2-quickstart-windows/julian.jconf';
+HMMDEF = '../julius-3.5.2-quickstart-windows/acoustic_model_files_build726/hmmdefs';
+TIEDLIST = '../julius-3.5.2-quickstart-windows/acoustic_model_files_build726/tiedlist';
+MKDFA_BIN = '../julius-3.5.2-quickstart-windows/bin/mkdfa.pl';
+JULIAN_BIN = '../julius-3.5.2-quickstart-windows/bin/julian.exe';
+ASR_DATA_DIR = '../asr';
 % MKDFA_BIN = 'E:/speechres/rhythm-fmri/asrcode/mkdfa.pl';
 
-GRAM_VOCA = 'E:/speechres/rhythm-fmri/asr/gram.voca';
-GRAM_GRAMMAR = 'E:/speechres/rhythm-fmri/asr/gram.grammar';
+GRAM_VOCA = '../asr/gram.voca';
+GRAM_GRAMMAR = '../asr/gram.grammar';
 
 DOS2UNIX_BIN = 'C:\Programs\dos2unix\bin\dos2unix.exe';
 UNIX2DOS_BIN = 'C:\Programs\dos2unix\bin\unix2dos.exe';
