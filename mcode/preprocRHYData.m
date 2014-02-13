@@ -1,11 +1,16 @@
 function preprocRHYData(subjID, varargin)
 %% Configs
-hostName = getHostName;
+hostName = lower(getHostName);
 
 MAIN_UTTER = 'The steady bat gave birth to pups';
 
-dacacheDir='E:/speechres/rhythm-fmri/dacache';
-rawDataDir='G:/DATA/RHYTHM-FMRI/';
+if isequal(lower(hostName), 'cns-pc34')
+    dacacheDir='D:\DATA\RHYTHM-FMRI\_dacache';
+    rawDataDir='D:/DATA/RHYTHM-FMRI/';
+else
+    dacacheDir='E:/speechres/rhythm-fmri/dacache';
+    rawDataDir='G:/DATA/RHYTHM-FMRI/';
+end
 
 mvaWinWidth=21;     % 21 * 1.333 = 28 (ms)
 fineParseWin=100e-3;	% sec

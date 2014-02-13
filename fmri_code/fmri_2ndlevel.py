@@ -128,6 +128,7 @@ if __name__ == "__main__":
     for hemi in HEMIS:
         commSurfConFNs[hemi] = []
 
+    bNew = False
     for sID in subjIDs:
         #== Locate the con file ==#
         L1Dir = os.path.join(args.batchBase, sID, "firstlevel_%s" % modelName)
@@ -155,6 +156,7 @@ if __name__ == "__main__":
             commSurfConFN = os.path.join(L1Dir, "con_%.4d.%s.fsav.mgz" % \
                                                 (args.contrastNum, hemi))
             if args.bRedo or not os.path.isfile(commSurfConFN):
+                bNew = True
                 preprocCmd = "mris_preproc --s %s --hemi %s --is %s --fwhm %f --target %s --out %s" % \
                              (sID, hemi, surfConFN, args.fwhmSurf, \
                               commonSurfID, commSurfConFN)
@@ -182,12 +184,12 @@ if __name__ == "__main__":
         
         concatCmd = "mris_preproc --hemi %s --out %s --target %s " \
                     % (hemi, mergedSurfCon, commonSurfID)
-        if args.bRedo or not os.path.isfile(mergedSurfCon):
-            for (i0, csc) in enumerate(commSurfConFNs[hemi]):
-                concatCmd += "--s %s --is %s " % (commonSurfID, csc)
+        #if bNew or args.bRedo or not os.path.isfile(mergedSurfCon):
+        for (i0, csc) in enumerate(commSurfConFNs[hemi]):
+            concatCmd += "--s %s --is %s " % (commonSurfID, csc)
 
-            saydo(concatCmd)
-            check_file(mergedSurfCon)
+        saydo(concatCmd)
+        check_file(mergedSurfCon)
 
         mergedSurfCons[hemi] = mergedSurfCon
 
@@ -199,64 +201,63 @@ if __name__ == "__main__":
         X_mat = os.path.join(designDir, "X.mat")
         X_reverse_mat = os.path.join(designDir, "X_reverse.mat")
 
-        if args.bRedo or not os.path.isfile(X_mat):
-            generate_design_matrix(subjIsAWS, X_mat)
-        if args.bRedo or not os.path.isfile(X_reverse_mat):
-            generate_design_matrix(subjIsAWS, X_reverse_mat, bReverse=True)
+        # if bNew or args.bRedo or not os.path.isfile(X_mat):
+        generate_design_matrix(subjIsAWS, X_mat)
+        # if bNew or args.bRedo or not os.path.isfile(X_reverse_mat):
+        generate_design_matrix(subjIsAWS, X_reverse_mat, bReverse=True)
     
-
     #=== Perform mri_glmfit (OSGM) ===#
     viewCmds_osgm = {}
     for hemi in HEMIS:
         glmDir = os.path.join(outBase, "osgm_%s" % hemi)
         sig_mgh = os.path.join(glmDir, "osgm", "sig.mgh")
         
-        if args.bRedo or not os.path.isfile(sig_mgh):
-            fitCmd = 'mri_glmfit --cortex --y %s --osgm --glmdir %s'\
-                     % (mergedSurfCons[hemi], glmDir)
-            saydo(fitCmd)
-            check_file(sig_mgh)
+        #if bNew or args.bRedo or not os.path.isfile(sig_mgh):
+        fitCmd = 'mri_glmfit --cortex --y %s --osgm --glmdir %s'\
+            % (mergedSurfCons[hemi], glmDir)
+        saydo(fitCmd)
+        check_file(sig_mgh)
         
         viewCmds_osgm[hemi] = \
             "tksurfer %s %s inflated -gray -overlay %s -fthresh 2.5" % \
             (commonSurfID, hemi, sig_mgh)
 
     #=== Perform mri_glmfit: between-group comparison ===#
-    X_mats = [X_mat, X_reverse_mat]
-    desNames = ["bgc", "bgc_rev"]
-    viewCmds_bgc = {}
-    for hemi in HEMIS:
-        viewCmds_bgc[hemi] = {}
-        for (i0, des_mat) in enumerate(X_mats):
-            glmDir = os.path.join(outBase, "%s_%s" % (desNames[i0], hemi))
-            check_file(con_fns["01"])
-            sig_mgh = os.path.join(glmDir, con_fns["01"], "sig.mgh")
+    if bAll and bGrpComp:
+        X_mats = [X_mat, X_reverse_mat]
+        desNames = ["bgc", "bgc_rev"]
+        viewCmds_bgc = {}
+        for hemi in HEMIS:
+            viewCmds_bgc[hemi] = {}
+            for (i0, des_mat) in enumerate(X_mats):
+                glmDir = os.path.join(outBase, "%s_%s" % (desNames[i0], hemi))
+                check_file(con_fns["01"])
+                sig_mgh = os.path.join(glmDir, con_fns["01"], "sig.mgh")
             
-            if args.bRedo or not os.path.isfile(sig_mgh):
+                # if bNew or args.bRedo or not os.path.isfile(sig_mgh):
                 fitCmd = 'mri_glmfit --cortex --y %s --X %s --C %s --glmdir %s'\
-                     % (mergedSurfCons[hemi], des_mat, con_fns["01"], glmDir)
+                    % (mergedSurfCons[hemi], des_mat, con_fns["01"], glmDir)
                 
                 saydo(fitCmd)
                 check_file(sig_mgh)
-                
         
-            viewCmds_bgc[hemi][desNames[i0]] = \
-                "tksurfer %s %s inflated -gray -overlay %s -fthresh 2.5" % \
-                (commonSurfID, hemi, sig_mgh)
+                viewCmds_bgc[hemi][desNames[i0]] = \
+                    "tksurfer %s %s inflated -gray -overlay %s -fthresh 2.5" % \
+                    (commonSurfID, hemi, sig_mgh)
     
-        
     #=== Print view commands: OSGM ===#
     print("\n\n=== Commands for viewing OSGM results ===")
     for hemi in HEMIS:
         print("Hemisphere %s: " % hemi)
         print("\t%s\n" % viewCmds_osgm[hemi])
 
-    #=== Print view commands: between-group comparisons ===#
     if bAll and bGrpComp:
-        print("\n\n=== Commands for viewing between-group comparison results ===")
-        for hemi in HEMIS:
-            for (i0, t_desName) in enumerate(desNames):
-                print("Hemisphere %s - %s: " % (hemi, t_desName))
-                print("\t%s\n" % viewCmds_bgc[hemi][t_desName])
-        print("\n")
+        #=== Print view commands: between-group comparisons ===#
+        if bAll and bGrpComp:
+            print("\n\n=== Commands for viewing between-group comparison results ===")
+            for hemi in HEMIS:
+                for (i0, t_desName) in enumerate(desNames):
+                    print("Hemisphere %s - %s: " % (hemi, t_desName))
+                    print("\t%s\n" % viewCmds_bgc[hemi][t_desName])
+                print("\n")
 

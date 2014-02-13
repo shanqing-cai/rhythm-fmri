@@ -34,7 +34,14 @@ corrSigSquareClr = [0, 0, 0];
 corrSigSquareLW = 1;
 corrSigSquareMarkerSize = 10;
 
-dacacheDir = '../dacache';
+hostName = lower(getHostName);
+if isequal(hostName, 'cns-pc34')
+    dacacheDir = 'D:/DATA/RHYTHM-FMRI/_dacache';
+    rawDataDir = 'D:/DATA/RHYTHM-FMRI';
+else
+    dacacheDir = '../dacache';
+    rawDataDir = 'G:/DATA/RHYTHM-FMRI';
+end
 
 pdataFN = fullfile(dacacheDir, [subjID, '.mat']);
 check_file(pdataFN);
@@ -85,11 +92,18 @@ end
 
 %% Process noPert trials according to preceding pertType
 exptFN = fullfile(pdata.subject.dataDir, pdata.subject.name, 'expt.mat');
-check_file(exptFN);
+if ~isfile(exptFN) % Change expt file name
+    exptFN = fullfile(rawDataDir, pdata.subject.name, 'expt.mat');
+    
+    if ~isfile(exptFN)
+        error('Cannot find expt.mat');
+    end
+end
+% check_file(exptFN);
 
-assert(exist('expt') == 0);
+assert(exist('expt', 'var') == 0);
 load(exptFN);
-assert(exist('expt') == 1);
+assert(exist('expt', 'var') == 1);
 
 [pdata, idx_noPert_precNoPert, idx_noPert_precF1Up, idx_noPert_precDecel] = ...
     proc_pdata_preceding(pdata, expt);

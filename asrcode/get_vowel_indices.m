@@ -1,6 +1,6 @@
 function vi = get_vowel_indices(sent)
 %% CONFIG
-vifn = 'E:/speechres/rhythm-fmri/asr/vowel_indices.mat';
+vifn = '../asr/vowel_indices.mat';
 
 %%
 if ~isfile(vifn)

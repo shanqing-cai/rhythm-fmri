@@ -7,10 +7,12 @@ tridx = get(uihdls.hlist, 'Value');
 % load(dacacheFN);    % gives pdata
 load(stateFN);      % gives state
 
-hostName=deblank(getHostName);
+hostName = lower(deblank(getHostName));
 if bIsRHY
     if isequal(hostName,'smcg-w510') || isequal(hostName,'smcgw510') || isequal(hostName,'smcg_w510')
         driveLet = 'G:';
+    elseif isequal(hostName, 'cns-pc34')
+        driveLet = 'D:';
     else
         error('Unsupported host: %s', hostName);
     end

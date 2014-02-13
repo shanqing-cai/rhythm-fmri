@@ -9,7 +9,8 @@ for i1 = 1 : length(aot)
     end
     
     if isequal(tline(1 : 18), 'input speechfile: ')
-        if isequal(tline(end - length(wavFN) + 1 : end), wavFN)
+%         if isequal(tline(end - length(wavFN) + 1 : end), wavFN)
+        if isequal(tline(end - 9 : end), 'speech.wav')
             bFoundWav = 1;
             break;
         end
