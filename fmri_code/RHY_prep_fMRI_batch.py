@@ -202,7 +202,7 @@ if __name__ == "__main__":
         r_L1Dir = os.path.join(sID, "firstlevel_%s" % machineSettings[hostName]["modelName"])
         r_func2Struct_dat = os.path.join(sID, "nii", "func2struct.bbr.dat")
         spmTViewCmd_vol = "CONTR=%s; tkmedit ${S} T1.mgz -surfs -overlay ${RHYBASE}/%s/spmT_${CONTR}.img -overlay-reg ${RHYBASE}/%s -fthresh 6 -fmid 9" \
-                          % (strContr, r_L1Dir, strContr, r_func2Struct_dat)
+                          % (strContr, r_L1Dir, r_func2Struct_dat)
 
         info_log("# Commands for viewing spmT for contrast #%d in the volume: " % (i0 + 1))
         info_log("\t%s" % spmTViewCmd_vol)
@@ -212,7 +212,7 @@ if __name__ == "__main__":
         
         for hemi in HEMIS:
             spmTViewCmd_surf = "CONTR=%s; HEMI=%s; tksurfer ${S} ${HEMI} inflated -gray -overlay ${RHYBASE}/%s/spmT_${CONTR}.img -ovelay-reg ${RHYBASE}/%s -fthresh 6 -fmid 9" \
-                               % (strContr, hemi, r_L1Dir, strContr, r_func2Struct_dat)
+                               % (strContr, hemi, r_L1Dir,  r_func2Struct_dat)
             info_log("\t%s" % spmTViewCmd_surf)
 
         info_log(" ")
