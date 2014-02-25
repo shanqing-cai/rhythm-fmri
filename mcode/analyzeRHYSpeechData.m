@@ -242,10 +242,10 @@ for i1 = 1 : numel(rhyConds)
             if bTotSentDur
                 %-- Total sentence duration --%
                 trial_asrDir = strrep(pdata.mainData.rawDataFNs{t_idx}, '.mat', '_asr');
-                check_dir(trial_asrDir);
-                asrOutTxt = fullfile(trial_asrDir, 'julian_stdout.txt');
+                check_dir(local_path(trial_asrDir, rawDataDir));
+                asrOutTxt = fullfile(local_path(trial_asrDir, rawDataDir), 'julian_stdout.txt');
                 check_file(asrOutTxt);
-                wavFN = fullfile(trial_asrDir, 'speech.wav');
+                wavFN = fullfile(local_path(trial_asrDir, rawDataDir), 'speech.wav');
                 check_file(wavFN);
             
                 pa = parse_asr_out(asrOutTxt, wavFN);
