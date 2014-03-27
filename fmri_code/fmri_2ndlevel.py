@@ -93,7 +93,7 @@ if __name__ == "__main__":
 
     #=== Get the list of subjects ===#
     if args.group == None or len(args.group) == 0:
-        wc = "*"
+        wc = "*_*"
         bAll = True
     else:
         wc = args.group + "*"
