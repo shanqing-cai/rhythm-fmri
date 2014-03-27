@@ -18,6 +18,9 @@ con_fns['10'] = 'con_10'
 con_fns['01'] = 'con_01'
 con_fns['0m1'] = '/users/cais/STUT/analysis/design/con_0-1'
 
+VOL_TEMPLATE="/usr/share/fsl/5.0/data/standard/MNI152_T1_1mm_brain.nii.gz"
+VOL_TEMPLATE_FS_ID = "MNI152_1mm"
+
 def generate_design_matrix(isAWS, matFN, bReverse=False):
 # Input arguments:
 #     isAWS: vector of 0's and 1's
@@ -68,6 +71,8 @@ if __name__ == "__main__":
                     help="Subject group (e.g., AWS). If not specified, will include all subjects and perform between-group analysis")
     ap.add_argument("--fwhm-surf", dest="fwhmSurf", type=float, default=10, 
                     help="FWHM for surface-based smoothing (default=0)")
+    ap.add_argument("--vol", action="store_true", dest="bVol",
+                    help="Perform volumetric analysis, instead of surface-based analysis (default: false)")
     ap.add_argument("--redo", dest="bRedo", action="store_true", 
                     help="Force redo all steps (default: false)")
 
@@ -88,7 +93,7 @@ if __name__ == "__main__":
 
     #=== Get the list of subjects ===#
     if args.group == None or len(args.group) == 0:
-        wc = "*"
+        wc = "*_*"
         bAll = True
     else:
         wc = args.group + "*"
@@ -123,10 +128,18 @@ if __name__ == "__main__":
         # Determine if between-group comparison is to be performed
         bGrpComp = not (subjIsAWS.count(1) == 0 or subjIsAWS.count(0) == 0)
 
-    #=== Project the con values to the surface ===#
-    commSurfConFNs = {}
-    for hemi in HEMIS:
-        commSurfConFNs[hemi] = []
+    if args.bVol:
+        #=== Prepare volumetric registered 4D ===#
+        cvConFNs = [] # Common-volume contrast files
+
+        check_file(VOL_TEMPLATE)
+        templateSuffix = os.path.split(VOL_TEMPLATE)[1]\
+            .replace(".nii.gz", "").replace(".mgz", "").replace(".nii", "")
+    else:
+        #=== Project the con values to the surface ===#
+        commSurfConFNs = {}
+        for hemi in HEMIS:
+            commSurfConFNs[hemi] = []
 
     bNew = False
     for sID in subjIDs:
@@ -141,29 +154,50 @@ if __name__ == "__main__":
         bbrDat = os.path.join(args.batchBase, sID, "nii", "func2struct.bbr.dat")
         check_file(bbrDat)
 
-        #== Use vol2surf command to project the contrast values to the subject's own surface ===#
-        #== Then use mris_preproc to project the data from the subject's own surface to the common space (fsaverage) ==#
-        for hemi in HEMIS:
-            surfConFN = os.path.join(L1Dir, "con_%.4d.%s.mgz" % \
-                                            (args.contrastNum, hemi))
-            if args.bRedo or not os.path.isfile(surfConFN):
-                projCmd = "mri_vol2surf --mov %s --reg %s --o %s --hemi %s --trgsubject %s --noreshape --interp trilin" % \
-                          (conFN, bbrDat, surfConFN, hemi, sID)
+        if args.bVol:
+            bbrMat = os.path.join(args.batchBase, sID, 
+                                  "nii", "func2struct.bbr.mat")
+            check_file(bbrMat)
+
+            cvConFN = os.path.join(L1Dir, "con_%.4d.commVol.nii.gz" % \
+                                          args.contrastNum)
+            #=== Locate the warp files ===#
+            fnirtWarp = os.path.join(args.batchBase, sID, 
+                                     "fnirt", 
+                                     "fnirt_to_%s_warp.nii.gz" % templateSuffix)
+            check_file(fnirtWarp)
+
+            if args.bRedo or not os.path.isfile(cvConFN):
+                warpCmd = "applywarp --ref=%s --in=%s --warp=%s --premat=%s --out=%s" % \
+                          (VOL_TEMPLATE, conFN, fnirtWarp, bbrMat, cvConFN) \
+                          + " --interp=trilinear"
+                saydo(warpCmd)
+                check_file(cvConFN)
+            cvConFNs.append(cvConFN)
+        else:
+            #== Use vol2surf command to project the contrast values to the subject's own surface ===#
+            #== Then use mris_preproc to project the data from the subject's own surface to the common space (fsaverage) ==#
+            for hemi in HEMIS:
+                surfConFN = os.path.join(L1Dir, "con_%.4d.%s.mgz" % \
+                                             (args.contrastNum, hemi))
+                if args.bRedo or not os.path.isfile(surfConFN):
+                    projCmd = "mri_vol2surf --mov %s --reg %s --o %s --hemi %s --trgsubject %s --noreshape --interp trilin" % \
+                              (conFN, bbrDat, surfConFN, hemi, sID)
                 
-                saydo(projCmd)
-                check_file(surfConFN)
+                    saydo(projCmd)
+                    check_file(surfConFN)
                 
-            commSurfConFN = os.path.join(L1Dir, "con_%.4d.%s.fsav.mgz" % \
-                                                (args.contrastNum, hemi))
-            if args.bRedo or not os.path.isfile(commSurfConFN):
-                bNew = True
-                preprocCmd = "mris_preproc --s %s --hemi %s --is %s --fwhm %f --target %s --out %s" % \
-                             (sID, hemi, surfConFN, args.fwhmSurf, \
-                              commonSurfID, commSurfConFN)
-                saydo(preprocCmd)
-                check_file(commSurfConFN)
+                commSurfConFN = os.path.join(L1Dir, "con_%.4d.%s.fsav.mgz" % \
+                                                    (args.contrastNum, hemi))
+                if args.bRedo or not os.path.isfile(commSurfConFN):
+                    bNew = True
+                    preprocCmd = "mris_preproc --s %s --hemi %s --is %s --fwhm %f --target %s --out %s" % \
+                                 (sID, hemi, surfConFN, args.fwhmSurf, \
+                                  commonSurfID, commSurfConFN)
+                    saydo(preprocCmd)
+                    check_file(commSurfConFN)
             
-            commSurfConFNs[hemi].append(commSurfConFN)
+                commSurfConFNs[hemi].append(commSurfConFN)
 
     #=== Concatenate the files ===#
     # "sf" stands for surface FWHM
@@ -173,25 +207,44 @@ if __name__ == "__main__":
         t_grp = "ALL"
     
     # Prepare output base directory
-    outBase = os.path.join(args.resBase, "%s_%.4d_sf%d" % \
-                           (t_grp, args.contrastNum, args.fwhmSurf))
-    
-    check_dir(outBase, bCreate=True)
-    
-    mergedSurfCons = {}
-    for hemi in HEMIS:
-        mergedSurfCon = os.path.join(outBase, "merged_con.%s.fsav.mgz" % hemi) 
+    if args.bVol:
+        outBase = os.path.join(args.resBase, "%s_%.4d_vol" % \
+                                      (t_grp, args.contrastNum))
+        check_dir(outBase, bCreate=True)
+    else:
+        outBase = os.path.join(args.resBase, "%s_%.4d_sf%d" % \
+                           (t_grp, args.contrastNum, args.fwhmSurf))        
+        check_dir(outBase, bCreate=True)
+
+    if args.bVol:
+        mergedVolCon = os.path.join(outBase, "merged_con.nii.gz")
+        if os.path.isfile(mergedVolCon):
+            from mri_utils import get_n_frames
+            bComplete = get_n_frames(mergedVolCon) == len(cvConFNs)
+        else:
+            bComplete = False
+
+        if args.bRedo or not bComplete:
+            concatCmd = "fslmerge -t %s " % mergedVolCon
+            for t_cvConFN in cvConFNs:
+                concatCmd += t_cvConFN + " " 
+            saydo(concatCmd)
+            check_file(mergedVolCon)
+    else:
+        mergedSurfCons = {}
+        for hemi in HEMIS:
+            mergedSurfCon = os.path.join(outBase, "merged_con.%s.fsav.mgz" % hemi) 
         
-        concatCmd = "mris_preproc --hemi %s --out %s --target %s " \
-                    % (hemi, mergedSurfCon, commonSurfID)
+            concatCmd = "mris_preproc --hemi %s --out %s --target %s " \
+                % (hemi, mergedSurfCon, commonSurfID)
         #if bNew or args.bRedo or not os.path.isfile(mergedSurfCon):
-        for (i0, csc) in enumerate(commSurfConFNs[hemi]):
-            concatCmd += "--s %s --is %s " % (commonSurfID, csc)
+            for (i0, csc) in enumerate(commSurfConFNs[hemi]):
+                concatCmd += "--s %s --is %s " % (commonSurfID, csc)
 
-        saydo(concatCmd)
-        check_file(mergedSurfCon)
+            saydo(concatCmd)
+            check_file(mergedSurfCon)
 
-        mergedSurfCons[hemi] = mergedSurfCon
+            mergedSurfCons[hemi] = mergedSurfCon
 
     #=== Prepare the group-level design matrix and contrast vectors ===#
     if bAll and bGrpComp:
@@ -208,52 +261,93 @@ if __name__ == "__main__":
     
     #=== Perform mri_glmfit (OSGM) ===#
     viewCmds_osgm = {}
-    for hemi in HEMIS:
-        glmDir = os.path.join(outBase, "osgm_%s" % hemi)
+    if args.bVol:
+        glmDir = os.path.join(outBase, "osgm")
         sig_mgh = os.path.join(glmDir, "osgm", "sig.mgh")
         
-        #if bNew or args.bRedo or not os.path.isfile(sig_mgh):
-        fitCmd = 'mri_glmfit --cortex --y %s --osgm --glmdir %s'\
-            % (mergedSurfCons[hemi], glmDir)
+        fitCmd = "mri_glmfit --y %s --osgm --glmdir %s" % \
+                 (mergedVolCon, glmDir)
         saydo(fitCmd)
         check_file(sig_mgh)
+
+        viewCmds_osgm = \
+            "tkmedit %s brain.mgz -overlay %s -fthresh 2.5 -fmid 4" % \
+            (VOL_TEMPLATE_FS_ID, sig_mgh)
+    else:
+        for hemi in HEMIS:
+            glmDir = os.path.join(outBase, "osgm_%s" % hemi)
+            sig_mgh = os.path.join(glmDir, "osgm", "sig.mgh")
         
-        viewCmds_osgm[hemi] = \
-            "tksurfer %s %s inflated -gray -overlay %s -fthresh 2.5" % \
-            (commonSurfID, hemi, sig_mgh)
+            #if bNew or args.bRedo or not os.path.isfile(sig_mgh)
+            fitCmd = 'mri_glmfit --cortex --y %s --osgm --glmdir %s'\
+                % (mergedSurfCons[hemi], glmDir)
+            saydo(fitCmd)
+            check_file(sig_mgh)
+        
+            viewCmds_osgm[hemi] = \
+                "tksurfer %s %s inflated -gray -overlay %s -fthresh 2.5" % \
+                (commonSurfID, hemi, sig_mgh)
 
     #=== Perform mri_glmfit: between-group comparison ===#
     if bAll and bGrpComp:
         X_mats = [X_mat, X_reverse_mat]
         desNames = ["bgc", "bgc_rev"]
         viewCmds_bgc = {}
-        for hemi in HEMIS:
-            viewCmds_bgc[hemi] = {}
+
+        if args.bVol:
             for (i0, des_mat) in enumerate(X_mats):
-                glmDir = os.path.join(outBase, "%s_%s" % (desNames[i0], hemi))
+                glmDir = os.path.join(outBase, desNames[i0])
                 check_file(con_fns["01"])
                 sig_mgh = os.path.join(glmDir, con_fns["01"], "sig.mgh")
-            
-                # if bNew or args.bRedo or not os.path.isfile(sig_mgh):
-                fitCmd = 'mri_glmfit --cortex --y %s --X %s --C %s --glmdir %s'\
-                    % (mergedSurfCons[hemi], des_mat, con_fns["01"], glmDir)
                 
+                fitCmd = 'mri_glmfit --cortex --y %s --X %s --C %s --glmdir %s'\
+                         % (mergedVolCon, des_mat, con_fns["01"], glmDir)
+
                 saydo(fitCmd)
                 check_file(sig_mgh)
-        
-                viewCmds_bgc[hemi][desNames[i0]] = \
-                    "tksurfer %s %s inflated -gray -overlay %s -fthresh 2.5" % \
-                    (commonSurfID, hemi, sig_mgh)
-    
-    #=== Print view commands: OSGM ===#
-    print("\n\n=== Commands for viewing OSGM results ===")
-    for hemi in HEMIS:
-        print("Hemisphere %s: " % hemi)
-        print("\t%s\n" % viewCmds_osgm[hemi])
 
-    if bAll and bGrpComp:
-        #=== Print view commands: between-group comparisons ===#
+                viewCmds_bgc[desNames[i0]] = \
+                    "tkmedit %s brain.mgz -overlay %s -fthresh 2.5 -fmid 4" % \
+                    (VOL_TEMPLATE_FS_ID, sig_mgh)
+        else:
+            for hemi in HEMIS:
+                viewCmds_bgc[hemi] = {}
+                for (i0, des_mat) in enumerate(X_mats):
+                    glmDir = os.path.join(outBase, "%s_%s" % (desNames[i0], hemi))
+                    check_file(con_fns["01"])
+                    sig_mgh = os.path.join(glmDir, con_fns["01"], "sig.mgh")
+            
+                    # if bNew or args.bRedo or not os.path.isfile(sig_mgh):
+                    fitCmd = 'mri_glmfit --cortex --y %s --X %s --C %s --glmdir %s'\
+                        % (mergedSurfCons[hemi], des_mat, con_fns["01"], glmDir)
+                
+                    saydo(fitCmd)
+                    check_file(sig_mgh)
+        
+                    viewCmds_bgc[hemi][desNames[i0]] = \
+                        "tksurfer %s %s inflated -gray -overlay %s -fthresh 2.5" % \
+                        (commonSurfID, hemi, sig_mgh)
+    
+
+    #=== Print viewing commands ===#
+    if args.bVol:
+        print("\n\n=== Commands for viewing OSGM results ===")
+        print("\t%s\n" % viewCmds_osgm)
+        
         if bAll and bGrpComp:
+            print("\n\n=== Commands for viewing between-group comparison results ===")
+            for (i0, t_desName) in enumerate(desNames):
+                print("%s: " % t_desName)
+                print("\t%s\n" % viewCmds_bgc[t_desName])
+            print("\n")
+    else:
+        print("\n\n=== Commands for viewing OSGM results ===")
+        for hemi in HEMIS:
+            print("Hemisphere %s: " % hemi)
+            print("\t%s\n" % viewCmds_osgm[hemi])
+
+        if bAll and bGrpComp:
+            #=== Print view commands: between-group comparisons ===#
             print("\n\n=== Commands for viewing between-group comparison results ===")
             for hemi in HEMIS:
                 for (i0, t_desName) in enumerate(desNames):

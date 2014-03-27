@@ -31,6 +31,13 @@ else
     padHead = [];    
 end
 
+if ~isempty(fsic(varargin, '--man-n-vols')) % Manual # of volumes
+    % e.g., '--man-n-vols', [4, 27]
+    manNVols = varargin{fsic(varargin, '--man-n-vols') + 1};
+else
+    manNVols = [];
+end
+
 %% Parameters
 % TR = 11500;    % ms
 % TA = 2470;    % ms
@@ -182,7 +189,15 @@ for i1 = 1 : nRunsAct
         fprintf(2, 'WARNING: found %d trigger skips in %s\n', ...
                 nSkips, runStr);
         stims{i1} = stims{i1}(1 : len0);
-    end    
+    end
+    
+    if ~isempty(manNVols) && ~isempty(find(manNVols(:, 1) == i1))
+        fprintf(1, 'INFO: Run %d: Using manually set # of volumes: %d --> ', ...
+                i1, length(stims{i1}));
+        manNVol = manNVols(find(manNVols(:, 1) == i1), 2);
+        stims{i1} = stims{i1}(1 : manNVol);
+        fprintf(1, '%d\n', length(stims{i1}));
+    end
 end
 
 %% Generate the design matrices
