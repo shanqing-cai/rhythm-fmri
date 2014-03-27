@@ -180,6 +180,7 @@ end
 
 %%
 uihdls = struct;
+uihdls.hostName = lower(deblank(getHostName));
 uihdls.dacacheFN = dacacheFN;
 
 uihdls.hfig_aux = figure('Position', [600, 100, 800, 400]);

@@ -55,7 +55,14 @@ if ~isempty(tridx)
     end
 end
 
-load(rawfn);	% gives data
+% hostName = lower(getHostName();
+if isequal(uihdls.hostName, 'smcg_w510')
+    rawBase = 'G:/DATA/RHYTHM-FMRI';
+else
+    rawBase = 'D:/DATA/RHYTHM-FMRI';
+end
+    
+load(local_path(rawfn, rawBase));	% gives data
 dataOrig=data;
 
 sigIn=data.signalIn;
@@ -143,8 +150,10 @@ frameDur = data.params.frameLen / data.params.sr;
 taxis1=0:(frameDur):(frameDur*(length(f1v)-1));
 
 rawDataFN = state.trialList.fn{tridx};
+rawDataFN = local_path(rawDataFN, rawBase);
 [fpath, fname] = fileparts(rawDataFN);
 asrDir = fullfile(fpath, [fname, '_asr']);
+check_dir(asrDir);
 
 if isdir(asrDir)
     wavFN = fullfile(asrDir, 'speech.wav');
@@ -183,7 +192,7 @@ if isdir(asrDir)
             iv2 = length(taxis1);
         end
     else
-        fprintf(1, 'WARNING: ASR results appears to be erroneous in trial %s', rawDataFn);
+        fprintf(1, 'WARNING: ASR results appears to be erroneous in trial %s', rawDataFN);
         iv1 = 1;
         iv2 = length(taxis1);
     end
