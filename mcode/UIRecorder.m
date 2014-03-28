@@ -111,6 +111,9 @@ handles.FmtShiftStat1 = 9;
 if isequal(getHostName, 'smcg_w510');
     handles.msgImgDir = 'E:\speechres\adapt\triphcode\uimg';
     handles.utterImgDir = 'E:\speechres\adapt\triphcode\utterimg';
+elseif isequal(getHostName, 'elisa-laptop');
+    handles.msgImgDir = 'C:\speechres\adapt\triphcode\uimg';
+    handles.utterImgDir = 'C:\speechres\adapt\triphcode\utterimg';
 else
     handles.msgImgDir = 'D:\speechres\adapt\triphcode\uimg';
     handles.utterImgDir = 'D:\speechres\adapt\triphcode\utterimg';
