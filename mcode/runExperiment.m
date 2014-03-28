@@ -14,6 +14,8 @@ subject = read_subject_config(configFN);
 if isequal(getHostName, 'smcg_w510')
 %     subject.dataDir        	= 'E:\DATA\RHYTHM-FMRI\';
     subject.dataDir        	= 'G:\DATA\RHYTHM-FMRI\';
+elseif isequal(getHostName, 'elisa-laptop')
+    subject.dataDir         = 'C:\DATA\RHYTHM-FMRI\';
 else
     subject.dataDir         = 'D:\CS_2004\PROJECTS\RHYTHM-FMRI\';
 end
