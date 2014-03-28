@@ -337,12 +337,14 @@ hgui.logFN = logFN;
 
 hgui.interfaceMode = subject.interfaceMode;
 hgui.simDataDir = subject.simDataDir;
-if ~isempty(hgui.simDataDir)
-    if ~isdir(hgui.simDataDir)
-        error('Input sim data directory does not exist: %s', subject.simDataDir);
+if hgui.interfaceMode == 2
+    if ~isempty(hgui.simDataDir)
+        if ~isdir(hgui.simDataDir)
+            error('Input sim data directory does not exist: %s', subject.simDataDir);
+        end
     end
 end
-
+    
 hgui.stcsData = load(sentMatFN);
 
 hgui.colors = colors;
