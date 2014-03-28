@@ -36,6 +36,8 @@ function wp=dBSPL2WaveAmp(lv,f,varargin)
 if isequal(getHostName, 'smcg_w510')
 %     load('E:\speechres\signals\leveltest\outputCalibration_S14.mat'); % contains calib at 0.1, 0.2, 0.3, 0.4, 0.5, 0.7, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5 kHz. 
     load('E:\speechres\signals\leveltest\outputCalibration_ER1.mat');
+elseif isequal(getHostName, 'elisa-laptop')
+    load('C:\speechres\signals\leveltest\outputCalibration_ER1.mat');
 else
 %     load('D:\speechres\signals\leveltest\outputCalibration_S14.mat'); % contains calib at 0.1, 0.2, 0.3, 0.4, 0.5, 0.7, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5 kHz. 
     load('D:\speechres\signals\leveltest\outputCalibration_ER1.mat');
